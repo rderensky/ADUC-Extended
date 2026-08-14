@@ -38,6 +38,7 @@ app prompts for credentials and performs all operations under the specified acco
 - Move accounts between organizational units.
 - Attribute editing.
 - Domain list with switching; a domain switch uses the active session credentials.
+- Built-in functionality of the external utility Lockout Status - date/time of password expiration, date/time of incorrect password entry
 
 ## Repository layout
 
