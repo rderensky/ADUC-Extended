@@ -1,0 +1,20 @@
+# Build artifacts
+dist/
+build/
+*.spec
+*.exe
+
+# Python
+__pycache__/
+*.pyc
+
+# App settings / logs (созданные при запуске)
+domains.json
+domains.log
+
+# Release archives
+*.zip
+
+# OS junk
+.DS_Store
+Thumbs.db
