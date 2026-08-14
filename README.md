@@ -14,7 +14,9 @@ and macOS (Python + Tkinter).
 
 **English** · [Русская версия](README_ru.md)
 
-💛 **На развитие проекта:** https://dalink.to/rderensky
+## Support the project · На развитие проекта
+
+💛 https://dalink.to/rderensky
 
 </div>
 
@@ -115,3 +117,5 @@ The domain list is stored locally (passwords are never saved):
 ## Distribution
 
 Provided as-is for internal use. No public license is granted; all rights reserved.
+
+

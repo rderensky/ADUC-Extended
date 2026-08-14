@@ -14,7 +14,9 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 
 [English](README.md) · **Русская версия**
 
-💛 **На развитие проекта:** https://dalink.to/rderensky
+## На развитие проекта
+
+💛 https://dalink.to/rderensky
 
 </div>
 
@@ -119,3 +121,7 @@ python3 aduc_ext.py      # английская
 
 Предоставляется «как есть» для внутреннего использования. Публичная лицензия
 не предоставляется; все права защищены.
+
+## На развитие проекта
+
+💛 https://dalink.to/rderensky
