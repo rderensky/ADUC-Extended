@@ -444,7 +444,7 @@ function Show-LoginWindow {
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="ADUC-Ext — управление пользователями Active Directory"
-        Height="640" Width="1180"
+        Height="660" Width="1320"
         WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" FontSize="13">
     <DockPanel>
         <!-- Верхняя панель поиска -->
@@ -502,8 +502,28 @@ function Show-LoginWindow {
                     <DataGridTextColumn Header="Имя" Binding="{Binding Name}" Width="1.6*"/>
                     <DataGridTextColumn Header="Логин" Binding="{Binding SamAccountName}" Width="1.2*"/>
                     <DataGridTextColumn Header="E-mail" Binding="{Binding Mail}" Width="1.6*"/>
+                    <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="1.6*"/>
                     <DataGridTextColumn Header="Состояние" Binding="{Binding State}" Width="1*"/>
                 </DataGrid.Columns>
+                <DataGrid.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Name="CmCopyLogin"   Header="Копировать логин"/>
+                        <MenuItem Name="CmCopyName"    Header="Копировать отображаемое имя"/>
+                        <MenuItem Name="CmCopyMail"    Header="Копировать e-mail"/>
+                        <MenuItem Name="CmCopyUpn"     Header="Копировать UPN"/>
+                        <MenuItem Name="CmCopyDn"      Header="Копировать DN"/>
+                        <MenuItem Name="CmCopyAll"     Header="Копировать все свойства"/>
+                        <Separator/>
+                        <MenuItem Name="CmEnable"      Header="Включить"/>
+                        <MenuItem Name="CmDisable"     Header="Отключить"/>
+                        <MenuItem Name="CmUnlock"      Header="Разблокировать"/>
+                        <MenuItem Name="CmResetPwd"    Header="Сбросить пароль..."/>
+                        <Separator/>
+                        <MenuItem Name="CmGroups"      Header="Группы..."/>
+                        <MenuItem Name="CmMove"        Header="Переместить (OU)..."/>
+                        <MenuItem Name="CmEdit"        Header="Изменить..."/>
+                    </ContextMenu>
+                </DataGrid.ContextMenu>
             </DataGrid>
 
             <GridSplitter Grid.Column="3" Width="5" HorizontalAlignment="Stretch"
@@ -593,6 +613,7 @@ function Search-ADUsers {
             Name              = if ($_.DisplayName) { $_.DisplayName } else { $_.Name }
             SamAccountName    = $_.SamAccountName
             Mail              = $_.Mail
+            Description       = $_.Description
             State             = Get-UserState $_
             DistinguishedName = $_.DistinguishedName
             _AD               = $_
@@ -1480,6 +1501,7 @@ function Update-PropsPanel {
         "Истекает"         = $ad.AccountExpirationDate
         "DN"               = $ad.DistinguishedName
     }
+    $Script:PropRows = @()
     foreach ($k in $rows.Keys) {
         $raw = $rows[$k]
         if ($raw -is [datetime]) {
@@ -1488,17 +1510,45 @@ function Update-PropsPanel {
             $val = [string]$raw
         }
         if ([string]::IsNullOrWhiteSpace($val)) { continue }
+        $Script:PropRows += "${k}: $val"
+
         $sp = New-Object System.Windows.Controls.StackPanel
         $sp.Margin = '0,0,0,6'
         $lbl = New-Object System.Windows.Controls.TextBlock
         $lbl.Text = $k; $lbl.FontWeight = 'SemiBold'; $lbl.Foreground = '#555'
         $lbl.FontSize = 11
-        $v = New-Object System.Windows.Controls.TextBlock
+        # Read-only TextBox с возможностью выделения — значение можно выделить и скопировать
+        $v = New-Object System.Windows.Controls.TextBox
         $v.Text = $val; $v.TextWrapping = 'Wrap'
+        $v.IsReadOnly = $true; $v.BorderThickness = '0'; $v.Background = 'Transparent'
+        $v.Padding = '0'
+        # Контекстное меню: копировать значение / копировать всё
+        $cm = New-Object System.Windows.Controls.ContextMenu
+        $miVal = New-Object System.Windows.Controls.MenuItem
+        $miVal.Header = "Копировать значение ($k)"
+        $miVal.Tag = $val
+        $miVal.Add_Click({ Set-ClipboardText ([string]$this.Tag) })
+        $miAll = New-Object System.Windows.Controls.MenuItem
+        $miAll.Header = "Копировать все свойства"
+        $miAll.Add_Click({ Set-ClipboardText ($Script:PropRows -join "`r`n") })
+        $cm.Items.Add($miVal) | Out-Null
+        $cm.Items.Add($miAll) | Out-Null
+        $v.ContextMenu = $cm
+
         $sp.Children.Add($lbl) | Out-Null
         $sp.Children.Add($v)   | Out-Null
         $PanelProps.Children.Add($sp) | Out-Null
     }
+}
+
+# --- Буфер обмена ---
+function Set-ClipboardText {
+    param([string]$Text)
+    if ($null -eq $Text) { return }
+    try {
+        [System.Windows.Clipboard]::SetText($Text)
+        if ($LblConn) { $LblConn.Text = "$($LblConn.Text)   |   Скопировано" }
+    } catch { }
 }
 
 # --- Построение дерева подразделений (OU) ---
@@ -1594,6 +1644,7 @@ function Refresh-SelectedUser {
             Name              = if ($ad.DisplayName) { $ad.DisplayName } else { $ad.Name }
             SamAccountName    = $ad.SamAccountName
             Mail              = $ad.Mail
+            Description       = $ad.Description
             State             = Get-UserState $ad
             DistinguishedName = $ad.DistinguishedName
             _AD               = $ad
@@ -1663,6 +1714,17 @@ $ChkSubtree.Add_Click({ Invoke-Search })
 $TreeOU.Add_SelectedItemChanged({ Invoke-Search })
 
 $GridUsers.Add_SelectionChanged({ Update-PropsPanel $GridUsers.SelectedItem })
+# Ctrl+C в списке копирует выбранную строку (имя, логин, e-mail, состояние) через табуляцию
+$GridUsers.Add_PreviewKeyDown({
+    param($s, $e)
+    if ($e.Key -eq 'C' -and ([System.Windows.Input.Keyboard]::Modifiers -band [System.Windows.Input.ModifierKeys]::Control)) {
+        $u = $GridUsers.SelectedItem
+        if ($u) {
+            Set-ClipboardText (@([string]$u.Name, [string]$u.SamAccountName, [string]$u.Mail, [string]$u.Description, [string]$u.State) -join "`t")
+        }
+        $e.Handled = $true
+    }
+})
 
 $BtnCreate.Add_Click({
     $defOu = $null
@@ -1733,6 +1795,41 @@ $BtnEdit.Add_Click({
         Invoke-Search
     }
 })
+
+# --- Контекстное меню списка пользователей ---
+$cmGrid = $GridUsers.ContextMenu
+# По правому клику выделить строку под курсором, чтобы меню применялось к ней
+$GridUsers.Add_PreviewMouseRightButtonDown({
+    param($s, $e)
+    $dep = $e.OriginalSource
+    while ($dep -and -not ($dep -is [System.Windows.Controls.DataGridRow])) {
+        $dep = [System.Windows.Media.VisualTreeHelper]::GetParent($dep)
+    }
+    if ($dep) { $dep.IsSelected = $true }
+})
+# Включать/выключать пункты в зависимости от наличия данных
+$cmGrid.Add_Opened({
+    $u = $GridUsers.SelectedItem
+    $has = [bool]$u
+    foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyDn','CmCopyAll','CmEnable','CmDisable','CmUnlock','CmResetPwd','CmGroups','CmMove','CmEdit') {
+        $mi = $cmGrid.FindName($n); if ($mi) { $mi.IsEnabled = $has }
+    }
+    $mi = $cmGrid.FindName('CmCopyMail'); if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u.Mail)) }
+    $mi = $cmGrid.FindName('CmCopyUpn');  if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u._AD.UserPrincipalName)) }
+})
+$cmGrid.FindName('CmCopyLogin').Add_Click({ $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.SamAccountName) } })
+$cmGrid.FindName('CmCopyName').Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Name) } })
+$cmGrid.FindName('CmCopyMail').Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Mail) } })
+$cmGrid.FindName('CmCopyUpn').Add_Click(  { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u._AD.UserPrincipalName) } })
+$cmGrid.FindName('CmCopyDn').Add_Click(   { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.DistinguishedName) } })
+$cmGrid.FindName('CmCopyAll').Add_Click(  { if ($Script:PropRows) { Set-ClipboardText ($Script:PropRows -join "`r`n") } })
+$cmGrid.FindName('CmEnable').Add_Click(   { $BtnEnable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmDisable').Add_Click(  { $BtnDisable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmUnlock').Add_Click(   { $BtnUnlock.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmResetPwd').Add_Click( { $BtnResetPwd.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmGroups').Add_Click(   { $BtnGroups.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmMove').Add_Click(     { $BtnMove.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
+$cmGrid.FindName('CmEdit').Add_Click(     { $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
 
 # Начальная загрузка: дерево OU (выбор корня запустит поиск)
 $MainWin.Add_ContentRendered({ Load-OUTree })

@@ -734,6 +734,25 @@ def pwd_expiry_text(u):
 # ============================================================================
 #  GUI
 # ============================================================================
+def set_clipboard(root, text):
+    """Put text on the system clipboard. On macOS use pbcopy (reliable with
+    Tk 9, where Tk's own clipboard path is broken); elsewhere use Tk."""
+    text = '' if text is None else str(text)
+    if sys.platform == 'darwin':
+        try:
+            subprocess.run(['pbcopy'], input=text.encode('utf-8'), check=True)
+            return True
+        except Exception:
+            pass
+    try:
+        root.clipboard_clear()
+        root.clipboard_append(text)
+        root.update()
+        return True
+    except Exception:
+        return False
+
+
 class LoginDialog(tk.Toplevel):
     """Окно запроса учётных данных с выбором сохранённого домена."""
 
@@ -907,6 +926,10 @@ class MainWindow(ttk.Frame):
         self._build_toolbar()
         self._build_body()
         self._build_statusbar()
+        # Global copy shortcut (works even where Tk's own <<Copy>> is broken)
+        for seq in ('<Command-Key-c>', '<Command-Key-C>',
+                    '<Control-Key-c>', '<Control-Key-C>'):
+            self.master.bind_all(seq, self._on_copy_shortcut, add='+')
 
         self.after(150, self._post_login)
 
@@ -1000,9 +1023,7 @@ class MainWindow(ttk.Frame):
             })
         self._reload_domains()
         self.e_search.delete(0, 'end')
-        self.props.config(state='normal')
         self.props.delete('1.0', 'end')
-        self.props.config(state='disabled')
         self._load_ou_tree()
         self.do_search()
         messagebox.showinfo(
@@ -1037,22 +1058,32 @@ class MainWindow(ttk.Frame):
         left = ttk.Frame(body)
         left.rowconfigure(0, weight=1)
         left.columnconfigure(0, weight=1)
-        cols = ('name', 'sam', 'mail', 'state')
+        cols = ('name', 'sam', 'mail', 'desc', 'state')
         self.tree = ttk.Treeview(left, columns=cols, show='headings',
                                  selectmode='browse')
         self.tree.heading('name', text='Имя')
         self.tree.heading('sam', text='Логин')
         self.tree.heading('mail', text='E-mail')
+        self.tree.heading('desc', text='Описание')
         self.tree.heading('state', text='Состояние')
         self.tree.column('name', width=200)
         self.tree.column('sam', width=130)
         self.tree.column('mail', width=200)
+        self.tree.column('desc', width=180)
         self.tree.column('state', width=100)
         self.tree.grid(row=0, column=0, sticky='nsew')
         sb = ttk.Scrollbar(left, orient='vertical', command=self.tree.yview)
         sb.grid(row=0, column=1, sticky='ns')
         self.tree.configure(yscrollcommand=sb.set)
         self.tree.bind('<<TreeviewSelect>>', self.on_select)
+        # Контекстное меню списка пользователей (правый клик / Ctrl-клик на macOS)
+        self.tree.bind('<Button-2>', self._show_user_menu)
+        self.tree.bind('<Button-3>', self._show_user_menu)
+        self.tree.bind('<Control-Button-1>', self._show_user_menu)
+        # Cmd+C / Ctrl+C в списке копирует строку выбранного пользователя
+        for seq in ('<<Copy>>', '<Command-Key-c>', '<Command-Key-C>',
+                    '<Control-Key-c>', '<Control-Key-C>'):
+            self.tree.bind(seq, lambda e: self._copy_selected_row())
         body.add(left, weight=3)
 
         # Правая панель: свойства + действия
@@ -1064,10 +1095,27 @@ class MainWindow(ttk.Frame):
         prop_group.grid(row=0, column=0, sticky='nsew')
         prop_group.rowconfigure(0, weight=1)
         prop_group.columnconfigure(0, weight=1)
+        # Виджет включён (без state='disabled'), чтобы получать фокус клавиатуры и
+        # чтобы работало штатное Cmd+C/Ctrl+C; редактирование блокирует _block_edit.
         self.props = tk.Text(prop_group, width=44, height=18, wrap='word',
-                             state='disabled', relief='flat',
-                             font=('Menlo', 11))
+                             relief='flat', font=('Menlo', 11),
+                             insertwidth=0, exportselection=True)
         self.props.grid(row=0, column=0, sticky='nsew', padx=4, pady=4)
+        # Блокировать любое изменение текста (выделение/копирование работают)
+        self.props.bind('<Key>', self._block_edit)
+        self.props.bind('<<Paste>>', lambda e: 'break')
+        self.props.bind('<<Cut>>', lambda e: 'break')
+        self.props.bind('<Delete>', lambda e: 'break')
+        self.props.bind('<BackSpace>', lambda e: 'break')
+        # Контекстное меню панели свойств
+        self.props.bind('<Button-2>', self._show_props_menu)
+        self.props.bind('<Button-3>', self._show_props_menu)
+        self.props.bind('<Control-Button-1>', self._show_props_menu)
+        # Фокус клавиатуры по клику, чтобы горячие клавиши доходили до панели
+        self.props.bind('<Button-1>', lambda e: self.props.focus_set())
+        # Автокопирование при выделении мышью: отпускание кнопки после протяжки
+        # копирует выделенный текст (работает, даже если Cmd+C до нас не доходит).
+        self.props.bind('<ButtonRelease-1>', self._props_autocopy)
 
         act_group = ttk.LabelFrame(right, text="Действия")
         act_group.grid(row=1, column=0, sticky='ew', pady=(8, 0))
@@ -1159,7 +1207,7 @@ class MainWindow(ttk.Frame):
             self.tree.delete(*self.tree.get_children())
             for i, u in enumerate(self.users):
                 self.tree.insert('', 'end', iid=str(i), values=(
-                    u['name'], u['sAMAccountName'], u['mail'], u['state']))
+                    u['name'], u['sAMAccountName'], u['mail'], u['description'], u['state']))
             scope_txt = self._short_dn(base)
             if subtree:
                 scope_txt += " (+вложенные)"
@@ -1195,7 +1243,7 @@ class MainWindow(ttk.Frame):
                     self.users[idx] = fresh
                     self.tree.item(sel[0], values=(
                         fresh['name'], fresh['sAMAccountName'],
-                        fresh['mail'], fresh['state']))
+                        fresh['mail'], fresh['description'], fresh['state']))
                 self._show_props(fresh)
         except Exception:
             pass
@@ -1226,16 +1274,184 @@ class MainWindow(ttk.Frame):
             ("Истекает", filetime_to_str(u['accountExpires'])),
             ("DN", u['dn']),
         ]
-        self.props.config(state='normal')
+        self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
         self.props.delete('1.0', 'end')
-        for k, val in rows:
-            if val in (None, ''):
-                continue
+        for k, val in self._prop_rows:
             self.props.insert('end', f"{k}:\n", ('label',))
             self.props.insert('end', f"{val}\n\n")
         self.props.tag_config('label', foreground='#555',
                               font=('Menlo', 10, 'bold'))
-        self.props.config(state='disabled')
+
+    # --- Буфер обмена / контекстные меню ---
+    def _copy_text(self, text):
+        if text is None:
+            return
+        set_clipboard(self.master, str(text))
+        self._update_status("Скопировано в буфер обмена")
+
+    def _on_copy_shortcut(self, event=None):
+        """Application-wide Cmd+C / Ctrl+C: copy from whichever widget has focus.
+        Bypasses Tk's built-in <<Copy>> (broken on macOS with Tk 9)."""
+        try:
+            w = self.master.focus_get()
+        except Exception:
+            w = None
+        if w is self.props:
+            return self._copy_props_selection()
+        if w is self.tree:
+            return self._copy_selected_row()
+        # Any Entry-like widget: copy its selection natively
+        try:
+            if w is not None and w.selection_present():
+                self._copy_text(w.selection_get())
+                return 'break'
+        except Exception:
+            pass
+        return None
+
+    def _on_select_all(self, event=None):
+        """Select all text in the focused widget (properties panel or entry)."""
+        try:
+            w = self.master.focus_get()
+        except Exception:
+            w = None
+        if w is self.props:
+            self.props.tag_add('sel', '1.0', 'end-1c')
+            return 'break'
+        try:
+            if w is not None:
+                w.select_range(0, 'end')
+                return 'break'
+        except Exception:
+            pass
+        return None
+
+    def _props_autocopy(self, event=None):
+        """Copy the current mouse selection in the properties panel, if any."""
+        try:
+            rng = self.props.tag_ranges('sel')
+            if rng:
+                txt = self.props.get(rng[0], rng[1])
+                if txt.strip():
+                    self._copy_text(txt)
+        except tk.TclError:
+            pass
+        return None
+
+    def _block_edit(self, event):
+        """Пропускать навигацию/выделение/копирование, блокировать всё, что меняет текст."""
+        # Пропустить комбинации с Cmd/Ctrl (копирование, выделить всё) и модификаторы
+        if event.state & 0x8 or event.state & 0x4:   # Command (macOS) / Control
+            return None
+        nav = {'Left', 'Right', 'Up', 'Down', 'Home', 'End', 'Prior', 'Next',
+               'Shift_L', 'Shift_R', 'Control_L', 'Control_R', 'Meta_L', 'Meta_R',
+               'Alt_L', 'Alt_R', 'Escape', 'Tab', 'Caps_Lock'}
+        if event.keysym in nav:
+            return None
+        return 'break'
+
+    def _copy_props_selection(self, event=None):
+        sel = ''
+        try:
+            rng = self.props.tag_ranges('sel')
+            if rng:
+                sel = self.props.get(rng[0], rng[1])
+        except tk.TclError:
+            sel = ''
+        if sel:
+            self._copy_text(sel)
+        return 'break'
+
+    def _copy_all_props(self):
+        rows = getattr(self, '_prop_rows', [])
+        if rows:
+            self._copy_text("\n".join(f"{k}: {v}" for k, v in rows))
+
+    def _copy_selected_row(self):
+        """Копировать выбранную строку списка (имя, логин, e-mail, состояние) через табуляцию."""
+        sel = self.tree.selection()
+        if not sel:
+            return 'break'
+        u = self.users[int(sel[0])]
+        self._copy_text("\t".join(str(x or '') for x in (
+            u['name'], u['sAMAccountName'], u['mail'], u['description'], u['state'])))
+        return 'break'
+
+    def _show_user_menu(self, event):
+        # Сначала выделить строку под курсором
+        iid = self.tree.identify_row(event.y)
+        if iid:
+            self.tree.selection_set(iid)
+            self.tree.focus(iid)
+        sel = self.tree.selection()
+        if not sel:
+            return 'break'
+        u = self.users[int(sel[0])]
+
+        m = tk.Menu(self, tearoff=0)
+        m.add_command(label="Копировать логин",
+                      command=lambda: self._copy_text(u['sAMAccountName']))
+        m.add_command(label="Копировать отображаемое имя",
+                      command=lambda: self._copy_text(u['name']))
+        m.add_command(label="Копировать e-mail",
+                      command=lambda: self._copy_text(u['mail']),
+                      state='normal' if u.get('mail') else 'disabled')
+        m.add_command(label="Копировать UPN",
+                      command=lambda: self._copy_text(u['userPrincipalName']),
+                      state='normal' if u.get('userPrincipalName') else 'disabled')
+        m.add_command(label="Копировать DN",
+                      command=lambda: self._copy_text(u['dn']))
+        m.add_command(label="Копировать все свойства",
+                      command=self._copy_all_props)
+        m.add_separator()
+        m.add_command(label="Включить", command=self.on_enable)
+        m.add_command(label="Отключить", command=self.on_disable)
+        m.add_command(label="Разблокировать", command=self.on_unlock)
+        m.add_command(label="Сбросить пароль...", command=self.on_reset)
+        m.add_separator()
+        m.add_command(label="Группы...", command=self.on_groups)
+        m.add_command(label="Переместить (OU)...", command=self.on_move)
+        m.add_command(label="Изменить...", command=self.on_edit)
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+        return 'break'
+
+    def _show_props_menu(self, event):
+        rows = getattr(self, '_prop_rows', [])
+        if not rows:
+            return 'break'
+        try:
+            has_sel = bool(self.props.tag_ranges('sel'))
+        except tk.TclError:
+            has_sel = False
+        # Определить, на какой строке свойства стоит курсор
+        idx = self.props.index(f"@{event.x},{event.y}")
+        line = int(idx.split('.')[0])
+        row_val = None
+        row_key = None
+        cur = 1
+        for k, v in rows:
+            # каждое свойство занимает 3 строки: название, значение, пустая
+            if line in (cur, cur + 1):
+                row_key, row_val = k, v
+                break
+            cur += 3
+
+        m = tk.Menu(self, tearoff=0)
+        m.add_command(label="Копировать выделенное",
+                      command=self._copy_props_selection,
+                      state='normal' if has_sel else 'disabled')
+        if row_val is not None:
+            m.add_command(label=f"Копировать значение ({row_key})",
+                          command=lambda v=row_val: self._copy_text(v))
+        m.add_command(label="Копировать все свойства", command=self._copy_all_props)
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+        return 'break'
 
     # --- Действия ---
     def on_enable(self):
@@ -2145,7 +2361,7 @@ def _install_mac_keybindings(root):
 def main():
     root = tk.Tk()
     root.title("ADUC-Ext (macOS)")
-    root.geometry("1280x680")
+    root.geometry("1400x700")
     _install_mac_keybindings(root)
     root.withdraw()  # скрыть до успешного входа
 
@@ -2159,7 +2375,26 @@ def main():
         return
 
     root.deiconify()
-    MainWindow(root, client, config)
+    win = MainWindow(root, client, config)
+
+    # macOS routes Cmd+C/Cmd+A through the application's Edit menu, so
+    # provide one; its commands call our own copy logic (pbcopy on macOS).
+    menubar = tk.Menu(root)
+    edit_menu = tk.Menu(menubar, tearoff=0)
+    edit_menu.add_command(label="Вырезать", accelerator="Cmd+X",
+                          command=lambda: root.focus_get() and
+                          root.focus_get().event_generate('<<Cut>>'))
+    edit_menu.add_command(label="Копировать", accelerator="Cmd+C",
+                          command=win._on_copy_shortcut)
+    edit_menu.add_command(label="Вставить", accelerator="Cmd+V",
+                          command=lambda: root.focus_get() and
+                          root.focus_get().event_generate('<<Paste>>'))
+    edit_menu.add_separator()
+    edit_menu.add_command(label="Выделить всё", accelerator="Cmd+A",
+                          command=win._on_select_all)
+    menubar.add_cascade(label="Правка", menu=edit_menu)
+    root.config(menu=menubar)
+
     root.mainloop()
 
 

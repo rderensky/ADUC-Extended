@@ -10,13 +10,11 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.0-orange)
+![Version](https://img.shields.io/badge/version-1.0.1-orange)
 
 **English** · [Русская версия](README_ru.md)
 
-## Support the project · На развитие проекта
-
-💛 https://dalink.to/rderensky
+💛 **На развитие проекта:** https://dalink.to/rderensky
 
 </div>
 
@@ -119,4 +117,6 @@ The domain list is stored locally (passwords are never saved):
 
 Provided as-is for internal use. No public license is granted; all rights reserved.
 
+## Support the project · На развитие проекта
 
+💛 https://dalink.to/rderensky
