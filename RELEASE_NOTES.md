@@ -1,54 +1,42 @@
-# ADUC-Extended v1.0.0
+# ADUC-Extended v1.0.1
 
-GUI application for managing Active Directory accounts / Графическое приложение
-для управления учётными записями Active Directory.
+## What's new / Что нового
 
-Each asset below contains **both English and Russian** versions and READMEs in
-both languages. / Каждый архив содержит **английскую и русскую** версии и README
-на двух языках.
+- **Context menu** on the user list (right-click): copy login / display name /
+  e-mail / UPN / DN / all properties, plus quick actions (enable, disable, unlock,
+  reset password, groups, move, edit).
+  **Контекстное меню** в списке пользователей: копирование логина / имени / e-mail /
+  UPN / DN / всех свойств и быстрые действия.
+- **Copy to clipboard** from the properties panel: select text and press Cmd+C /
+  Ctrl+C, use the context menu, or (macOS) simply select with the mouse.
+  **Копирование в буфер** из панели свойств: выделить и Cmd+C / Ctrl+C, через
+  контекстное меню или (macOS) простым выделением мышью.
+- Cmd+C / Ctrl+C on a selected list row copies the row (name, login, e-mail,
+  description, state).
+  Cmd+C / Ctrl+C на строке списка копирует строку.
+- **Description** column added to the user list.
+  Добавлена колонка **«Описание»** в список пользователей.
+- macOS: Edit menu (Cut / Copy / Paste / Select All); reliable clipboard on Tk 9.
+  macOS: меню «Правка»; надёжное копирование на Tk 9.
 
 ## Downloads / Загрузки
 
-| Platform / Платформа | Asset / Архив |
-|---|---|
-| Windows (PowerShell + WPF) | `ADUC-Ext-1.0.0-windows.zip` |
-| macOS (Python + Tkinter)   | `ADUC-Ext-1.0.0-macos.zip` |
+Each asset contains **both English and Russian** versions and READMEs in both
+languages. / Каждый архив содержит **английскую и русскую** версии и README на
+двух языках.
 
-### Windows package contents / Состав архива Windows
-- `ADUC-Ext.ps1` — English version
-- `ADUC-Ext-ru.ps1` — русская версия
-- `build_exe.ps1`, `build_exe_ru.ps1` — build to .exe / сборка в .exe
-- `aduc_ext.ico` — icon / иконка
-- `README.md`, `README_ru.md`
-
-### macOS package contents / Состав архива macOS
-- `aduc_ext.py` — English version
-- `aduc_ext_ru.py` — русская версия
-- `build_app.sh`, `build_app_ru.sh` — build to .app / сборка в .app
-- `aduc_ext.icns` — icon / иконка
-- `README.md`, `README_ru.md`
-
-## Quick start / Быстрый старт
-
-**Windows**
-```powershell
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext.ps1      # English
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext-ru.ps1   # Русский
-```
-
-**macOS**
-```bash
-python3 aduc_ext.py      # English
-python3 aduc_ext_ru.py   # Русский
-```
+| Platform / Платформа | Source / Исходники | Binaries / Бинарники |
+|---|---|---|
+| Windows | `ADUC-Ext-1.0.1-windows.zip` | `ADUC-Ext-1.0.1-win-exe.zip` |
+| macOS   | `ADUC-Ext-1.0.1-macos.zip`   | `ADUC-Ext-1.0.1-mac-app-en.zip`, `ADUC-Ext-1.0.1-mac-app-ru.zip` |
 
 ## Requirements / Требования
-- Windows: PowerShell 5.1 + модуль ActiveDirectory (RSAT); приложение предложит
-  установку RSAT при отсутствии.
-- macOS: Python 3.8+ c Tkinter; пакет `ldap3` ставится автоматически.
+- Windows: PowerShell 5.1 + ActiveDirectory module (RSAT); the app offers to
+  install RSAT if missing.
+- macOS: Python 3.8+ with Tkinter; `ldap3` is installed automatically.
 
-## SHA-256
+## SHA-256 (source archives)
 ```
-cef6255b13c08eb6457d8158574b65dc8c02aa599d3a2f7cbf8d1cad0d3b69c1  ADUC-Ext-1.0.0-windows.zip
-b003e6ad019b28538ffd981fb7bd788b59833bb03a1ed60adace5c9f99bf0c2c  ADUC-Ext-1.0.0-macos.zip
+9dc2fb2ec066c74da3d8ba330107c2c8199da5829cceb2762ae189b68779971a  ADUC-Ext-1.0.1-windows.zip
+72f7630d93efaa0390cb78b57397b8934c4d0a59a6f89ee8fd46e0aa14394d34  ADUC-Ext-1.0.1-macos.zip
 ```
