@@ -12,6 +12,7 @@
 set -e
 
 APP_NAME="ADUC-Ext-ru"
+APP_VERSION="1.0.2"
 SCRIPT="aduc_ext_ru.py"
 ICON="aduc_ext.icns"   # иконка приложения (.icns)
 
@@ -44,6 +45,15 @@ python3 -m PyInstaller --windowed --noconfirm --clean \
     --hidden-import pyasn1 \
     $ICON_ARG \
     "$SCRIPT"
+
+echo "==> Прописываю версию в Info.plist..."
+PLIST="dist/$APP_NAME.app/Contents/Info.plist"
+if [ -f "$PLIST" ]; then
+    /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $APP_VERSION" "$PLIST" 2>/dev/null \
+      || /usr/libexec/PlistBuddy -c "Add :CFBundleShortVersionString string $APP_VERSION" "$PLIST" || true
+    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $APP_VERSION" "$PLIST" 2>/dev/null \
+      || /usr/libexec/PlistBuddy -c "Add :CFBundleVersion string $APP_VERSION" "$PLIST" || true
+fi
 
 echo "==> Ad-hoc подпись приложения (нужна для запуска на Apple Silicon)..."
 codesign --force --deep --sign - "dist/$APP_NAME.app"
