@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.1-orange)
+![Version](https://img.shields.io/badge/version-1.0.2-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -27,16 +27,20 @@ app prompts for credentials and performs all operations under the specified acco
 
 - Search and view user properties (including password details: last set date,
   change required, bad password attempts).
+- Computer objects (Users / Computers mode toggle): search, properties, rename,
+  move between OUs, edit description, enable/disable, delete.
 - Navigation of the organizational unit (OU) tree.
 - Account creation: name, login, UPN, e-mail, description, password, OU selection
   via the tree, expiration date, group selection; duplicate-login check.
 - Enable, disable, and unlock accounts.
 - Password reset.
-- Group membership management.
+- Group membership management, including bulk add of selected users to groups.
 - Move accounts between organizational units.
-- Attribute editing.
+- Multi-select with bulk actions: enable, disable, move to an OU.
+- Manage the "password never expires" flag (like ADUC, enabling it also
+  cancels a pending change-at-next-logon requirement).
+- Attribute editing; double-click on a list row opens the edit dialog.
 - Domain list with switching; a domain switch uses the active session credentials.
-- Built-in functionality of the external utility Lockout Status - date/time of password expiration, date/time of incorrect password entry
 
 ## Repository layout
 

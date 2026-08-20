@@ -124,7 +124,7 @@ if _failed:
 
 from ldap3 import (
     Server, Connection, ALL, SUBTREE, LEVEL, MODIFY_REPLACE, MODIFY_ADD,
-    MODIFY_DELETE, Tls,
+    MODIFY_DELETE, Tls, RESTARTABLE,
 )
 from ldap3.core.exceptions import LDAPException
 
@@ -137,6 +137,13 @@ USER_ATTRS = [
     'physicalDeliveryOfficeName', 'telephoneNumber', 'distinguishedName',
     'whenCreated', 'pwdLastSet', 'lastLogonTimestamp', 'accountExpires',
     'msDS-UserPasswordExpiryTimeComputed', 'badPwdCount', 'badPasswordTime',
+]
+
+# --- Атрибуты компьютеров, запрашиваемые из AD ---
+COMPUTER_ATTRS = [
+    'cn', 'name', 'sAMAccountName', 'dNSHostName', 'operatingSystem',
+    'operatingSystemVersion', 'description', 'userAccountControl',
+    'distinguishedName', 'whenCreated', 'lastLogonTimestamp',
 ]
 
 # Биты userAccountControl
@@ -229,9 +236,20 @@ class ADClient:
         # SIMPLE bind; auto_bind поднимет исключение при неверных данных
         # raise_exceptions=False: ошибки операций проверяем через self._check(),
         # а неверные учётные данные всё равно поднимут исключение через auto_bind.
+        # RESTARTABLE: если контроллер домена или файрвол закрывает
+        # неактивное соединение («Broken pipe» после простоя), ldap3 сам
+        # переподключается, повторяет bind с теми же учётными данными и
+        # выполняет операцию заново.
         self.conn = Connection(
             self.server, user=username, password=password,
-            authentication='SIMPLE', auto_bind=True, raise_exceptions=False)
+            authentication='SIMPLE', auto_bind=True, raise_exceptions=False,
+            client_strategy=RESTARTABLE)
+        # Короткие повторы, чтобы интерфейс не зависал при недоступном сервере
+        try:
+            self.conn.strategy.restartable_tries = 2
+            self.conn.strategy.restartable_sleep_time = 1
+        except Exception:
+            pass
 
         # Определить базовый DN домена из RootDSE
         self.base_dn = self.server.info.other.get(
@@ -504,6 +522,40 @@ class ADClient:
         self.conn.modify(dn, {'lockoutTime': [(MODIFY_REPLACE, [0])]})
         self._check()
 
+    def set_password_never_expires(self, dn, enable):
+        """Установить или снять флаг «срок действия пароля не ограничен»
+        (бит UAC 0x10000).
+
+        Как в оснастке ADUC: при установке флага снимается требование
+        «сменить пароль при следующем входе» (pwdLastSet 0 -> -1), и
+        текущий пароль остаётся действительным. Возвращает True, если
+        такое требование было снято."""
+        user = self.get_user(dn)
+        if enable:
+            new_uac = user['uac'] | UAC_DONT_EXPIRE_PASSWORD
+        else:
+            new_uac = user['uac'] & ~UAC_DONT_EXPIRE_PASSWORD
+        if new_uac != user['uac']:
+            self.conn.modify(dn, {'userAccountControl':
+                                  [(MODIFY_REPLACE, [new_uac])]})
+            self._check()
+        cleared_must_change = False
+        if enable:
+            # pwdLastSet == 0 — «требовать смены пароля при следующем входе»
+            self.conn.search(dn, "(objectClass=user)", search_scope='BASE',
+                             attributes=['pwdLastSet'])
+            try:
+                raw = self.conn.entries[0]['pwdLastSet'].raw_values
+                is_zero = bool(raw) and raw[0].strip() == b'0'
+            except Exception:
+                is_zero = False
+            if is_zero:
+                # -1 = не требовать смену (pwdLastSet := текущее время)
+                self.conn.modify(dn, {'pwdLastSet': [(MODIFY_REPLACE, [-1])]})
+                self._check()
+                cleared_must_change = True
+        return cleared_must_change
+
     def reset_password(self, dn, new_password, unlock=True,
                        change_at_logon=True):
         if not self.is_ssl():
@@ -524,6 +576,88 @@ class ADClient:
     def move_user(self, dn, target_ou):
         rdn = dn.split(',', 1)[0]
         self.conn.modify_dn(dn, rdn, new_superior=target_ou)
+        self._check()
+
+    # ---- Операции с компьютерами ----
+    def search_computers(self, query=None, base=None, scope=SUBTREE):
+        """query — строка поиска; base — DN контейнера/OU; scope — LEVEL/SUBTREE.
+        Возвращает все подходящие объекты-компьютеры (постранично, без лимита)."""
+        base = base or self.base_dn
+        query = (query or '').strip().replace('*', '')
+        if query:
+            q = _escape_filter(query)
+            flt = (
+                "(&(objectCategory=computer)"
+                f"(|(cn=*{q}*)(name=*{q}*)(sAMAccountName=*{q}*)"
+                f"(dNSHostName=*{q}*)(operatingSystem=*{q}*)"
+                f"(description=*{q}*)))"
+            )
+            scope = SUBTREE  # текстовый поиск всегда охватывает всё поддерево
+        else:
+            flt = "(objectCategory=computer)"
+
+        entries = self._paged_search(base, flt, COMPUTER_ATTRS, scope)
+        result = [self._computer_to_dict(e) for e in entries]
+        result.sort(key=lambda x: (x.get('name') or '').lower())
+        return result
+
+    def get_computer(self, dn):
+        self.conn.search(dn, "(objectClass=computer)", search_scope='BASE',
+                         attributes=COMPUTER_ATTRS)
+        if not self.conn.entries:
+            return None
+        return self._computer_to_dict(self.conn.entries[0])
+
+    def _computer_to_dict(self, e):
+        def v(attr, default=''):
+            try:
+                val = e[attr].value
+                return val if val is not None else default
+            except Exception:
+                return default
+
+        uac = v('userAccountControl', 0) or 0
+        try:
+            uac = int(uac)
+        except (ValueError, TypeError):
+            uac = 0
+        enabled = not (uac & UAC_DISABLED)
+        state = "Активна" if enabled else "Отключена"
+
+        name = v('name') or v('cn') or str(e.entry_dn).split(',')[0][3:]
+        os_name = v('operatingSystem')
+        os_ver = v('operatingSystemVersion')
+        os_full = (f"{os_name} ({os_ver})" if os_name and os_ver
+                   else os_name or os_ver)
+        return {
+            'name': name,
+            'cn': v('cn') or name,
+            'sAMAccountName': v('sAMAccountName'),
+            'dnsHostName': v('dNSHostName'),
+            'os': os_name,
+            'osVersion': os_ver,
+            'osFull': os_full,
+            'description': v('description'),
+            'enabled': enabled,
+            'state': state,
+            'dn': str(e.entry_dn),
+            'whenCreated': v('whenCreated'),
+            'lastLogon': v('lastLogonTimestamp'),
+            'uac': uac,
+            'is_computer': True,
+        }
+
+    def rename_object(self, dn, new_name):
+        """Переименовать объект (сменить CN/RDN) в том же контейнере."""
+        new_rdn = "CN=" + _escape_dn((new_name or '').strip())
+        self.conn.modify_dn(dn, new_rdn)
+        self._check()
+        parent = dn.split(',', 1)[1] if ',' in dn else ''
+        return f"{new_rdn},{parent}" if parent else new_rdn
+
+    def delete_object(self, dn):
+        """Удалить объект из каталога."""
+        self.conn.delete(dn)
         self._check()
 
     def add_to_group(self, user_dn, group_name):
@@ -950,8 +1084,9 @@ class MainWindow(ttk.Frame):
             row=0, column=2, padx=6)
         ttk.Button(bar, text="Обновить", command=self.do_search).grid(
             row=0, column=3)
-        ttk.Button(bar, text="Создать пользователя",
-                   command=self.on_create).grid(row=0, column=4, padx=(20, 0))
+        self.btn_create = ttk.Button(bar, text="Создать пользователя",
+                                     command=self.on_create)
+        self.btn_create.grid(row=0, column=4, padx=(20, 0))
 
         # Переключатель доменов (справа)
         ttk.Label(bar, text="Домен:").grid(row=0, column=6, padx=(0, 6))
@@ -963,13 +1098,27 @@ class MainWindow(ttk.Frame):
         self._domain_profiles = []
         self._reload_domains()
 
+        # Тип объектов: пользователи / компьютеры
+        self.mode_var = tk.StringVar(value='users')
+        mode_row = ttk.Frame(bar)
+        mode_row.grid(row=1, column=0, columnspan=5, sticky='w', pady=(6, 0))
+        ttk.Label(mode_row, text="Показывать:").grid(row=0, column=0, padx=(0, 6))
+        ttk.Radiobutton(mode_row, text="Пользователи", value='users',
+                        variable=self.mode_var,
+                        command=self.on_mode_change).grid(row=0, column=1)
+        ttk.Radiobutton(mode_row, text="Компьютеры", value='computers',
+                        variable=self.mode_var,
+                        command=self.on_mode_change).grid(row=0, column=2,
+                                                          padx=(8, 0))
+
         # Вложенные OU
         self.include_subtree = tk.BooleanVar(value=False)
-        ttk.Checkbutton(
-            bar, text="Показывать пользователей из вложенных OU",
+        self.chk_subtree = ttk.Checkbutton(
+            bar, text="Показывать из вложенных OU",
             variable=self.include_subtree,
-            command=self.do_search).grid(row=1, column=0, columnspan=5,
-                                         sticky='w', pady=(6, 0))
+            command=self.do_search)
+        self.chk_subtree.grid(row=2, column=0, columnspan=5,
+                              sticky='w', pady=(6, 0))
 
     def _reload_domains(self):
         profiles = self.config.load() if self.config else []
@@ -1058,19 +1207,8 @@ class MainWindow(ttk.Frame):
         left = ttk.Frame(body)
         left.rowconfigure(0, weight=1)
         left.columnconfigure(0, weight=1)
-        cols = ('name', 'sam', 'mail', 'desc', 'state')
-        self.tree = ttk.Treeview(left, columns=cols, show='headings',
-                                 selectmode='browse')
-        self.tree.heading('name', text='Имя')
-        self.tree.heading('sam', text='Логин')
-        self.tree.heading('mail', text='E-mail')
-        self.tree.heading('desc', text='Описание')
-        self.tree.heading('state', text='Состояние')
-        self.tree.column('name', width=200)
-        self.tree.column('sam', width=130)
-        self.tree.column('mail', width=200)
-        self.tree.column('desc', width=180)
-        self.tree.column('state', width=100)
+        self.tree = ttk.Treeview(left, show='headings', selectmode='extended')
+        self._apply_columns()
         self.tree.grid(row=0, column=0, sticky='nsew')
         sb = ttk.Scrollbar(left, orient='vertical', command=self.tree.yview)
         sb.grid(row=0, column=1, sticky='ns')
@@ -1084,6 +1222,9 @@ class MainWindow(ttk.Frame):
         for seq in ('<<Copy>>', '<Command-Key-c>', '<Command-Key-C>',
                     '<Control-Key-c>', '<Control-Key-C>'):
             self.tree.bind(seq, lambda e: self._copy_selected_row())
+        # Двойной клик открывает окно редактирования (и для пользователей,
+        # и для компьютеров)
+        self.tree.bind('<Double-1>', self._on_tree_double)
         body.add(left, weight=3)
 
         # Правая панель: свойства + действия
@@ -1091,7 +1232,8 @@ class MainWindow(ttk.Frame):
         right.rowconfigure(0, weight=1)
         right.columnconfigure(0, weight=1)
 
-        prop_group = ttk.LabelFrame(right, text="Свойства пользователя")
+        self.prop_group = prop_group = ttk.LabelFrame(
+            right, text="Свойства пользователя")
         prop_group.grid(row=0, column=0, sticky='nsew')
         prop_group.rowconfigure(0, weight=1)
         prop_group.columnconfigure(0, weight=1)
@@ -1117,21 +1259,78 @@ class MainWindow(ttk.Frame):
         # копирует выделенный текст (работает, даже если Cmd+C до нас не доходит).
         self.props.bind('<ButtonRelease-1>', self._props_autocopy)
 
-        act_group = ttk.LabelFrame(right, text="Действия")
-        act_group.grid(row=1, column=0, sticky='ew', pady=(8, 0))
-        actions = [
-            ("Включить", self.on_enable),
-            ("Отключить", self.on_disable),
-            ("Разблокировать", self.on_unlock),
-            ("Сбросить пароль", self.on_reset),
-            ("Группы...", self.on_groups),
-            ("Переместить (OU)", self.on_move),
-            ("Изменить...", self.on_edit),
-        ]
-        for i, (label, cmd) in enumerate(actions):
-            ttk.Button(act_group, text=label, command=cmd, width=18).grid(
-                row=i // 2, column=i % 2, padx=4, pady=4, sticky='ew')
+        self.act_group = ttk.LabelFrame(right, text="Действия")
+        self.act_group.grid(row=1, column=0, sticky='ew', pady=(8, 0))
+        self._build_actions()
         body.add(right, weight=2)
+
+    def _apply_columns(self):
+        """Настроить колонки списка для текущего режима (пользователи/компьютеры)."""
+        if getattr(self, 'mode_var', None) and self.mode_var.get() == 'computers':
+            spec = [
+                ('name', 'Имя', 190),
+                ('dns', 'DNS-имя', 200),
+                ('os', 'Операционная система', 190),
+                ('desc', 'Описание', 150),
+                ('state', 'Состояние', 90),
+            ]
+        else:
+            spec = [
+                ('name', 'Имя', 200),
+                ('sam', 'Логин', 130),
+                ('mail', 'E-mail', 200),
+                ('desc', 'Описание', 180),
+                ('state', 'Состояние', 100),
+            ]
+        cols = tuple(c[0] for c in spec)
+        self.tree.configure(columns=cols)
+        for key, title, width in spec:
+            self.tree.heading(key, text=title)
+            self.tree.column(key, width=width)
+
+    def _build_actions(self):
+        """(Пере)построить кнопки действий для текущего режима."""
+        for w in self.act_group.winfo_children():
+            w.destroy()
+        if self.mode_var.get() == 'computers':
+            actions = [
+                ("Включить", self.on_enable),
+                ("Отключить", self.on_disable),
+                ("Переименовать...", self.on_rename),
+                ("Переместить (OU)", self.on_move),
+                ("Изменить...", self.on_edit),
+                ("Удалить", self.on_delete),
+            ]
+        else:
+            actions = [
+                ("Включить", self.on_enable),
+                ("Отключить", self.on_disable),
+                ("Разблокировать", self.on_unlock),
+                ("Сбросить пароль", self.on_reset),
+                ("Бессрочный пароль", self.on_pwd_never_expires),
+                ("Группы...", self.on_groups),
+                ("Переместить (OU)", self.on_move),
+                ("Изменить...", self.on_edit),
+            ]
+        for i, (label, cmd) in enumerate(actions):
+            ttk.Button(self.act_group, text=label, command=cmd, width=18).grid(
+                row=i // 2, column=i % 2, padx=4, pady=4, sticky='ew')
+
+    def on_mode_change(self):
+        """Переключение между пользователями и компьютерами."""
+        computers = self.mode_var.get() == 'computers'
+        self.e_search.delete(0, 'end')
+        self.props.delete('1.0', 'end')
+        self._prop_rows = []
+        self._apply_columns()
+        self._build_actions()
+        self.prop_group.config(
+            text="Свойства компьютера" if computers else "Свойства пользователя")
+        if computers:
+            self.btn_create.grid_remove()
+        else:
+            self.btn_create.grid()
+        self.do_search()
 
     def _build_statusbar(self):
         self.status = ttk.Label(self, text="", padding=(8, 4),
@@ -1202,12 +1401,22 @@ class MainWindow(ttk.Frame):
             text = self.e_search.get().strip()
             subtree = bool(text) or self.include_subtree.get()
             scope = SUBTREE if subtree else LEVEL
-            self.users = self.client.search_users(
-                query=text, base=base, scope=scope)
+            computers = self.mode_var.get() == 'computers'
+            if computers:
+                self.users = self.client.search_computers(
+                    query=text, base=base, scope=scope)
+            else:
+                self.users = self.client.search_users(
+                    query=text, base=base, scope=scope)
             self.tree.delete(*self.tree.get_children())
             for i, u in enumerate(self.users):
-                self.tree.insert('', 'end', iid=str(i), values=(
-                    u['name'], u['sAMAccountName'], u['mail'], u['description'], u['state']))
+                if computers:
+                    vals = (u['name'], u.get('dnsHostName', ''),
+                            u.get('osFull', ''), u['description'], u['state'])
+                else:
+                    vals = (u['name'], u['sAMAccountName'], u['mail'],
+                            u['description'], u['state'])
+                self.tree.insert('', 'end', iid=str(i), values=vals)
             scope_txt = self._short_dn(base)
             if subtree:
                 scope_txt += " (+вложенные)"
@@ -1218,11 +1427,21 @@ class MainWindow(ttk.Frame):
         finally:
             self.master.config(cursor='')
 
+    def _selected_users(self):
+        """Все выбранные объекты (с учётом множественного выбора)."""
+        return [self.users[int(i)] for i in self.tree.selection()]
+
     def _selected_user(self):
         sel = self.tree.selection()
         if not sel:
             messagebox.showinfo("Не выбран пользователь",
                                 "Сначала выберите пользователя в списке.")
+            return None
+        if len(sel) > 1:
+            messagebox.showinfo(
+                "Выбрано несколько объектов",
+                "Это действие применимо к одному объекту.\n"
+                "Выберите ровно один элемент списка.")
             return None
         return self.users[int(sel[0])]
 
@@ -1230,10 +1449,31 @@ class MainWindow(ttk.Frame):
         sel = self.tree.selection()
         if not sel:
             return
+        if len(sel) > 1:
+            self.props.delete('1.0', 'end')
+            self.props.insert(
+                'end',
+                f"Выбрано объектов: {len(sel)}\n\n"
+                f"Доступные групповые действия:\n"
+                f"  Включить / Отключить / Переместить (OU)\n"
+                f"  Добавить в группы (пользователи)")
+            return
         u = self.users[int(sel[0])]
-        self._show_props(u)
+        if u.get('is_computer'):
+            self._show_computer_props(u)
+        else:
+            self._show_props(u)
 
     def _refresh_selected(self, dn):
+        if self.mode_var.get() == 'computers':
+            self.do_search()
+            for iid in self.tree.get_children():
+                if self.users[int(iid)]['dn'].lower() == dn.lower():
+                    self.tree.selection_set(iid)
+                    self.tree.focus(iid)
+                    self.on_select()
+                    break
+            return
         try:
             fresh = self.client.get_user(dn)
             if fresh:
@@ -1265,6 +1505,8 @@ class MainWindow(ttk.Frame):
             ("Кабинет", u['office']),
             ("Телефон", u['phone']),
             ("Пароль изменён", filetime_to_str(u['pwdLastSet'])),
+            ("Срок действия пароля не ограничен",
+             "Да" if u.get('dontExpire') else "Нет"),
             ("Требуется смена пароля", pwd_expiry_text(u)),
             ("Неверных попыток входа",
              '' if u.get('badPwdCount') in (None, '') else str(u.get('badPwdCount'))),
@@ -1273,6 +1515,27 @@ class MainWindow(ttk.Frame):
             ("Создан", filetime_to_str(u['whenCreated'])),
             ("Истекает", filetime_to_str(u['accountExpires'])),
             ("DN", u['dn']),
+        ]
+        self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
+        self.props.delete('1.0', 'end')
+        for k, val in self._prop_rows:
+            self.props.insert('end', f"{k}:\n", ('label',))
+            self.props.insert('end', f"{val}\n\n")
+        self.props.tag_config('label', foreground='#555',
+                              font=('Menlo', 10, 'bold'))
+
+    def _show_computer_props(self, c):
+        rows = [
+            ("Имя", c['name']),
+            ("Имя учётной записи", c['sAMAccountName']),
+            ("DNS-имя", c['dnsHostName']),
+            ("Операционная система", c['os']),
+            ("Версия ОС", c['osVersion']),
+            ("Состояние", c['state']),
+            ("Описание", c['description']),
+            ("Последний вход", filetime_to_str(c['lastLogon'])),
+            ("Создан", filetime_to_str(c['whenCreated'])),
+            ("DN", c['dn']),
         ]
         self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
         self.props.delete('1.0', 'end')
@@ -1368,25 +1631,56 @@ class MainWindow(ttk.Frame):
             self._copy_text("\n".join(f"{k}: {v}" for k, v in rows))
 
     def _copy_selected_row(self):
-        """Копировать выбранную строку списка (имя, логин, e-mail, состояние) через табуляцию."""
+        """Копировать выбранные строки списка (через табуляцию, по строке
+        на объект)."""
         sel = self.tree.selection()
         if not sel:
             return 'break'
-        u = self.users[int(sel[0])]
-        self._copy_text("\t".join(str(x or '') for x in (
-            u['name'], u['sAMAccountName'], u['mail'], u['description'], u['state'])))
+        lines = []
+        for iid in sel:
+            u = self.users[int(iid)]
+            if u.get('is_computer'):
+                fields = (u['name'], u.get('dnsHostName', ''),
+                          u.get('osFull', ''), u['description'], u['state'])
+            else:
+                fields = (u['name'], u['sAMAccountName'], u['mail'],
+                          u['description'], u['state'])
+            lines.append("\t".join(str(x or '') for x in fields))
+        self._copy_text("\n".join(lines))
         return 'break'
 
     def _show_user_menu(self, event):
-        # Сначала выделить строку под курсором
+        # Выделить строку под курсором; существующий множественный выбор
+        # сохраняется, если клик попал внутрь него
         iid = self.tree.identify_row(event.y)
-        if iid:
+        if iid and iid not in self.tree.selection():
             self.tree.selection_set(iid)
             self.tree.focus(iid)
         sel = self.tree.selection()
         if not sel:
             return 'break'
+        if len(sel) > 1:
+            m = tk.Menu(self, tearoff=0)
+            m.add_command(label=f"Выбрано: {len(sel)}", state='disabled')
+            m.add_separator()
+            m.add_command(label="Включить", command=self.on_enable)
+            m.add_command(label="Отключить", command=self.on_disable)
+            m.add_command(label="Переместить (OU)...", command=self.on_move)
+            if self.mode_var.get() != 'computers':
+                m.add_command(label="Добавить в группы...",
+                              command=self.on_groups)
+            m.add_separator()
+            m.add_command(label="Копировать строки",
+                          command=self._copy_selected_row)
+            try:
+                m.tk_popup(event.x_root, event.y_root)
+            finally:
+                m.grab_release()
+            return 'break'
         u = self.users[int(sel[0])]
+
+        if u.get('is_computer'):
+            return self._show_computer_menu(event, u)
 
         m = tk.Menu(self, tearoff=0)
         m.add_command(label="Копировать логин",
@@ -1408,10 +1702,41 @@ class MainWindow(ttk.Frame):
         m.add_command(label="Отключить", command=self.on_disable)
         m.add_command(label="Разблокировать", command=self.on_unlock)
         m.add_command(label="Сбросить пароль...", command=self.on_reset)
+        m.add_command(
+            label=("Срок действия пароля не ограничен  ✓" if u.get('dontExpire')
+                   else "Срок действия пароля не ограничен"),
+            command=self.on_pwd_never_expires)
         m.add_separator()
         m.add_command(label="Группы...", command=self.on_groups)
         m.add_command(label="Переместить (OU)...", command=self.on_move)
         m.add_command(label="Изменить...", command=self.on_edit)
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+        return 'break'
+
+    def _show_computer_menu(self, event, c):
+        m = tk.Menu(self, tearoff=0)
+        m.add_command(label="Копировать имя",
+                      command=lambda: self._copy_text(c['name']))
+        m.add_command(label="Копировать DNS-имя",
+                      command=lambda: self._copy_text(c['dnsHostName']),
+                      state='normal' if c.get('dnsHostName') else 'disabled')
+        m.add_command(label="Копировать имя учётной записи",
+                      command=lambda: self._copy_text(c['sAMAccountName']))
+        m.add_command(label="Копировать DN",
+                      command=lambda: self._copy_text(c['dn']))
+        m.add_command(label="Копировать все свойства",
+                      command=self._copy_all_props)
+        m.add_separator()
+        m.add_command(label="Включить", command=self.on_enable)
+        m.add_command(label="Отключить", command=self.on_disable)
+        m.add_separator()
+        m.add_command(label="Переименовать...", command=self.on_rename)
+        m.add_command(label="Переместить (OU)...", command=self.on_move)
+        m.add_command(label="Изменить...", command=self.on_edit)
+        m.add_command(label="Удалить", command=self.on_delete)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -1454,31 +1779,75 @@ class MainWindow(ttk.Frame):
         return 'break'
 
     # --- Действия ---
-    def on_enable(self):
-        u = self._selected_user()
-        if not u:
-            return
+    def _bulk_apply(self, objs, fn, done_msg):
+        """Применить fn(dn) к каждому объекту; показать сводку ошибок."""
+        errors = []
+        self.master.config(cursor='watch')
+        self.update_idletasks()
         try:
-            self.client.enable_account(u['dn'])
-            messagebox.showinfo("Готово", "Учётная запись включена.")
-            self._refresh_selected(u['dn'])
-        except Exception as ex:
-            messagebox.showerror("Ошибка", str(ex))
+            for o in objs:
+                try:
+                    fn(o['dn'])
+                except Exception as ex:
+                    errors.append(f"{o.get('name') or o.get('sAMAccountName')}"
+                                  f": {ex}")
+        finally:
+            self.master.config(cursor='')
+        ok = len(objs) - len(errors)
+        if errors:
+            messagebox.showwarning(
+                "Выполнено частично",
+                f"{done_msg}: {ok} из {len(objs)}.\n\nОшибки:\n"
+                + "\n".join(errors[:10])
+                + ("\n..." if len(errors) > 10 else ""))
+        else:
+            messagebox.showinfo("Готово", f"{done_msg}: {ok}.")
+        self.do_search()
 
-    def on_disable(self):
-        u = self._selected_user()
-        if not u:
+    def on_enable(self):
+        objs = self._selected_users()
+        if not objs:
+            messagebox.showinfo("Не выбран объект",
+                                "Выберите один или несколько объектов в списке.")
+            return
+        if len(objs) == 1:
+            try:
+                self.client.enable_account(objs[0]['dn'])
+                messagebox.showinfo("Готово", "Учётная запись включена.")
+                self._refresh_selected(objs[0]['dn'])
+            except Exception as ex:
+                messagebox.showerror("Ошибка", str(ex))
             return
         if not messagebox.askyesno(
                 "Подтверждение",
-                f"Отключить учётную запись '{u['sAMAccountName']}'?"):
+                f"Включить учётные записи: {len(objs)}?"):
             return
-        try:
-            self.client.disable_account(u['dn'])
-            messagebox.showinfo("Готово", "Учётная запись отключена.")
-            self._refresh_selected(u['dn'])
-        except Exception as ex:
-            messagebox.showerror("Ошибка", str(ex))
+        self._bulk_apply(objs, self.client.enable_account, "Включено")
+
+    def on_disable(self):
+        objs = self._selected_users()
+        if not objs:
+            messagebox.showinfo("Не выбран объект",
+                                "Выберите один или несколько объектов в списке.")
+            return
+        if len(objs) == 1:
+            u = objs[0]
+            if not messagebox.askyesno(
+                    "Подтверждение",
+                    f"Отключить учётную запись '{u['sAMAccountName']}'?"):
+                return
+            try:
+                self.client.disable_account(u['dn'])
+                messagebox.showinfo("Готово", "Учётная запись отключена.")
+                self._refresh_selected(u['dn'])
+            except Exception as ex:
+                messagebox.showerror("Ошибка", str(ex))
+            return
+        if not messagebox.askyesno(
+                "Подтверждение",
+                f"Отключить учётные записи: {len(objs)}?"):
+            return
+        self._bulk_apply(objs, self.client.disable_account, "Отключено")
 
     def on_unlock(self):
         u = self._selected_user()
@@ -1498,25 +1867,146 @@ class MainWindow(ttk.Frame):
         ResetPasswordDialog(self.master, self.client, u,
                             on_done=lambda: self._refresh_selected(u['dn']))
 
-    def on_groups(self):
+    def on_pwd_never_expires(self):
+        """Включить/снять флаг «срок действия пароля не ограничен»
+        у выбранного пользователя."""
         u = self._selected_user()
-        if not u:
+        if not u or u.get('is_computer'):
             return
-        GroupsDialog(self.master, self.client, u)
+        cur = bool(u.get('dontExpire'))
+        if cur:
+            msg = (f"Снять флаг «срок действия пароля не ограничен» у "
+                   f"'{u['sAMAccountName']}'?\n\n"
+                   f"Пароль будет истекать по политике домена.")
+        else:
+            msg = (f"Установить флаг «срок действия пароля не ограничен» у "
+                   f"'{u['sAMAccountName']}'?\n\n"
+                   f"Если у пользователя стоит требование смены пароля при "
+                   f"следующем входе, оно будет снято, и прежний пароль "
+                   f"останется действительным (как в оснастке ADUC).")
+        if not messagebox.askyesno("Бессрочный пароль", msg):
+            return
+        try:
+            cleared = self.client.set_password_never_expires(u['dn'], not cur)
+            if cur:
+                done = "Флаг снят: пароль истекает по политике домена."
+            else:
+                done = "Флаг установлен: срок действия пароля не ограничен."
+                if cleared:
+                    done += ("\n\nТребование смены пароля при следующем входе "
+                             "снято; прежний пароль остаётся действительным.")
+            messagebox.showinfo("Готово", done)
+            self._refresh_selected(u['dn'])
+        except Exception as ex:
+            messagebox.showerror("Ошибка", str(ex))
+
+    def on_groups(self):
+        objs = [o for o in self._selected_users()
+                if not o.get('is_computer')]
+        if not objs:
+            messagebox.showinfo("Не выбран пользователь",
+                                "Выберите одного или нескольких пользователей "
+                                "в списке.")
+            return
+        if len(objs) == 1:
+            GroupsDialog(self.master, self.client, objs[0])
+            return
+        # Групповой режим: добавить всех выбранных пользователей в группы
+        picker = GroupPickerDialog(self.master, self.client)
+        self.wait_window(picker)
+        groups = picker.selected
+        if not groups:
+            return
+        gnames = ", ".join(g['cn'] for g in groups[:5])
+        if len(groups) > 5:
+            gnames += ", ..."
+        if not messagebox.askyesno(
+                "Добавление в группы",
+                f"Добавить пользователей ({len(objs)}) в группы "
+                f"({len(groups)})?\n\nГруппы: {gnames}"):
+            return
+        added, skipped, errors = 0, 0, []
+        self.master.config(cursor='watch')
+        self.update_idletasks()
+        try:
+            for g in groups:
+                for u in objs:
+                    try:
+                        self.client.add_to_group(u['dn'], g['dn'])
+                        added += 1
+                    except Exception as ex:
+                        msg = str(ex)
+                        if 'entryalreadyexists' in msg.lower().replace(' ', ''):
+                            skipped += 1  # уже состоит в группе
+                        else:
+                            errors.append(
+                                f"{u['sAMAccountName']} -> {g['cn']}: {msg}")
+        finally:
+            self.master.config(cursor='')
+        summary = f"Добавлено: {added}."
+        if skipped:
+            summary += f"\nУже состояли (пропущено): {skipped}."
+        if errors:
+            summary += ("\n\nОшибки:\n" + "\n".join(errors[:10])
+                        + ("\n..." if len(errors) > 10 else ""))
+            messagebox.showwarning("Выполнено частично", summary)
+        else:
+            messagebox.showinfo("Готово", summary)
 
     def on_move(self):
-        u = self._selected_user()
-        if not u:
+        objs = self._selected_users()
+        if not objs:
+            messagebox.showinfo("Не выбран объект",
+                                "Выберите один или несколько объектов в списке.")
             return
-        MoveDialog(self.master, self.client, u,
+        MoveDialog(self.master, self.client, objs,
                    on_done=self.do_search)
+
+    def _on_tree_double(self, event):
+        """Двойной клик по строке списка открывает окно редактирования."""
+        row = self.tree.identify_row(event.y)
+        if not row:
+            return
+        self.tree.selection_set(row)
+        self.tree.focus(row)
+        self.on_edit()
+        return 'break'
 
     def on_edit(self):
         u = self._selected_user()
         if not u:
             return
-        EditDialog(self.master, self.client, u,
-                   on_done=lambda: self._refresh_selected(u['dn']))
+        if u.get('is_computer'):
+            ComputerEditDialog(self.master, self.client, u,
+                               on_done=lambda: self._refresh_selected(u['dn']))
+        else:
+            EditDialog(self.master, self.client, u,
+                       on_done=lambda: self._refresh_selected(u['dn']))
+
+    def on_rename(self):
+        c = self._selected_user()
+        if not c:
+            return
+        RenameDialog(self.master, self.client, c,
+                     on_done=lambda dn: self._refresh_selected(dn))
+
+    def on_delete(self):
+        c = self._selected_user()
+        if not c:
+            return
+        label = c.get('name') or c.get('sAMAccountName') or c['dn']
+        if not messagebox.askyesno(
+                "Подтверждение удаления",
+                f"Удалить объект «{label}»?\n\nЭта операция необратима."):
+            return
+        try:
+            self.client.delete_object(c['dn'])
+            messagebox.showinfo("Готово", "Объект удалён.")
+            self.do_search()
+            self.props.delete('1.0', 'end')
+            self._prop_rows = []
+        except Exception as ex:
+            messagebox.showerror("Ошибка", str(ex))
 
     def on_create(self):
         CreateDialog(self.master, self.client, on_done=self.do_search,
@@ -1584,20 +2074,33 @@ class ResetPasswordDialog(tk.Toplevel):
 
 class MoveDialog(tk.Toplevel):
     def __init__(self, master, client, user, on_done=None):
+        """user — один объект (dict) или список объектов (групповое
+        перемещение)."""
         super().__init__(master)
         self.client = client
-        self.user = user
+        self.users_list = user if isinstance(user, list) else [user]
+        user = self.users_list[0]
         self.on_done = on_done
         self.title("Перемещение в подразделение")
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
-        ttk.Label(frm, text=f"Пользователь: {user['name']} "
-                            f"({user['sAMAccountName']})",
-                  font=('', 12, 'bold')).grid(row=0, column=0, sticky='w',
-                                              pady=(0, 10))
+        if len(self.users_list) == 1:
+            hdr = f"Объект: {user['name']} ({user['sAMAccountName']})"
+        else:
+            names = ", ".join(o['name'] for o in self.users_list[:3])
+            if len(self.users_list) > 3:
+                names += ", ..."
+            hdr = f"Выбрано объектов: {len(self.users_list)} ({names})"
+        ttk.Label(frm, text=hdr, font=('', 12, 'bold'),
+                  wraplength=420).grid(row=0, column=0, sticky='w',
+                                       pady=(0, 10))
         parent = user['dn'].split(',', 1)[1] if ',' in user['dn'] else ''
+        parents = {o['dn'].split(',', 1)[1].lower() if ',' in o['dn'] else ''
+                   for o in self.users_list}
+        if len(parents) > 1:
+            parent = "(объекты в разных контейнерах)"
         ttk.Label(frm, text="Текущее размещение:").grid(row=1, column=0,
                                                         sticky='w')
         cur = ttk.Entry(frm, width=60)
@@ -1638,11 +2141,83 @@ class MoveDialog(tk.Toplevel):
         if not dest:
             self.lbl.config(text="Укажите целевой контейнер.")
             return
+        if len(self.users_list) == 1:
+            try:
+                self.client.move_user(self.users_list[0]['dn'], dest)
+                messagebox.showinfo("Готово", "Объект перемещён.")
+                if self.on_done:
+                    self.on_done()
+                self.destroy()
+            except Exception as ex:
+                self.lbl.config(text=str(ex))
+            return
+        errors = []
+        for o in self.users_list:
+            try:
+                self.client.move_user(o['dn'], dest)
+            except Exception as ex:
+                errors.append(f"{o.get('name')}: {ex}")
+        ok = len(self.users_list) - len(errors)
+        if errors:
+            messagebox.showwarning(
+                "Выполнено частично",
+                f"Перемещено: {ok} из {len(self.users_list)}.\n\nОшибки:\n"
+                + "\n".join(errors[:10])
+                + ("\n..." if len(errors) > 10 else ""))
+        else:
+            messagebox.showinfo("Готово", f"Объектов перемещено: {ok}.")
+        if self.on_done:
+            self.on_done()
+        self.destroy()
+
+
+class RenameDialog(tk.Toplevel):
+    """Переименование объекта (смена имени/CN) в том же контейнере."""
+
+    def __init__(self, master, client, obj, on_done=None):
+        super().__init__(master)
+        self.client = client
+        self.obj = obj
+        self.on_done = on_done
+        self.title("Переименование объекта")
+        self.resizable(False, False)
+        self.grab_set()
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        cur_name = obj.get('name') or obj.get('cn') or ''
+        ttk.Label(frm, text=f"Объект: {cur_name}",
+                  font=('', 12, 'bold')).grid(row=0, column=0, columnspan=2,
+                                              sticky='w', pady=(0, 10))
+        ttk.Label(frm, text="Новое имя:").grid(row=1, column=0, sticky='w')
+        self.e_name = ttk.Entry(frm, width=36)
+        self.e_name.insert(0, cur_name)
+        self.e_name.grid(row=1, column=1, pady=4, padx=(6, 0))
+        self.e_name.focus_set()
+        self.e_name.select_range(0, 'end')
+        self.lbl = ttk.Label(frm, text="", foreground='#B00020', wraplength=340)
+        self.lbl.grid(row=2, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=3, column=0, columnspan=2, sticky='e', pady=(12, 0))
+        ttk.Button(btns, text="Переименовать", command=self._apply).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text="Отмена", command=self.destroy).grid(
+            row=0, column=1)
+        self.e_name.bind('<Return>', lambda e: self._apply())
+
+    def _apply(self):
+        new_name = self.e_name.get().strip()
+        if not new_name:
+            self.lbl.config(text="Введите имя.")
+            return
+        cur_name = self.obj.get('name') or self.obj.get('cn') or ''
+        if new_name == cur_name:
+            self.destroy()
+            return
         try:
-            self.client.move_user(self.user['dn'], dest)
-            messagebox.showinfo("Готово", "Пользователь перемещён.")
+            new_dn = self.client.rename_object(self.obj['dn'], new_name)
+            messagebox.showinfo("Готово", "Объект переименован.")
             if self.on_done:
-                self.on_done()
+                self.on_done(new_dn)
             self.destroy()
         except Exception as ex:
             self.lbl.config(text=str(ex))
@@ -1801,6 +2376,51 @@ class GroupsDialog(tk.Toplevel):
         self._reload()
 
 
+class ComputerEditDialog(tk.Toplevel):
+    """Редактирование атрибутов компьютера (описание)."""
+
+    def __init__(self, master, client, comp, on_done=None):
+        super().__init__(master)
+        self.client = client
+        self.comp = comp
+        self.on_done = on_done
+        self.title("Изменить компьютер")
+        self.resizable(False, False)
+        self.grab_set()
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        ttk.Label(frm, text="Имя:").grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(frm, text=comp.get('name') or '').grid(
+            row=0, column=1, sticky='w', pady=3)
+        ttk.Label(frm, text="DNS-имя:").grid(row=1, column=0, sticky='w',
+                                             pady=3)
+        ttk.Label(frm, text=comp.get('dnsHostName') or '—').grid(
+            row=1, column=1, sticky='w', pady=3)
+        ttk.Label(frm, text="Описание:").grid(row=2, column=0, sticky='w',
+                                              pady=3)
+        self.e_desc = ttk.Entry(frm, width=38)
+        self.e_desc.insert(0, comp.get('description', '') or '')
+        self.e_desc.grid(row=2, column=1, pady=3)
+        self.lbl = ttk.Label(frm, text="", foreground='#b00')
+        self.lbl.grid(row=3, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=4, column=0, columnspan=2, pady=(12, 0))
+        ttk.Button(btns, text="Сохранить", command=self._save).grid(
+            row=0, column=0)
+        ttk.Button(btns, text="Отмена", command=self.destroy).grid(
+            row=0, column=1, padx=(8, 0))
+
+    def _save(self):
+        try:
+            self.client.update_attributes(
+                self.comp['dn'], {'description': self.e_desc.get()})
+            self.destroy()
+            if self.on_done:
+                self.on_done()
+        except Exception as ex:
+            self.lbl.config(text=f"Ошибка: {ex}")
+
+
 class EditDialog(tk.Toplevel):
     FIELDS = [
         ("Отображаемое имя", 'displayName'),
@@ -1838,6 +2458,12 @@ class EditDialog(tk.Toplevel):
             e.grid(row=i, column=1, pady=3)
             self.entries[attr] = e
         r = len(self.FIELDS)
+        # Параметр учётной записи: срок действия пароля не ограничен (бит UAC)
+        self.v_dont_expire = tk.BooleanVar(value=bool(user.get('dontExpire')))
+        ttk.Checkbutton(frm, text="Срок действия пароля не ограничен",
+                        variable=self.v_dont_expire).grid(
+            row=r, column=0, columnspan=2, sticky='w', pady=(8, 0))
+        r += 1
         # Группы доступа (Member Of) — применяются сразу
         grp = ttk.LabelFrame(frm, text="Группы доступа (Member Of)")
         grp.grid(row=r, column=0, columnspan=2, sticky='ew', pady=(10, 0))
@@ -1907,6 +2533,9 @@ class EditDialog(tk.Toplevel):
         attrs = {attr: e.get() for attr, e in self.entries.items()}
         try:
             self.client.update_attributes(self.user['dn'], attrs)
+            if self.v_dont_expire.get() != bool(self.user.get('dontExpire')):
+                self.client.set_password_never_expires(
+                    self.user['dn'], self.v_dont_expire.get())
             messagebox.showinfo("Готово", "Изменения сохранены.")
             if self.on_done:
                 self.on_done()

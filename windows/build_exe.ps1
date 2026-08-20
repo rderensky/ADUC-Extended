@@ -37,7 +37,7 @@ $params = @{
     title       = 'ADUC-Ext'
     description = 'Active Directory user management'
     product     = 'ADUC-Ext'
-    version     = '1.0.1'
+    version     = '1.0.2'
     # requireAdmin = $true       # uncomment if RSAT installation from the app is needed
 }
 

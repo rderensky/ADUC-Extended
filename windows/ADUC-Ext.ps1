@@ -449,24 +449,33 @@ function Show-LoginWindow {
     <DockPanel>
         <!-- Top search bar -->
         <Border DockPanel.Dock="Top" Background="#F3F3F3" Padding="10">
-            <DockPanel>
-                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Domain:" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <ComboBox Name="CmbDomain" Width="170" VerticalAlignment="Center" IsEditable="True"
-                              ToolTip="Select a saved domain or enter a controller/domain name"/>
-                    <Button Name="BtnSwitchDomain" Content="Switch domain" Width="130" Height="30" Margin="8,0,0,0"/>
-                </StackPanel>
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBox Name="TxtSearch" Width="220" Padding="4" VerticalAlignment="Center"
-                             ToolTip="Name, login (sAMAccountName), e-mail, or part of a value"/>
-                    <Button Name="BtnSearch" Content="Find" Width="70" Height="30" Margin="8,0,0,0"/>
-                    <Button Name="BtnRefresh" Content="Refresh" Width="80" Height="30" Margin="8,0,0,0"/>
-                    <Button Name="BtnCreate" Content="Create user" Width="160" Height="30" Margin="12,0,0,0"/>
+            <StackPanel>
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="Domain:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                        <ComboBox Name="CmbDomain" Width="170" VerticalAlignment="Center" IsEditable="True"
+                                  ToolTip="Select a saved domain or enter a controller/domain name"/>
+                        <Button Name="BtnSwitchDomain" Content="Switch domain" Width="130" Height="30" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Name="TxtSearch" Width="220" Padding="4" VerticalAlignment="Center"
+                                 ToolTip="Name, login (sAMAccountName), e-mail, or part of a value"/>
+                        <Button Name="BtnSearch" Content="Find" Width="70" Height="30" Margin="8,0,0,0"/>
+                        <Button Name="BtnRefresh" Content="Refresh" Width="80" Height="30" Margin="8,0,0,0"/>
+                        <Button Name="BtnCreate" Content="Create user" Width="160" Height="30" Margin="12,0,0,0"/>
+                    </StackPanel>
+                </DockPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                    <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <RadioButton Name="RbUsers" Content="Users" GroupName="ObjMode" IsChecked="True"
+                                 VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <RadioButton Name="RbComputers" Content="Computers" GroupName="ObjMode"
+                                 VerticalAlignment="Center"/>
                     <CheckBox Name="ChkSubtree" Content="Nested OUs" VerticalAlignment="Center"
-                              Margin="12,0,0,0" ToolTip="Show users from nested organizational units"/>
+                              Margin="24,0,0,0" ToolTip="Show objects from nested organizational units"/>
                 </StackPanel>
-            </DockPanel>
+            </StackPanel>
         </Border>
 
         <!-- Bottom status bar -->
@@ -496,7 +505,7 @@ function Show-LoginWindow {
 
             <DataGrid Name="GridUsers" Grid.Column="2" Margin="0,10"
                       AutoGenerateColumns="False" IsReadOnly="True"
-                      SelectionMode="Single" HeadersVisibility="Column"
+                      SelectionMode="Extended" HeadersVisibility="Column"
                       GridLinesVisibility="Horizontal" CanUserResizeRows="False">
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="1.6*"/>
@@ -518,10 +527,13 @@ function Show-LoginWindow {
                         <MenuItem Name="CmDisable"     Header="Disable"/>
                         <MenuItem Name="CmUnlock"      Header="Unlock"/>
                         <MenuItem Name="CmResetPwd"    Header="Reset password..."/>
+                        <MenuItem Name="CmPwdNoExpire" Header="Password never expires" IsCheckable="True"/>
                         <Separator/>
                         <MenuItem Name="CmGroups"      Header="Groups..."/>
                         <MenuItem Name="CmMove"        Header="Move (OU)..."/>
                         <MenuItem Name="CmEdit"        Header="Edit..."/>
+                        <MenuItem Name="CmRename"      Header="Rename..." Visibility="Collapsed"/>
+                        <MenuItem Name="CmDelete"      Header="Delete" Visibility="Collapsed"/>
                     </ContextMenu>
                 </DataGrid.ContextMenu>
             </DataGrid>
@@ -535,7 +547,7 @@ function Show-LoginWindow {
                     <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <GroupBox Grid.Row="0" Header="User properties">
+                <GroupBox Grid.Row="0" Name="GrpProps" Header="User properties">
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <StackPanel Name="PanelProps" Margin="6">
                             <TextBlock Text="Select a user from the list" Foreground="#888"
@@ -550,9 +562,13 @@ function Show-LoginWindow {
                         <Button Name="BtnDisable"  Content="Disable"         Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnUnlock"   Content="Unlock"          Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnResetPwd" Content="Reset password"  Width="130" Height="32" Margin="4"/>
+                        <Button Name="BtnPwdNoExpire" Content="Pwd never expires" Width="130" Height="32" Margin="4"
+                                ToolTip="Set or clear the 'password never expires' flag"/>
                         <Button Name="BtnGroups"   Content="Groups..."       Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnMove"     Content="Move (OU)"        Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnEdit"     Content="Edit..."          Width="130" Height="32" Margin="4"/>
+                        <Button Name="BtnRename"   Content="Rename..."        Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
+                        <Button Name="BtnDelete"   Content="Delete"           Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
                     </WrapPanel>
                 </GroupBox>
             </Grid>
@@ -617,6 +633,60 @@ function Search-ADUsers {
             State             = Get-UserState $_
             DistinguishedName = $_.DistinguishedName
             _AD               = $_
+        }
+    }
+}
+
+# Properties requested for a computer
+$Script:ComputerProps = @(
+    'Name','DNSHostName','OperatingSystem','OperatingSystemVersion',
+    'Description','Enabled','DistinguishedName','whenCreated',
+    'LastLogonDate','SamAccountName'
+)
+
+function Get-ComputerState {
+    param($c)
+    if (-not $c.Enabled) { return "Disabled" }
+    return "Active"
+}
+
+function Search-ADComputers {
+    param(
+        [string]$Query,
+        [string]$SearchBase,
+        [string]$Scope = 'Subtree'   # Base | OneLevel | Subtree
+    )
+    $p = Get-ADParams
+    $p['Properties'] = $Script:ComputerProps
+    if ($SearchBase) { $p['SearchBase'] = $SearchBase }
+    if ($Scope)      { $p['SearchScope'] = $Scope }
+
+    if ([string]::IsNullOrWhiteSpace($Query)) {
+        $p['Filter'] = '*'
+    }
+    else {
+        $q = $Query.Replace('*','').Trim()
+        $wild = "*$q*"
+        $p['Filter'] = {
+            (Name -like $wild) -or (DNSHostName -like $wild) -or
+            (SamAccountName -like $wild) -or (OperatingSystem -like $wild) -or
+            (Description -like $wild)
+        }.GetNewClosure()
+    }
+
+    Get-ADComputer @p | Sort-Object Name | ForEach-Object {
+        $osFull = if ($_.OperatingSystem -and $_.OperatingSystemVersion) {
+            "$($_.OperatingSystem) ($($_.OperatingSystemVersion))"
+        } elseif ($_.OperatingSystem) { $_.OperatingSystem } else { $_.OperatingSystemVersion }
+        [pscustomobject]@{
+            Name              = $_.Name
+            DnsHostName       = $_.DNSHostName
+            OS                = $osFull
+            Description       = $_.Description
+            State             = Get-ComputerState $_
+            DistinguishedName = $_.DistinguishedName
+            _AD               = $_
+            _IsComputer       = $true
         }
     }
 }
@@ -959,19 +1029,27 @@ function Show-ResetPasswordDialog {
 "@
 
 function Show-MoveDialog {
-    param($Owner, $User)
+    param($Owner, $User, $Users)
+    # $Users (array) — bulk move; $User — single object (back-compat)
+    $items = if ($Users) { @($Users) } else { @($User) }
     $reader = New-Object System.Xml.XmlNodeReader $MoveXaml
     $w = [Windows.Markup.XamlReader]::Load($reader)
     $w.Owner = $Owner
-    $w.FindName("MLbl").Text = "User: $($User.Name) ($($User.SamAccountName))"
+    if ($items.Count -eq 1) {
+        $w.FindName("MLbl").Text = "Object: $($items[0].Name) ($($items[0].SamAccountName))"
+    } else {
+        $names = ($items | Select-Object -First 3 | ForEach-Object { $_.Name }) -join ", "
+        if ($items.Count -gt 3) { $names += ", ..." }
+        $w.FindName("MLbl").Text = "Objects selected: $($items.Count) ($names)"
+    }
     $current = $w.FindName("MCurrent")
     $target  = $w.FindName("MTarget")
     $browse  = $w.FindName("MBrowse")
     $st=$w.FindName("MStatus"); $ok=$w.FindName("MOk"); $cancel=$w.FindName("MCancel")
 
     # Current parent container
-    $parentDN = ($User.DistinguishedName -replace '^CN=.*?(?<!\\),','')
-    $current.Text = $parentDN
+    $parents = @($items | ForEach-Object { ($_.DistinguishedName -replace '^CN=.*?(?<!\\),','') } | Sort-Object -Unique)
+    $current.Text = if ($parents.Count -gt 1) { "(objects are in different containers)" } else { $parents[0] }
 
     # Populate the list of available OUs
     try {
@@ -988,21 +1066,167 @@ function Show-MoveDialog {
     })
 
     $script:MoveOk = $false
+    $script:MoveErrors = @()
     $ok.Add_Click({
         $st.Text = ""
         $dest = $target.Text.Trim()
         if ([string]::IsNullOrWhiteSpace($dest)) { $st.Text="Specify a target container."; return }
+        if ($items.Count -eq 1) {
+            try {
+                $p = Get-ADParams
+                Move-ADObject @p -Identity $items[0].DistinguishedName -TargetPath $dest
+                $script:MoveOk = $true
+                $w.Close()
+            }
+            catch { $st.Text = "Error: $($_.Exception.Message)" }
+            return
+        }
+        $errors = @()
+        foreach ($o in $items) {
+            try {
+                $p = Get-ADParams
+                Move-ADObject @p -Identity $o.DistinguishedName -TargetPath $dest
+            } catch { $errors += "$($o.Name): $($_.Exception.Message)" }
+        }
+        $script:MoveOk = ($errors.Count -lt $items.Count)
+        $script:MoveErrors = $errors
+        if ($errors.Count -gt 0) {
+            $okCnt = $items.Count - $errors.Count
+            $txt = ($errors | Select-Object -First 10) -join "`r`n"
+            if ($errors.Count -gt 10) { $txt += "`r`n..." }
+            $st.Text = "Moved: $okCnt of $($items.Count).`r`n$txt"
+            return
+        }
+        $w.Close()
+    })
+    $cancel.Add_Click({ $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:MoveOk
+}
+
+# --- Rename an object (change its name/CN) ---
+[xml]$RenameXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Rename object" Height="180" Width="420" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="RnLbl" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="1" Text="New name:" Margin="0,0,0,4"/>
+        <TextBox Grid.Row="2" Name="RnName" Padding="4"/>
+        <TextBlock Grid.Row="2" Name="RnStatus" Foreground="#B00020" Margin="0,40,0,0" TextWrapping="Wrap"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Name="RnOk" Content="Rename" Width="110" Height="30" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="RnCancel" Content="Cancel" Width="90" Height="30" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-RenameDialog {
+    param($Owner, $Obj)
+    $reader = New-Object System.Xml.XmlNodeReader $RenameXaml
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    $w.Owner = $Owner
+    $curName = [string]$Obj.Name
+    $w.FindName("RnLbl").Text = "Object: $curName"
+    $name = $w.FindName("RnName")
+    $st   = $w.FindName("RnStatus")
+    $ok   = $w.FindName("RnOk"); $cancel = $w.FindName("RnCancel")
+    $name.Text = $curName
+    $w.Add_Loaded({ $name.SelectAll(); $name.Focus() })
+
+    $script:RenameOk = $false
+    $ok.Add_Click({
+        $st.Text = ""
+        $new = $name.Text.Trim()
+        if ([string]::IsNullOrWhiteSpace($new)) { $st.Text = "Enter a name."; return }
+        if ($new -eq $curName) { $w.Close(); return }
         try {
             $p = Get-ADParams
-            Move-ADObject @p -Identity $User.DistinguishedName -TargetPath $dest
-            $script:MoveOk = $true
+            Rename-ADObject @p -Identity $Obj.DistinguishedName -NewName $new
+            $script:RenameOk = $true
             $w.Close()
         }
         catch { $st.Text = "Error: $($_.Exception.Message)" }
     })
     $cancel.Add_Click({ $w.Close() })
     $w.ShowDialog() | Out-Null
-    return $script:MoveOk
+    return $script:RenameOk
+}
+
+# --- Edit computer attributes (description) ---
+[xml]$CompEditXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit computer" Height="240" Width="440" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name:" Margin="0,0,10,6"/>
+        <TextBlock Grid.Row="0" Grid.Column="1" Name="CeName" Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="DNS name:" Margin="0,0,10,6"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Name="CeDns" Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Description:" Margin="0,4,10,0"/>
+        <TextBox Grid.Row="2" Grid.Column="1" Name="CeDesc" Height="26"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Name="CeStatus"
+                   Foreground="Firebrick" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Name="CeOk" Content="Save" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="CeCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-ComputerEditDialog {
+    param($Owner, $Comp)
+    $reader = New-Object System.Xml.XmlNodeReader $CompEditXaml
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    $w.Owner = $Owner
+    $ad = $Comp._AD
+    $w.FindName("CeName").Text = [string]$ad.Name
+    $w.FindName("CeDns").Text  = if ($ad.DNSHostName) { [string]$ad.DNSHostName } else { "-" }
+    $desc = $w.FindName("CeDesc"); $st = $w.FindName("CeStatus")
+    $ok = $w.FindName("CeOk"); $cancel = $w.FindName("CeCancel")
+    $desc.Text = [string]$ad.Description
+
+    $script:CompEditOk = $false
+    $ok.Add_Click({
+        $st.Text = ""
+        try {
+            $p = Get-ADParams
+            $val = $desc.Text.Trim()
+            if ($val) {
+                Set-ADComputer @p -Identity $Comp.DistinguishedName -Description $val
+            } else {
+                Set-ADComputer @p -Identity $Comp.DistinguishedName -Clear description
+            }
+            $script:CompEditOk = $true
+            $w.Close()
+        }
+        catch { $st.Text = "Error: $($_.Exception.Message)" }
+    })
+    $cancel.Add_Click({ $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:CompEditOk
 }
 
 # --- Select an organizational unit (OU) by tree navigation ---
@@ -1272,8 +1496,8 @@ function Show-GroupsDialog {
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-            <RowDefinition Height="140"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="140"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Display name:" VerticalAlignment="Center"/>
@@ -1293,18 +1517,21 @@ function Show-GroupsDialog {
         <TextBlock Grid.Row="7" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
         <TextBox   Grid.Row="7" Grid.Column="1" Name="EDesc" Margin="0,4" Padding="3"/>
 
-        <TextBlock Grid.Row="8" Grid.ColumnSpan="2" Text="Group membership (Member Of):"
+        <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Name="EPwdNoExpire"
+                  Content="Password never expires" Margin="0,8,0,0"/>
+
+        <TextBlock Grid.Row="9" Grid.ColumnSpan="2" Text="Group membership (Member Of):"
                    FontWeight="SemiBold" Margin="0,10,0,4"/>
-        <ListBox Grid.Row="9" Grid.ColumnSpan="2" Name="EGroups" SelectionMode="Extended"/>
-        <StackPanel Grid.Row="10" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+        <ListBox Grid.Row="10" Grid.ColumnSpan="2" Name="EGroups" SelectionMode="Extended"/>
+        <StackPanel Grid.Row="11" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
             <Button Name="EGAdd" Content="Add..." Width="130" Height="30"/>
             <Button Name="EGRemove" Content="Remove selected" Width="170" Height="30" Margin="8,0,0,0"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="11" Grid.ColumnSpan="2" Name="EStatus" Foreground="#B00020"
+        <TextBlock Grid.Row="12" Grid.ColumnSpan="2" Name="EStatus" Foreground="#B00020"
                    TextWrapping="Wrap" Margin="0,10,0,0"/>
 
-        <StackPanel Grid.Row="12" Grid.ColumnSpan="2" Orientation="Horizontal"
+        <StackPanel Grid.Row="13" Grid.ColumnSpan="2" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Name="EOk" Content="Save" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
             <Button Name="ECancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
@@ -1324,6 +1551,8 @@ function Show-EditDialog {
     $phone=$w.FindName("EPhone"); $desc=$w.FindName("EDesc")
     $egroups=$w.FindName("EGroups"); $egAdd=$w.FindName("EGAdd"); $egRemove=$w.FindName("EGRemove")
     $st=$w.FindName("EStatus"); $ok=$w.FindName("EOk"); $cancel=$w.FindName("ECancel")
+    $pwdNoExp = $w.FindName("EPwdNoExpire")
+    $pwdNoExp.IsChecked = [bool]$ad.PasswordNeverExpires
 
     $disp.Text    = [string]$ad.DisplayName
     $mail.Text    = [string]$ad.Mail
@@ -1392,6 +1621,12 @@ function Show-EditDialog {
             $p['Office']          = $office.Text
             $p['OfficePhone']     = $phone.Text
             $p['Description']     = $desc.Text
+            $p['PasswordNeverExpires'] = [bool]$pwdNoExp.IsChecked
+            # Like ADUC: enabling the flag cancels a pending 'change password
+            # at next logon' requirement (PasswordLastSet = $null means pending).
+            if ([bool]$pwdNoExp.IsChecked -and -not $User._AD.PasswordLastSet) {
+                $p['ChangePasswordAtLogon'] = $false
+            }
             Set-ADUser @p
             $script:EditOk = $true
             $w.Close()
@@ -1436,6 +1671,12 @@ $BtnResetPwd= $MainWin.FindName("BtnResetPwd")
 $BtnGroups  = $MainWin.FindName("BtnGroups")
 $BtnMove    = $MainWin.FindName("BtnMove")
 $BtnEdit    = $MainWin.FindName("BtnEdit")
+$BtnRename  = $MainWin.FindName("BtnRename")
+$BtnDelete  = $MainWin.FindName("BtnDelete")
+$BtnPwdNoExpire = $MainWin.FindName("BtnPwdNoExpire")
+$RbUsers    = $MainWin.FindName("RbUsers")
+$RbComputers= $MainWin.FindName("RbComputers")
+$GrpProps   = $MainWin.FindName("GrpProps")
 
 $LblConn.Text = "Connected to: $($Global:ADConnection.Server)   |   User: $($Global:ADConnection.UserName)"
 
@@ -1475,6 +1716,21 @@ function Update-PropsPanel {
         return
     }
     $ad = $User._AD
+    if ($User._IsComputer) {
+        $rows = [ordered]@{
+            "Name"             = $ad.Name
+            "Account name"     = $ad.SamAccountName
+            "DNS name"         = $ad.DNSHostName
+            "Operating system" = $ad.OperatingSystem
+            "OS version"       = $ad.OperatingSystemVersion
+            "State"            = (Get-ComputerState $ad)
+            "Description"      = $ad.Description
+            "Last logon"       = $ad.LastLogonDate
+            "Created"          = $ad.whenCreated
+            "DN"               = $ad.DistinguishedName
+        }
+    }
+    else {
     $rows = [ordered]@{
         "Display name"    = $ad.DisplayName
         "Login"           = $ad.SamAccountName
@@ -1491,6 +1747,7 @@ function Update-PropsPanel {
         "Office"          = $ad.Office
         "Phone"          = $ad.TelephoneNumber
         "Password last set"     = $ad.PasswordLastSet
+        "Password never expires" = if ($ad.PasswordNeverExpires) { "Yes" } else { "No" }
         "Password change required" = (Get-PwdExpiryText $ad)
         "Bad password attempts" = $ad.badPwdCount
         "Last bad password"     = $ad.LastBadPasswordAttempt
@@ -1498,6 +1755,7 @@ function Update-PropsPanel {
         "Created"         = $ad.whenCreated
         "Expires"        = $ad.AccountExpirationDate
         "DN"               = $ad.DistinguishedName
+    }
     }
     $Script:PropRows = @()
     foreach ($k in $rows.Keys) {
@@ -1610,7 +1868,11 @@ function Invoke-Search {
         $subtree = (-not [string]::IsNullOrWhiteSpace($text)) -or $ChkSubtree.IsChecked
         $scope = if ($subtree) { 'Subtree' } else { 'OneLevel' }
 
-        $results = @(Search-ADUsers -Query $text -SearchBase $base -Scope $scope)
+        if ($RbComputers.IsChecked) {
+            $results = @(Search-ADComputers -Query $text -SearchBase $base -Scope $scope)
+        } else {
+            $results = @(Search-ADUsers -Query $text -SearchBase $base -Scope $scope)
+        }
         $GridUsers.ItemsSource = $results
 
         $scopeTxt = if ($sel -and $sel.Header) { [string]$sel.Header } else { $Global:ADConnection.DnsRoot }
@@ -1625,9 +1887,23 @@ function Invoke-Search {
 
 # --- Get the selected user ---
 function Get-SelectedUser {
+    if ($GridUsers.SelectedItems.Count -gt 1) {
+        Show-Info "This action applies to a single object.`r`nSelect exactly one item in the list." "Multiple objects selected"
+        return $null
+    }
     $u = $GridUsers.SelectedItem
     if (-not $u) { Show-Info "Select a user in the list first." "No user selected"; return $null }
     return $u
+}
+
+function Get-SelectedUsers {
+    # All selected objects (multi-select aware)
+    $items = @($GridUsers.SelectedItems)
+    if (-not $items -or $items.Count -eq 0) {
+        Show-Info "Select one or more objects in the list." "No object selected"
+        return @()
+    }
+    return $items
 }
 
 # --- Re-read the selected user from AD and refresh the panel ---
@@ -1649,6 +1925,60 @@ function Refresh-SelectedUser {
         }
         Update-PropsPanel $obj
     } catch { }
+}
+
+# --- Set list columns for the current mode (users / computers) ---
+function Set-GridColumns {
+    param([switch]$Computers)
+    $GridUsers.Columns.Clear()
+    $starU = [System.Windows.Controls.DataGridLengthUnitType]::Star
+    $mk = {
+        param($header, $bind, $wStar)
+        $col = New-Object System.Windows.Controls.DataGridTextColumn
+        $col.Header = $header
+        $col.Binding = New-Object System.Windows.Data.Binding $bind
+        $col.Width = New-Object System.Windows.Controls.DataGridLength($wStar, [System.Windows.Controls.DataGridLengthUnitType]::Star)
+        return $col
+    }
+    if ($Computers) {
+        $GridUsers.Columns.Add((& $mk 'Name' 'Name' 1.4)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'DNS name' 'DnsHostName' 1.6)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'Operating system' 'OS' 1.5)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'Description' 'Description' 1.4)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'State' 'State' 1.0)) | Out-Null
+    } else {
+        $GridUsers.Columns.Add((& $mk 'Name' 'Name' 1.6)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'Login' 'SamAccountName' 1.2)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'E-mail' 'Mail' 1.6)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'Description' 'Description' 1.6)) | Out-Null
+        $GridUsers.Columns.Add((& $mk 'State' 'State' 1.0)) | Out-Null
+    }
+}
+
+# --- Switch between users and computers ---
+function Switch-Mode {
+    $computers = [bool]$RbComputers.IsChecked
+    $TxtSearch.Text = ""
+    $PanelProps.Children.Clear()
+    $Script:PropRows = @()
+    Set-GridColumns -Computers:$computers
+    $GrpProps.Header = if ($computers) { "Computer properties" } else { "User properties" }
+
+    # Action buttons (Edit stays visible in both modes — it routes by object type)
+    $userBtns = @($BtnUnlock, $BtnResetPwd, $BtnPwdNoExpire, $BtnGroups)
+    $compBtns = @($BtnRename, $BtnDelete)
+    foreach ($b in $userBtns) { if ($b) { $b.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } } }
+    foreach ($b in $compBtns) { if ($b) { $b.Visibility = if ($computers) { 'Visible' } else { 'Collapsed' } } }
+    if ($BtnCreate) { $BtnCreate.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } }
+
+    # Context-menu items
+    $cm = $GridUsers.ContextMenu
+    $userItems = @('CmCopyMail','CmCopyUpn','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups')
+    $compItems = @('CmRename','CmDelete')
+    foreach ($n in $userItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } } }
+    foreach ($n in $compItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($computers) { 'Visible' } else { 'Collapsed' } } }
+
+    Invoke-Search
 }
 
 # --- Domain switching ---
@@ -1711,14 +2041,32 @@ $BtnRefresh.Add_Click({ Invoke-Search })
 $ChkSubtree.Add_Click({ Invoke-Search })
 $TreeOU.Add_SelectedItemChanged({ Invoke-Search })
 
-$GridUsers.Add_SelectionChanged({ Update-PropsPanel $GridUsers.SelectedItem })
+$GridUsers.Add_SelectionChanged({
+    if ($GridUsers.SelectedItems.Count -gt 1) {
+        $PanelProps.Children.Clear()
+        $Script:PropRows = @()
+        $tb = New-Object System.Windows.Controls.TextBlock
+        $tb.Text = "Selected objects: $($GridUsers.SelectedItems.Count)`r`n`r`nAvailable bulk actions:`r`nEnable / Disable / Move (OU)`r`nAdd to groups (users)"
+        $tb.TextWrapping = 'Wrap'
+        $PanelProps.Children.Add($tb) | Out-Null
+    } else {
+        Update-PropsPanel $GridUsers.SelectedItem
+    }
+})
 # Ctrl+C on the list copies the selected row (name, login, e-mail, state) tab-separated
 $GridUsers.Add_PreviewKeyDown({
     param($s, $e)
     if ($e.Key -eq 'C' -and ([System.Windows.Input.Keyboard]::Modifiers -band [System.Windows.Input.ModifierKeys]::Control)) {
-        $u = $GridUsers.SelectedItem
-        if ($u) {
-            Set-ClipboardText (@([string]$u.Name, [string]$u.SamAccountName, [string]$u.Mail, [string]$u.Description, [string]$u.State) -join "`t")
+        $items = @($GridUsers.SelectedItems)
+        if ($items.Count -gt 0) {
+            $lines = foreach ($u in $items) {
+                if ($u._IsComputer) {
+                    @([string]$u.Name, [string]$u.DnsHostName, [string]$u.OS, [string]$u.Description, [string]$u.State) -join "`t"
+                } else {
+                    @([string]$u.Name, [string]$u.SamAccountName, [string]$u.Mail, [string]$u.Description, [string]$u.State) -join "`t"
+                }
+            }
+            Set-ClipboardText ($lines -join "`r`n")
         }
         $e.Handled = $true
     }
@@ -1734,25 +2082,54 @@ $BtnCreate.Add_Click({
     }
 })
 
+# Apply an account operation to every selected object; show an error summary
+function Invoke-BulkAccountAction {
+    param($Items, [scriptblock]$Action, [string]$DoneMsg)
+    $errors = @()
+    foreach ($o in $Items) {
+        try { & $Action $o } catch { $errors += "$($o.Name): $($_.Exception.Message)" }
+    }
+    $ok = $Items.Count - $errors.Count
+    if ($errors.Count -gt 0) {
+        $txt = ($errors | Select-Object -First 10) -join "`r`n"
+        if ($errors.Count -gt 10) { $txt += "`r`n..." }
+        Show-Error "${DoneMsg}: $ok of $($Items.Count).`r`n`r`nErrors:`r`n$txt" "Partially completed"
+    } else {
+        Show-Info "${DoneMsg}: $ok."
+    }
+    Invoke-Search
+}
+
 $BtnEnable.Add_Click({
-    $u = Get-SelectedUser; if (-not $u) { return }
-    try {
-        $p = Get-ADParams
-        Enable-ADAccount @p -Identity $u.DistinguishedName
-        Show-Info "Account enabled."
-        Invoke-Search
-    } catch { Show-Error "Failed to enable: $($_.Exception.Message)" }
+    $items = Get-SelectedUsers; if (-not $items -or $items.Count -eq 0) { return }
+    if ($items.Count -eq 1) {
+        try {
+            $p = Get-ADParams
+            Enable-ADAccount @p -Identity $items[0].DistinguishedName
+            Show-Info "Account enabled."
+            Invoke-Search
+        } catch { Show-Error "Failed to enable: $($_.Exception.Message)" }
+        return
+    }
+    if (-not (Confirm-Action "Enable $($items.Count) accounts?")) { return }
+    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Enable-ADAccount @p -Identity $o.DistinguishedName } "Enabled"
 })
 
 $BtnDisable.Add_Click({
-    $u = Get-SelectedUser; if (-not $u) { return }
-    if (-not (Confirm-Action "Disable account '$($u.SamAccountName)'?")) { return }
-    try {
-        $p = Get-ADParams
-        Disable-ADAccount @p -Identity $u.DistinguishedName
-        Show-Info "Account disabled."
-        Invoke-Search
-    } catch { Show-Error "Failed to disable: $($_.Exception.Message)" }
+    $items = Get-SelectedUsers; if (-not $items -or $items.Count -eq 0) { return }
+    if ($items.Count -eq 1) {
+        $u = $items[0]
+        if (-not (Confirm-Action "Disable account '$($u.SamAccountName)'?")) { return }
+        try {
+            $p = Get-ADParams
+            Disable-ADAccount @p -Identity $u.DistinguishedName
+            Show-Info "Account disabled."
+            Invoke-Search
+        } catch { Show-Error "Failed to disable: $($_.Exception.Message)" }
+        return
+    }
+    if (-not (Confirm-Action "Disable $($items.Count) accounts?")) { return }
+    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Disable-ADAccount @p -Identity $o.DistinguishedName } "Disabled"
 })
 
 $BtnUnlock.Add_Click({
@@ -1773,29 +2150,157 @@ $BtnResetPwd.Add_Click({
     }
 })
 
-$BtnGroups.Add_Click({
+$BtnPwdNoExpire.Add_Click({
     $u = Get-SelectedUser; if (-not $u) { return }
-    Show-GroupsDialog -Owner $MainWin -User $u
+    if ($u._IsComputer) { return }
+    $cur = [bool]$u._AD.PasswordNeverExpires
+    $new = -not $cur
+    # PasswordLastSet = $null means 'must change password at next logon'
+    $mustChange = ($new -and -not $u._AD.PasswordLastSet)
+    $msg = if ($new) {
+        $m = "Set the 'password never expires' flag for '$($u.SamAccountName)'?"
+        if ($mustChange) {
+            $m += "`r`n`r`nThe pending 'change password at next logon' requirement will be removed; the current password stays valid (same as in ADUC)."
+        }
+        $m
+    } else {
+        "Clear the 'password never expires' flag for '$($u.SamAccountName)'?`r`n`r`nThe password will expire per the domain policy."
+    }
+    if (-not (Confirm-Action $msg)) { return }
+    try {
+        $p = Get-ADParams
+        if ($mustChange) {
+            # Like ADUC: enabling the flag also cancels the pending change
+            # requirement, so the current password stays valid.
+            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $true -ChangePasswordAtLogon $false
+            Show-Info "Flag set: the password never expires.`r`n`r`nThe 'change password at next logon' requirement was removed; the current password stays valid."
+        } else {
+            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $new
+            if ($new) { Show-Info "Flag set: the password never expires." }
+            else      { Show-Info "Flag cleared: the password expires per the domain policy." }
+        }
+        Invoke-Search
+    } catch { Show-Error "Failed to change the flag: $($_.Exception.Message)" }
+})
+
+$BtnGroups.Add_Click({
+    $items = @((Get-SelectedUsers) | Where-Object { -not $_._IsComputer })
+    if (-not $items -or $items.Count -eq 0) { return }
+    if ($items.Count -eq 1) {
+        Show-GroupsDialog -Owner $MainWin -User $items[0]
+        return
+    }
+    # Bulk: add all selected users to the chosen groups
+    $picked = @(Show-GroupPickerDialog -Owner $MainWin)
+    if (-not $picked -or $picked.Count -eq 0) { return }
+    if (-not (Confirm-Action "Add $($items.Count) users to $($picked.Count) group(s)?")) { return }
+    $added = 0; $errors = @()
+    foreach ($gdn in $picked) {
+        foreach ($u in $items) {
+            try {
+                $p = Get-ADParams
+                Add-ADGroupMember @p -Identity $gdn -Members $u.DistinguishedName
+                $added++
+            } catch {
+                $gcn = ($gdn -split ',')[0] -replace '^CN=',''
+                $errors += "$($u.SamAccountName) -> ${gcn}: $($_.Exception.Message)"
+            }
+        }
+    }
+    $summary = "Added: $added."
+    if ($errors.Count -gt 0) {
+        $txt = ($errors | Select-Object -First 10) -join "`r`n"
+        if ($errors.Count -gt 10) { $txt += "`r`n..." }
+        Show-Error "$summary`r`n`r`nErrors:`r`n$txt" "Partially completed"
+    } else {
+        Show-Info $summary
+    }
 })
 
 $BtnMove.Add_Click({
-    $u = Get-SelectedUser; if (-not $u) { return }
-    if (Show-MoveDialog -Owner $MainWin -User $u) {
-        Show-Info "User moved."
+    $items = Get-SelectedUsers; if (-not $items -or $items.Count -eq 0) { return }
+    if (Show-MoveDialog -Owner $MainWin -Users $items) {
+        if ($items.Count -eq 1) { Show-Info "Object moved." }
+        elseif ($script:MoveErrors.Count -eq 0) { Show-Info "Objects moved: $($items.Count)." }
         Invoke-Search
     }
 })
 
 $BtnEdit.Add_Click({
     $u = Get-SelectedUser; if (-not $u) { return }
-    if (Show-EditDialog -Owner $MainWin -User $u) {
+    if ($u._IsComputer) {
+        if (Show-ComputerEditDialog -Owner $MainWin -Comp $u) {
+            Show-Info "Changes saved."
+            Invoke-Search
+        }
+    }
+    elseif (Show-EditDialog -Owner $MainWin -User $u) {
         Show-Info "Changes saved."
         Invoke-Search
     }
 })
 
+# Double-click on a grid row opens the edit dialog (users and computers)
+$GridUsers.Add_MouseDoubleClick({
+    param($s, $e)
+    # Only react to double-clicks on an actual row (not the header)
+    $dep = $e.OriginalSource
+    $isRow = $false
+    try {
+        while ($dep) {
+            if ($dep -is [System.Windows.Controls.DataGridRow]) { $isRow = $true; break }
+            if ($dep -is [System.Windows.Media.Visual] -or
+                $dep -is [System.Windows.Media.Media3D.Visual3D]) {
+                $dep = [System.Windows.Media.VisualTreeHelper]::GetParent($dep)
+            } else {
+                $dep = [System.Windows.LogicalTreeHelper]::GetParent($dep)
+            }
+        }
+    } catch { $isRow = [bool]$GridUsers.SelectedItem }
+    if ($isRow -and $GridUsers.SelectedItem) {
+        $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+    }
+})
+
+$BtnRename.Add_Click({
+    $u = Get-SelectedUser; if (-not $u) { return }
+    if (Show-RenameDialog -Owner $MainWin -Obj $u) {
+        Show-Info "Object renamed."
+        Invoke-Search
+    }
+})
+
+$BtnDelete.Add_Click({
+    $u = Get-SelectedUser; if (-not $u) { return }
+    $label = if ($u.Name) { $u.Name } else { $u.SamAccountName }
+    if (-not (Confirm-Action "Delete object '$label'?`r`n`r`nThis operation is irreversible.")) { return }
+    try {
+        $p = Get-ADParams
+        Remove-ADObject @p -Identity $u.DistinguishedName -Confirm:$false
+        Show-Info "Object deleted."
+        $PanelProps.Children.Clear()
+        $Script:PropRows = @()
+        Invoke-Search
+    } catch { Show-Error "Failed to delete: $($_.Exception.Message)" }
+})
+
+# Object type switch
+$RbUsers.Add_Checked({ if ($GridUsers) { Switch-Mode } })
+$RbComputers.Add_Checked({ if ($GridUsers) { Switch-Mode } })
+
 # --- Context menu of the user list ---
 $cmGrid = $GridUsers.ContextMenu
+# Find a context-menu item by name (FindName on a ContextMenu does not
+# work: the menu has its own name scope outside the window's tree)
+function Get-CmItem {
+    param([string]$Name)
+    if (-not $cmGrid) { return $null }
+    foreach ($it in $cmGrid.Items) {
+        if ($it -is [System.Windows.Controls.MenuItem] -and $it.Name -eq $Name) { return $it }
+    }
+    return $null
+}
+
 # Select the row under the cursor on right-click so the menu applies to it
 $GridUsers.Add_PreviewMouseRightButtonDown({
     param($s, $e)
@@ -1809,26 +2314,46 @@ $GridUsers.Add_PreviewMouseRightButtonDown({
 $cmGrid.Add_Opened({
     $u = $GridUsers.SelectedItem
     $has = [bool]$u
-    foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyDn','CmCopyAll','CmEnable','CmDisable','CmUnlock','CmResetPwd','CmGroups','CmMove','CmEdit') {
-        $mi = $cmGrid.FindName($n); if ($mi) { $mi.IsEnabled = $has }
+    $multi = ($GridUsers.SelectedItems.Count -gt 1)
+    if ($multi) {
+        # Multi-selection: only bulk actions (Enable / Disable / Move) apply
+        foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyMail','CmCopyUpn','CmCopyDn','CmCopyAll','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmEdit','CmRename','CmDelete') {
+            $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $false }
+        }
+        foreach ($n in 'CmEnable','CmDisable','CmMove') {
+            $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $true }
+        }
+        # Bulk add-to-groups is available for users (not in computers mode)
+        $mi = Get-CmItem('CmGroups')
+        if ($mi) { $mi.IsEnabled = (-not [bool]$RbComputers.IsChecked) }
+        $mi = Get-CmItem('CmPwdNoExpire'); if ($mi) { $mi.IsChecked = $false }
+        return
     }
-    $mi = $cmGrid.FindName('CmCopyMail'); if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u.Mail)) }
-    $mi = $cmGrid.FindName('CmCopyUpn');  if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u._AD.UserPrincipalName)) }
+    foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyDn','CmCopyAll','CmEnable','CmDisable','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmMove','CmEdit','CmRename','CmDelete') {
+        $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $has }
+    }
+    $mi = Get-CmItem('CmCopyMail'); if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u.Mail)) }
+    $mi = Get-CmItem('CmCopyUpn');  if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u._AD.UserPrincipalName)) }
+    # Reflect the current flag state on the checkable item
+    $mi = Get-CmItem('CmPwdNoExpire')
+    if ($mi) { $mi.IsChecked = ($has -and -not $u._IsComputer -and [bool]$u._AD.PasswordNeverExpires) }
 })
-$cmGrid.FindName('CmCopyLogin').Add_Click({ $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.SamAccountName) } })
-$cmGrid.FindName('CmCopyName').Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Name) } })
-$cmGrid.FindName('CmCopyMail').Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Mail) } })
-$cmGrid.FindName('CmCopyUpn').Add_Click(  { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u._AD.UserPrincipalName) } })
-$cmGrid.FindName('CmCopyDn').Add_Click(   { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.DistinguishedName) } })
-$cmGrid.FindName('CmCopyAll').Add_Click(  { if ($Script:PropRows) { Set-ClipboardText ($Script:PropRows -join "`r`n") } })
-$cmGrid.FindName('CmEnable').Add_Click(   { $BtnEnable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmDisable').Add_Click(  { $BtnDisable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmUnlock').Add_Click(   { $BtnUnlock.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmResetPwd').Add_Click( { $BtnResetPwd.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmGroups').Add_Click(   { $BtnGroups.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmMove').Add_Click(     { $BtnMove.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-$cmGrid.FindName('CmEdit').Add_Click(     { $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) })
-
+$mi = Get-CmItem 'CmCopyLogin'; if ($mi) { $mi.Add_Click({ $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.SamAccountName) } }) }
+$mi = Get-CmItem 'CmCopyName'; if ($mi) { $mi.Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Name) } }) }
+$mi = Get-CmItem 'CmCopyMail'; if ($mi) { $mi.Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Mail) } }) }
+$mi = Get-CmItem 'CmCopyUpn'; if ($mi) { $mi.Add_Click(  { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u._AD.UserPrincipalName) } }) }
+$mi = Get-CmItem 'CmCopyDn'; if ($mi) { $mi.Add_Click(   { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.DistinguishedName) } }) }
+$mi = Get-CmItem 'CmCopyAll'; if ($mi) { $mi.Add_Click(  { if ($Script:PropRows) { Set-ClipboardText ($Script:PropRows -join "`r`n") } }) }
+$mi = Get-CmItem 'CmEnable'; if ($mi) { $mi.Add_Click(   { $BtnEnable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmDisable'; if ($mi) { $mi.Add_Click(  { $BtnDisable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmUnlock'; if ($mi) { $mi.Add_Click(   { $BtnUnlock.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmResetPwd'; if ($mi) { $mi.Add_Click( { $BtnResetPwd.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmPwdNoExpire'; if ($mi) { $mi.Add_Click({ $BtnPwdNoExpire.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmGroups'; if ($mi) { $mi.Add_Click(   { $BtnGroups.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmMove'; if ($mi) { $mi.Add_Click(     { $BtnMove.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmEdit'; if ($mi) { $mi.Add_Click(     { $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmRename'; if ($mi) { $mi.Add_Click(   { $BtnRename.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmDelete'; if ($mi) { $mi.Add_Click(   { $BtnDelete.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 # Initial load: OU tree (selecting the root triggers the search)
 $MainWin.Add_ContentRendered({ Load-OUTree })
 
