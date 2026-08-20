@@ -33,14 +33,277 @@ import datetime
 import subprocess
 import importlib
 
+
+# ============================================================================
+#  Localization (EN / RU)
+# ============================================================================
+LANG = 'en'   # current interface language: 'en' or 'ru'
+
+def T(s):
+    """Translate an interface string into the current language."""
+    if LANG == 'ru':
+        return RU_STRINGS.get(s, s)
+    return s
+
+
+def set_lang(lang):
+    global LANG
+    LANG = 'ru' if lang == 'ru' else 'en'
+
+
+RU_STRINGS = {
+    "Tkinter module not found (required for the GUI).\nInstall it: brew install python-tk, or use Python from python.org.\n": "Не найден модуль Tkinter (нужен для графического интерфейса).\nУстановите его: brew install python-tk  — либо используйте Python с python.org.\n",
+    "Checking dependencies": "Проверка зависимостей",
+    "Missing components: {a0}\n\nInstalling, please wait…": "Не установлены компоненты: {a0}\n\nВыполняется установка, подождите…",
+    "Installing component: {a0}\nPlease wait…": "Устанавливается компонент: {a0}\nПодождите…",
+    "Failed to install dependencies": "Не удалось установить зависимости",
+    "Could not install automatically: ": "Не удалось автоматически установить: ",
+    "\n\nInstall manually in a terminal:\n    pip3 install ": "\n\nУстановите вручную в терминале:\n    pip3 install ",
+    "\n\nIf pip is not found:\n    python3 -m ensurepip --upgrade": "\n\nЕсли pip не найден:\n    python3 -m ensurepip --upgrade",
+    "No active session to switch domains.": "Нет активной сессии для смены домена.",
+    "Locked": "Заблокирован",
+    "Disabled": "Отключено",
+    "Active": "Активна",
+    "Password reset requires a secure connection (LDAPS). Reconnect using LDAPS (port 636).": "Сброс пароля требует защищённого соединения (LDAPS). Переподключитесь по LDAPS (порт 636).",
+    "Group '{a0}' not found.": "Группа '{a0}' не найдена.",
+    "User created, but the password cannot be set without LDAPS. Reconnect using LDAPS to set the password.": "Пользователь создан, но задать пароль без LDAPS нельзя. Переподключитесь по LDAPS для установки пароля.",
+    "never / not set": "никогда / не задано",
+    "never": "никогда",
+    "at next logon (change required)": "при следующем входе (требуется смена)",
+    "never (password does not expire)": "никогда (пароль не истекает)",
+    " (expired)": " (просрочен)",
+    "Connect to Active Directory": "Подключение к Active Directory",
+    "Connect to the Active Directory domain": "Подключение к домену Active Directory",
+    "Saved domain:": "Сохранённый домен:",
+    "Server / DC:": "Сервер / DC:",
+    "User:": "Пользователь:",
+    "Password:": "Пароль:",
+    "LDAPS (encryption, port 636)": "LDAPS (шифрование, порт 636)",
+    "Validate server certificate": "Проверять сертификат сервера",
+    "Save domain to the list": "Сохранить домен в список",
+    "Connect": "Подключиться",
+    "Cancel": "Отмена",
+    "Remove domain": "Удаление домена",
+    "Remove '{a0}' from the list?": "Удалить '{a0}' из списка?",
+    "Fill in server, user, and password.": "Заполните сервер, пользователя и пароль.",
+    "Connecting...": "Подключение...",
+    "Failed to connect: {a0}": "Не удалось подключиться: {a0}",
+    "Error: {a0}": "Ошибка: {a0}",
+    "Search:": "Поиск:",
+    "Find": "Найти",
+    "Refresh": "Обновить",
+    "Create user": "Создание пользователя",
+    "Domain:": "Домен:",
+    "Switch domain": "Сменить домен",
+    "Show:": "Показывать:",
+    "Users": "Пользователи",
+    "Computers": "Компьютеры",
+    "Show from nested OUs": "Показывать из вложенных OU",
+    "No domain selected": "Домен не выбран",
+    "Select from the list or enter a domain/controller.": "Выберите из списка или введите домен/контроллер.",
+    "Access error": "Ошибка доступа",
+    "Failed to connect to domain \"{a0}\" with the current account ({a1}).\n\nInsufficient rights or the domain is unavailable:\n{a2}": "Не удалось подключиться к домену «{a0}» под текущей учётной записью ({a1}).\n\nНедостаточно прав или домен недоступен:\n{a2}",
+    "Domain changed": "Домен изменён",
+    "Connected to domain \"{a0}\" as {a1}.": "Подключено к домену «{a0}» под учётной записью {a1}.",
+    "Organizational units": "Подразделения",
+    "User properties": "Свойства пользователя",
+    "Actions": "Действия",
+    "Name": "Имя",
+    "DNS name": "DNS-имя",
+    "Operating system": "Операционная система",
+    "Description": "Описание",
+    "State": "Состояние",
+    "Login": "Логин",
+    "Enable": "Включить",
+    "Disable": "Отключить",
+    "Rename...": "Переименовать...",
+    "Move (OU)": "Переместить (OU)",
+    "Edit...": "Изменить...",
+    "Delete": "Удалить",
+    "Unlock": "Разблокировать",
+    "Reset password": "Сброс пароля",
+    "Pwd never expires": "Бессрочный пароль",
+    "Groups...": "Группы...",
+    "Computer properties": "Свойства компьютера",
+    "Connected: {a0} ({a1})   |   Base: {a2}": "Подключено: {a0} ({a1})   |   База: {a2}",
+    "domain": "домен",
+    " (+nested)": " (+вложенные)",
+    "Found: {a0}  |  scope: {a1}": "Найдено: {a0}  |  область: {a1}",
+    "Search error": "Ошибка поиска",
+    "No user selected": "Не выбран пользователь",
+    "Select a user in the list first.": "Сначала выберите пользователя в списке.",
+    "Multiple objects selected": "Выбрано несколько объектов",
+    "This action applies to a single object.\nSelect exactly one item in the list.": "Это действие применимо к одному объекту.\nВыберите ровно один элемент списка.",
+    "Selected objects: {a0}\n\nAvailable bulk actions:\n  Enable / Disable / Move (OU)\n  Add to groups (users)": "Выбрано объектов: {a0}\n\nДоступные групповые действия:\n  Включить / Отключить / Переместить (OU)\n  Добавить в группы (пользователи)",
+    "Display name": "Отображаемое имя",
+    "First name": "Имя",
+    "Last name": "Фамилия",
+    "Yes": "Да",
+    "No": "Нет",
+    "Title": "Должность",
+    "Department": "Отдел",
+    "Company": "Компания",
+    "Office": "Кабинет",
+    "Phone": "Телефон",
+    "Password last set": "Пароль изменён",
+    "Password never expires": "Срок действия пароля не ограничен",
+    "Password change required": "Требуется смена пароля",
+    "Bad password attempts": "Неверных попыток входа",
+    "Last bad password": "Последний неверный ввод",
+    "Last logon": "Последний вход",
+    "Created": "Создан",
+    "Expires": "Истекает",
+    "Account name": "Имя учётной записи",
+    "OS version": "Версия ОС",
+    "Copied to clipboard": "Скопировано в буфер обмена",
+    "Selected: {a0}": "Выбрано: {a0}",
+    "Move (OU)...": "Переместить (OU)...",
+    "Add to groups...": "Добавить в группы...",
+    "Copy rows": "Копировать строки",
+    "Copy login": "Копировать логин",
+    "Copy display name": "Копировать отображаемое имя",
+    "Copy e-mail": "Копировать e-mail",
+    "Copy UPN": "Копировать UPN",
+    "Copy DN": "Копировать DN",
+    "Copy all properties": "Копировать все свойства",
+    "Reset password...": "Сбросить пароль...",
+    "Password never expires  ✓": "Срок действия пароля не ограничен  ✓",
+    "Copy name": "Копировать имя",
+    "Copy DNS name": "Копировать DNS-имя",
+    "Copy account name": "Копировать имя учётной записи",
+    "Copy selection": "Копировать выделенное",
+    "Copy value ({a0})": "Копировать значение ({a0})",
+    "Partially completed": "Выполнено частично",
+    "{a0}: {a1} of {a2}.\n\nErrors:\n": "{a0}: {a1} из {a2}.\n\nОшибки:\n",
+    "Done": "Готово",
+    "No object selected": "Не выбран объект",
+    "Select one or more objects in the list.": "Выберите один или несколько объектов в списке.",
+    "Account enabled.": "Учётная запись включена.",
+    "Error": "Ошибка",
+    "Confirm": "Подтверждение",
+    "Enable {a0} accounts?": "Включить учётные записи: {a0}?",
+    "Enabled": "Включено",
+    "Disable account '{a0}'?": "Отключить учётную запись '{a0}'?",
+    "Account disabled.": "Учётная запись отключена.",
+    "Disable {a0} accounts?": "Отключить учётные записи: {a0}?",
+    "Account unlocked.": "Учётная запись разблокирована.",
+    "Clear the 'password never expires' flag for '{a0}'?\n\nThe password will expire per the domain policy.": "Снять флаг «срок действия пароля не ограничен» у '{a0}'?\n\nПароль будет истекать по политике домена.",
+    "Set the 'password never expires' flag for '{a0}'?\n\nIf a password change at next logon is pending, the requirement will be removed and the current password stays valid (same as in ADUC).": "Установить флаг «срок действия пароля не ограничен» у '{a0}'?\n\nЕсли у пользователя стоит требование смены пароля при следующем входе, оно будет снято, и прежний пароль останется действительным (как в оснастке ADUC).",
+    "Flag cleared: the password expires per the domain policy.": "Флаг снят: пароль истекает по политике домена.",
+    "Flag set: the password never expires.": "Флаг установлен: срок действия пароля не ограничен.",
+    "\n\nThe 'change password at next logon' requirement was removed; the current password stays valid.": "\n\nТребование смены пароля при следующем входе снято; прежний пароль остаётся действительным.",
+    "Select one or more users in the list.": "Выберите одного или нескольких пользователей в списке.",
+    "Add to groups": "Добавление в группы",
+    "Add {a0} users to {a1} group(s)?\n\nGroups: {a2}": "Добавить пользователей ({a0}) в группы ({a1})?\n\nГруппы: {a2}",
+    "Added: {a0}.": "Добавлено: {a0}.",
+    "\nAlready members (skipped): {a0}.": "\nУже состояли (пропущено): {a0}.",
+    "\n\nErrors:\n": "\n\nОшибки:\n",
+    "Confirm deletion": "Подтверждение удаления",
+    "Delete object '{a0}'?\n\nThis operation is irreversible.": "Удалить объект «{a0}»?\n\nЭта операция необратима.",
+    "Object deleted.": "Объект удалён.",
+    "User: {a0} ({a1})": "Пользователь: {a0} ({a1})",
+    "New password:": "Новый пароль:",
+    "Confirm:": "Подтверждение:",
+    "Change password at next logon": "Сменить пароль при следующем входе",
+    "Unlock the account": "Разблокировать учётную запись",
+    "Apply": "Применить",
+    "Enter a new password.": "Введите новый пароль.",
+    "Passwords do not match.": "Пароли не совпадают.",
+    "Password reset.": "Пароль сброшен.",
+    "Move to organizational unit": "Перемещение в подразделение",
+    "Object: {a0} ({a1})": "Объект: {a0} ({a1})",
+    "Objects selected: {a0} ({a1})": "Выбрано объектов: {a0} ({a1})",
+    "(objects are in different containers)": "(объекты в разных контейнерах)",
+    "Current location:": "Текущее размещение:",
+    "Target container (OU):": "Целевой контейнер (OU):",
+    "Browse…": "Обзор…",
+    "Move": "Переместить",
+    "Specify a target container.": "Укажите целевой контейнер.",
+    "Object moved.": "Объект перемещён.",
+    "Moved: {a0} of {a1}.\n\nErrors:\n": "Перемещено: {a0} из {a1}.\n\nОшибки:\n",
+    "Objects moved: {a0}.": "Объектов перемещено: {a0}.",
+    "Rename object": "Переименование объекта",
+    "Object: {a0}": "Объект: {a0}",
+    "New name:": "Новое имя:",
+    "Rename": "Переименовать",
+    "Enter a name.": "Введите имя.",
+    "Object renamed.": "Объект переименован.",
+    "Select groups": "Выбор групп доступа",
+    "Filter:": "Фильтр:",
+    "Groups from OU \"{a0}\"": "Группы из подразделения «{a0}»",
+    "Domain groups": "Группы домена",
+    "{a0} (Cmd-click — multi-select):": "{a0} (Cmd-клик — множественный выбор):",
+    "Select": "Выбрать",
+    "(no groups found)": "(групп не найдено)",
+    "Group membership": "Членство в группах",
+    "Groups: {a0} ({a1})": "Группы: {a0} ({a1})",
+    "Add...": "Добавить...",
+    "Remove selected": "Убрать выбранные",
+    "Close": "Закрыть",
+    "Remove from the selected groups ({a0})?": "Удалить из выбранных групп ({a0})?",
+    "Edit computer": "Изменить компьютер",
+    "Name:": "Имя:",
+    "DNS name:": "DNS-имя:",
+    "Description:": "Описание:",
+    "Save": "Сохранить",
+    "Edit properties": "Изменение свойств",
+    "Group membership (Member Of)": "Группы доступа (Member Of)",
+    "Changes saved.": "Изменения сохранены.",
+    "Select organizational unit (OU)": "Выбор подразделения (OU)",
+    "January": "Январь",
+    "February": "Февраль",
+    "March": "Март",
+    "April": "Апрель",
+    "May": "Май",
+    "June": "Июнь",
+    "July": "Июль",
+    "August": "Август",
+    "September": "Сентябрь",
+    "October": "Октябрь",
+    "November": "Ноябрь",
+    "December": "Декабрь",
+    "Mon": "Пн",
+    "Tue": "Вт",
+    "Wed": "Ср",
+    "Thu": "Чт",
+    "Fri": "Пт",
+    "Sat": "Сб",
+    "Sun": "Вс",
+    "Select date": "Выбор даты",
+    "First name:": "Имя:",
+    "Last name:": "Фамилия:",
+    "Display name:": "Отображаемое имя:",
+    "Login (sAMAccountName):": "Логин (sAMAccountName):",
+    "UPN suffix:": "UPN-суффикс:",
+    "Organizational unit (OU):": "Подразделение (OU):",
+    "Expires:": "Срок действия:",
+    "Valid through (incl.):": "Действует по (вкл.):",
+    "Groups on creation": "Группы доступа при создании",
+    "Select groups...": "Выбрать группы...",
+    "Account enabled": "Учётная запись включена",
+    "Create": "Создать",
+    "Default groups not found: ": "Не найдены группы по умолчанию: ",
+    "Specify a login (sAMAccountName).": "Укажите логин (sAMAccountName).",
+    "Specify a password.": "Укажите пароль.",
+    "Expiration: enter a date in {a0} format.": "Срок действия: укажите дату в формате {a0}.",
+    "A user with login \"{a0}\" already exists in the domain.": "Пользователь с логином «{a0}» уже существует в домене.",
+    "User created, but not added to all groups": "Пользователь создан, но не во все группы",
+    "User created.": "Пользователь создан.",
+    "Cut": "Вырезать",
+    "Copy": "Копировать",
+    "Paste": "Вставить",
+    "Select All": "Выделить всё",
+    "Edit": "Правка"
+}
+
+
 # Tkinter is required for the GUI
 try:
     import tkinter as tk
     from tkinter import ttk, messagebox, simpledialog
 except ImportError:
     sys.stderr.write(
-        "Tkinter module not found (required for the GUI).\n"
-        "Install it: brew install python-tk, or use Python from python.org.\n")
+        T('Tkinter module not found (required for the GUI).\nInstall it: brew install python-tk, or use Python from python.org.\n'))
     raise SystemExit(1)
 
 
@@ -83,19 +346,19 @@ def ensure_dependencies():
 
     # Small notification window shown during installation
     splash = tk.Tk()
-    splash.title("Checking dependencies")
+    splash.title(T('Checking dependencies'))
     splash.geometry("420x150")
     splash.resizable(False, False)
     names = ", ".join(p for _, p in missing)
     lbl = tk.Label(
         splash, padx=20, pady=20, justify="left", font=("", 13),
-        text=f"Missing components: {names}\n\nInstalling, please wait…")
+        text=T('Missing components: {a0}\n\nInstalling, please wait…').format(a0=(names)))
     lbl.pack(expand=True, fill="both")
     splash.update()
 
     still_missing = []
     for mod_name, pip_name in missing:
-        lbl.config(text=f"Installing component: {pip_name}\nPlease wait…")
+        lbl.config(text=T('Installing component: {a0}\nPlease wait…').format(a0=(pip_name)))
         splash.update()
         ok = _pip_install(pip_name)
         importlib.invalidate_caches()
@@ -114,12 +377,8 @@ _failed = ensure_dependencies()
 if _failed:
     _r = tk.Tk(); _r.withdraw()
     messagebox.showerror(
-        "Failed to install dependencies",
-        "Could not install automatically: " + ", ".join(_failed) + "\n\n"
-        "Install manually in a terminal:\n"
-        "    pip3 install " + " ".join(_failed) + "\n\n"
-        "If pip is not found:\n"
-        "    python3 -m ensurepip --upgrade")
+        T('Failed to install dependencies'),
+        T('Could not install automatically: ') + ", ".join(_failed) + T('\n\nInstall manually in a terminal:\n    pip3 install ') + " ".join(_failed) + T('\n\nIf pip is not found:\n    python3 -m ensurepip --upgrade'))
     raise SystemExit(1)
 
 from ldap3 import (
@@ -171,18 +430,37 @@ class ConfigStore:
         self.path = path or os.path.join(
             os.path.expanduser("~"), ".aduc_ext_domains.json")
 
-    def load(self):
+    def _read(self):
         try:
             with open(self.path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-            return data.get('domains', []) if isinstance(data, dict) else []
+            return data if isinstance(data, dict) else {}
         except Exception:
-            return []
+            return {}
+
+    def load(self):
+        return self._read().get('domains', [])
 
     def save(self, domains):
+        data = self._read()
+        data['domains'] = domains
         try:
             with open(self.path, 'w', encoding='utf-8') as f:
-                json.dump({'domains': domains}, f, ensure_ascii=False, indent=2)
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        except Exception:
+            pass
+
+    def get_lang(self):
+        """Saved interface language ('en'/'ru') or None."""
+        lang = self._read().get('lang')
+        return lang if lang in ('en', 'ru') else None
+
+    def set_lang(self, lang):
+        data = self._read()
+        data['lang'] = 'ru' if lang == 'ru' else 'en'
+        try:
+            with open(self.path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
         except Exception:
             pass
 
@@ -277,7 +555,7 @@ class ADClient:
         """Reconnect to another domain/controller using the credentials
         of the current session. Raises on failure (no access/rights)."""
         if not self.username:
-            raise RuntimeError("No active session to switch domains.")
+            raise RuntimeError(T('No active session to switch domains.'))
         if use_ssl is None:
             use_ssl = self._use_ssl
         if verify_cert is None:
@@ -362,11 +640,11 @@ class ADClient:
         enabled = not (uac & UAC_DISABLED)
         locked = bool(computed & UF_LOCKOUT)
         if locked:
-            state = "Locked"
+            state = T('Locked')
         elif not enabled:
-            state = "Disabled"
+            state = T('Disabled')
         else:
-            state = "Active"
+            state = T('Active')
 
         return {
             'name': v('displayName') or str(e.entry_dn).split(',')[0][3:],
@@ -558,8 +836,7 @@ class ADClient:
                        change_at_logon=True):
         if not self.is_ssl():
             raise RuntimeError(
-                "Password reset requires a secure connection (LDAPS). "
-                "Reconnect using LDAPS (port 636).")
+                T('Password reset requires a secure connection (LDAPS). Reconnect using LDAPS (port 636).'))
         # Administrative password reset: replace unicodePwd
         pwd_val = ('"%s"' % new_password).encode('utf-16-le')
         self.conn.modify(dn, {'unicodePwd': [(MODIFY_REPLACE, [pwd_val])]})
@@ -620,7 +897,7 @@ class ADClient:
         except (ValueError, TypeError):
             uac = 0
         enabled = not (uac & UAC_DISABLED)
-        state = "Active" if enabled else "Disabled"
+        state = T('Active') if enabled else T('Disabled')
 
         name = v('name') or v('cn') or str(e.entry_dn).split(',')[0][3:]
         os_name = v('operatingSystem')
@@ -662,7 +939,7 @@ class ADClient:
     def add_to_group(self, user_dn, group_name):
         gdn = self.find_group_dn(group_name)
         if not gdn:
-            raise RuntimeError(f"Group '{group_name}' not found.")
+            raise RuntimeError(T("Group '{a0}' not found.").format(a0=(group_name)))
         self.conn.modify(gdn, {'member': [(MODIFY_ADD, [user_dn])]})
         self._check()
 
@@ -730,8 +1007,7 @@ class ADClient:
         if password:
             if not self.is_ssl():
                 raise RuntimeError(
-                    "User created, but the password cannot be set without LDAPS. "
-                    "Reconnect using LDAPS to set the password.")
+                    T('User created, but the password cannot be set without LDAPS. Reconnect using LDAPS to set the password.'))
             pwd_val = ('"%s"' % password).encode('utf-16-le')
             self.conn.modify(dn, {'unicodePwd': [(MODIFY_REPLACE, [pwd_val])]})
             self._check()
@@ -777,32 +1053,47 @@ def _escape_dn(s):
     return s
 
 
-# Lowercase English month abbreviations for the YYYY-mmm-DD date format.
-MONTH_ABBR = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
-              'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
-DATE_HINT = "YYYY-MMM-DD"
+MONTH_ABBR_EN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+MONTH_ABBR_RU = ['янв', 'фев', 'мар', 'апр', 'май', 'июн',
+                 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек']
+
+
+def _month_abbr():
+    """Month abbreviations for the current language."""
+    return MONTH_ABBR_RU if LANG == 'ru' else MONTH_ABBR_EN
+
+
+def date_hint():
+    """Date format hint for the current language."""
+    return "ДД МММ ГГГГ" if LANG == 'ru' else "YYYY-MMM-DD"
 
 
 def fmt_date(dt, with_time=True):
     """Format a date/datetime as YYYY-mmm-DD (e.g. 2026-aug-14)."""
-    s = f"{dt.year:04d}-{MONTH_ABBR[dt.month - 1]}-{dt.day:02d}"
+    if LANG == 'ru':
+        s = f"{dt.day:02d} {_month_abbr()[dt.month - 1]} {dt.year:04d}"
+    else:
+        s = f"{dt.year:04d}-{_month_abbr()[dt.month - 1]}-{dt.day:02d}"
     if with_time and isinstance(dt, datetime.datetime):
         s += f" {dt.hour:02d}:{dt.minute:02d}"
     return s
 
 
 def parse_date(txt):
-    """Parse a YYYY-mmm-DD (or YYYY-MM-DD) string into a datetime.date."""
-    parts = txt.strip().lower().split('-')
+    """Parse a date string in the current language format into datetime.date."""
+    parts = txt.strip().lower().replace('-', ' ').replace('.', ' ').split()
     if len(parts) != 3:
         raise ValueError("bad date")
-    year = int(parts[0])
     mon_part = parts[1]
     if mon_part.isdigit():
         month = int(mon_part)
     else:
-        month = MONTH_ABBR.index(mon_part[:3]) + 1
-    day = int(parts[2])
+        month = _month_abbr().index(mon_part[:3]) + 1
+    if LANG == 'ru':
+        day, year = int(parts[0]), int(parts[2])
+    else:
+        year, day = int(parts[0]), int(parts[2])
     return datetime.date(year, month, day)
 
 
@@ -817,9 +1108,9 @@ def filetime_to_str(val):
     except (ValueError, TypeError):
         return str(val)
     if num == 0:
-        return 'never / not set'
+        return T('never / not set')
     if num >= 0x7FFFFFFFFFFFFFFF:
-        return 'never'
+        return T('never')
     try:
         secs = num / 10_000_000 - 11644473600
         return fmt_date(datetime.datetime.fromtimestamp(secs))
@@ -841,9 +1132,9 @@ def pwd_expiry_text(u):
     except (TypeError, ValueError):
         pls_i = None
     if pls_i == 0:
-        return "at next logon (change required)"
+        return T('at next logon (change required)')
     if u.get('dontExpire'):
-        return "never (password does not expire)"
+        return T('never (password does not expire)')
     exp = u.get('pwdExpiry')
     try:
         n = int(exp)
@@ -852,13 +1143,13 @@ def pwd_expiry_text(u):
     if n == 0:
         return ''
     if n >= 0x7FFFFFFFFFFFFFFF:
-        return "never"
+        return T('never')
     txt = filetime_to_str(n)
     # Mark if the date has already passed
     try:
         secs = n / 10_000_000 - 11644473600
         if datetime.datetime.fromtimestamp(secs) < datetime.datetime.now():
-            txt += " (expired)"
+            txt += T(' (expired)')
     except (ValueError, OverflowError, OSError):
         pass
     return txt
@@ -894,19 +1185,22 @@ class LoginDialog(tk.Toplevel):
         self.client = client
         self.config = config
         self.success = False
-        self.title("Connect to Active Directory")
+        self.title(T('Connect to Active Directory'))
         self.resizable(False, False)
-        self.grab_set()
+        # Take the grab and focus only after the window is actually mapped:
+        # an immediate grab_set() on a not-yet-visible window silently fails
+        # (fields would ignore input, e.g. after a language switch).
+        self.after(150, self._grab_focus)
 
         frm = ttk.Frame(self, padding=18)
         frm.grid()
 
-        ttk.Label(frm, text="Connect to the Active Directory domain",
+        ttk.Label(frm, text=T('Connect to the Active Directory domain'),
                   font=('', 13, 'bold')).grid(row=0, column=0, columnspan=2,
                                               sticky='w', pady=(0, 12))
 
         # Saved-domain selection
-        ttk.Label(frm, text="Saved domain:").grid(row=1, column=0,
+        ttk.Label(frm, text=T('Saved domain:')).grid(row=1, column=0,
                                                        sticky='w', pady=4)
         dom_row = ttk.Frame(frm)
         dom_row.grid(row=1, column=1, sticky='ew', pady=4)
@@ -916,30 +1210,30 @@ class LoginDialog(tk.Toplevel):
         ttk.Button(dom_row, text="✕", width=3,
                    command=self._delete_profile).grid(row=0, column=1, padx=(4, 0))
 
-        ttk.Label(frm, text="Server / DC:").grid(row=2, column=0, sticky='w', pady=4)
+        ttk.Label(frm, text=T('Server / DC:')).grid(row=2, column=0, sticky='w', pady=4)
         self.e_host = ttk.Entry(frm, width=34)
         self.e_host.grid(row=2, column=1, pady=4)
 
-        ttk.Label(frm, text="User:").grid(row=3, column=0, sticky='w', pady=4)
+        ttk.Label(frm, text=T('User:')).grid(row=3, column=0, sticky='w', pady=4)
         self.e_user = ttk.Entry(frm, width=34)
         self.e_user.grid(row=3, column=1, pady=4)
 
-        ttk.Label(frm, text="Password:").grid(row=4, column=0, sticky='w', pady=4)
+        ttk.Label(frm, text=T('Password:')).grid(row=4, column=0, sticky='w', pady=4)
         self.e_pass = ttk.Entry(frm, width=34, show='•')
         self.e_pass.grid(row=4, column=1, pady=4)
 
         self.use_ssl = tk.BooleanVar(value=True)
-        ttk.Checkbutton(frm, text="LDAPS (encryption, port 636)",
+        ttk.Checkbutton(frm, text=T('LDAPS (encryption, port 636)'),
                         variable=self.use_ssl).grid(
             row=5, column=1, sticky='w', pady=(8, 0))
 
         self.verify = tk.BooleanVar(value=False)
-        ttk.Checkbutton(frm, text="Validate server certificate",
+        ttk.Checkbutton(frm, text=T('Validate server certificate'),
                         variable=self.verify).grid(
             row=6, column=1, sticky='w')
 
         self.save_domain = tk.BooleanVar(value=True)
-        ttk.Checkbutton(frm, text="Save domain to the list",
+        ttk.Checkbutton(frm, text=T('Save domain to the list'),
                         variable=self.save_domain).grid(
             row=7, column=1, sticky='w')
 
@@ -949,11 +1243,19 @@ class LoginDialog(tk.Toplevel):
                              pady=(10, 0))
 
         btns = ttk.Frame(frm)
-        btns.grid(row=9, column=0, columnspan=2, sticky='e', pady=(14, 0))
-        ttk.Button(btns, text="Connect",
-                   command=self._connect).grid(row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel",
-                   command=self._cancel).grid(row=0, column=1)
+        btns.grid(row=9, column=0, columnspan=2, sticky='ew', pady=(14, 0))
+        btns.columnconfigure(1, weight=1)
+        # Interface language switcher (reopens the dialog)
+        self.relaunch = False
+        self.cmb_lang = ttk.Combobox(btns, width=4, state='readonly',
+                                     values=('EN', 'RU'))
+        self.cmb_lang.set('RU' if LANG == 'ru' else 'EN')
+        self.cmb_lang.grid(row=0, column=0, sticky='w')
+        self.cmb_lang.bind('<<ComboboxSelected>>', self._switch_lang)
+        ttk.Button(btns, text=T('Connect'),
+                   command=self._connect).grid(row=0, column=2, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'),
+                   command=self._cancel).grid(row=0, column=3)
 
         # Load the domain list
         self._profiles = self.config.load() if self.config else []
@@ -1001,8 +1303,8 @@ class LoginDialog(tk.Toplevel):
             return
         d = self._profiles[i]
         if not messagebox.askyesno(
-                "Remove domain",
-                f"Remove '{self._profile_label(d)}' from the list?"):
+                T('Remove domain'),
+                T("Remove '{a0}' from the list?").format(a0=(self._profile_label(d)))):
             return
         self._profiles = self.config.remove(d.get('host'))
         self.cmb_domain.set('')
@@ -1013,9 +1315,9 @@ class LoginDialog(tk.Toplevel):
         user = self.e_user.get().strip()
         pwd = self.e_pass.get()
         if not host or not user or not pwd:
-            self.lbl_status.config(text="Fill in server, user, and password.")
+            self.lbl_status.config(text=T('Fill in server, user, and password.'))
             return
-        self.lbl_status.config(text="Connecting...")
+        self.lbl_status.config(text=T('Connecting...'))
         self.update_idletasks()
         try:
             self.client.connect(
@@ -1033,12 +1335,44 @@ class LoginDialog(tk.Toplevel):
             self.success = True
             self.destroy()
         except LDAPException as ex:
-            self.lbl_status.config(text=f"Failed to connect: {ex}")
+            self.lbl_status.config(text=T('Failed to connect: {a0}').format(a0=(ex)))
         except Exception as ex:
-            self.lbl_status.config(text=f"Error: {ex}")
+            self.lbl_status.config(text=T('Error: {a0}').format(a0=(ex)))
 
     def _cancel(self):
         self.success = False
+        self.destroy()
+
+    def _grab_focus(self):
+        """Deferred grab/focus once the window is mapped."""
+        try:
+            self.deiconify()
+            self.lift()
+            self.focus_force()
+            self.grab_set()
+            if not self.e_host.get().strip():
+                self.e_host.focus_set()
+            elif not self.e_user.get().strip():
+                self.e_user.focus_set()
+            else:
+                self.e_pass.focus_set()
+        except Exception:
+            pass
+
+    def _switch_lang(self, event=None):
+        """Change the interface language and reopen the login dialog."""
+        new = 'ru' if self.cmb_lang.get() == 'RU' else 'en'
+        if new == LANG:
+            return
+        set_lang(new)
+        if self.config:
+            self.config.set_lang(new)
+        self.success = False
+        self.relaunch = True
+        try:
+            self.grab_release()
+        except Exception:
+            pass
         self.destroy()
 
 
@@ -1075,37 +1409,44 @@ class MainWindow(ttk.Frame):
         bar = ttk.Frame(self, padding=8)
         bar.grid(row=0, column=0, sticky='ew')
         bar.columnconfigure(5, weight=1)  # spacer between search and domain
-        ttk.Label(bar, text="Search:").grid(row=0, column=0, padx=(0, 6))
+        ttk.Label(bar, text=T('Search:')).grid(row=0, column=0, padx=(0, 6))
         self.e_search = ttk.Entry(bar, width=34)
         self.e_search.grid(row=0, column=1)
         self.e_search.bind('<Return>', lambda e: self.do_search())
-        ttk.Button(bar, text="Find", command=self.do_search).grid(
+        ttk.Button(bar, text=T('Find'), command=self.do_search).grid(
             row=0, column=2, padx=6)
-        ttk.Button(bar, text="Refresh", command=self.do_search).grid(
+        ttk.Button(bar, text=T('Refresh'), command=self.do_search).grid(
             row=0, column=3)
-        self.btn_create = ttk.Button(bar, text="Create user",
+        self.btn_create = ttk.Button(bar, text=T('Create user'),
                                      command=self.on_create)
         self.btn_create.grid(row=0, column=4, padx=(20, 0))
 
         # Domain switcher (right)
-        ttk.Label(bar, text="Domain:").grid(row=0, column=6, padx=(0, 6))
+        ttk.Label(bar, text=T('Domain:')).grid(row=0, column=6, padx=(0, 6))
         self.cmb_dom = ttk.Combobox(bar, width=24)  # editable: a new one can be typed
         self.cmb_dom.grid(row=0, column=7)
         self.cmb_dom.bind('<Return>', lambda e: self.on_switch_domain())
-        ttk.Button(bar, text="Switch domain",
+        ttk.Button(bar, text=T('Switch domain'),
                    command=self.on_switch_domain).grid(row=0, column=8, padx=(6, 0))
         self._domain_profiles = []
         self._reload_domains()
+
+        # Interface language switcher
+        self.cmb_lang = ttk.Combobox(bar, width=4, state='readonly',
+                                     values=('EN', 'RU'))
+        self.cmb_lang.set('RU' if LANG == 'ru' else 'EN')
+        self.cmb_lang.grid(row=0, column=9, padx=(10, 0))
+        self.cmb_lang.bind('<<ComboboxSelected>>', self._switch_lang)
 
         # Object type: users / computers
         self.mode_var = tk.StringVar(value='users')
         mode_row = ttk.Frame(bar)
         mode_row.grid(row=1, column=0, columnspan=5, sticky='w', pady=(6, 0))
-        ttk.Label(mode_row, text="Show:").grid(row=0, column=0, padx=(0, 6))
-        ttk.Radiobutton(mode_row, text="Users", value='users',
+        ttk.Label(mode_row, text=T('Show:')).grid(row=0, column=0, padx=(0, 6))
+        ttk.Radiobutton(mode_row, text=T('Users'), value='users',
                         variable=self.mode_var,
                         command=self.on_mode_change).grid(row=0, column=1)
-        ttk.Radiobutton(mode_row, text="Computers", value='computers',
+        ttk.Radiobutton(mode_row, text=T('Computers'), value='computers',
                         variable=self.mode_var,
                         command=self.on_mode_change).grid(row=0, column=2,
                                                           padx=(8, 0))
@@ -1113,7 +1454,7 @@ class MainWindow(ttk.Frame):
         # Nested OUs
         self.include_subtree = tk.BooleanVar(value=False)
         self.chk_subtree = ttk.Checkbutton(
-            bar, text="Show from nested OUs",
+            bar, text=T('Show from nested OUs'),
             variable=self.include_subtree,
             command=self.do_search)
         self.chk_subtree.grid(row=2, column=0, columnspan=5,
@@ -1133,8 +1474,8 @@ class MainWindow(ttk.Frame):
     def on_switch_domain(self):
         host = self.cmb_dom.get().strip()
         if not host:
-            messagebox.showinfo("No domain selected",
-                                "Select from the list or enter a domain/controller.")
+            messagebox.showinfo(T('No domain selected'),
+                                T('Select from the list or enter a domain/controller.'))
             return
         if host.lower() == (self.client.host or '').lower():
             return  # same domain — nothing to do
@@ -1155,10 +1496,8 @@ class MainWindow(ttk.Frame):
         except Exception as ex:
             self.master.config(cursor='')
             messagebox.showerror(
-                "Access error",
-                f"Failed to connect to domain \"{host}\" with the current "
-                f"account ({self.client.username}).\n\n"
-                f"Insufficient rights or the domain is unavailable:\n{ex}")
+                T('Access error'),
+                T('Failed to connect to domain "{a0}" with the current account ({a1}).\n\nInsufficient rights or the domain is unavailable:\n{a2}').format(a0=(host), a1=(self.client.username), a2=(ex)))
             return
         finally:
             self.master.config(cursor='')
@@ -1175,9 +1514,8 @@ class MainWindow(ttk.Frame):
         self._load_ou_tree()
         self.do_search()
         messagebox.showinfo(
-            "Domain changed",
-            f"Connected to domain \"{self.client.host}\" as "
-            f"{self.client.username}.")
+            T('Domain changed'),
+            T('Connected to domain "{a0}" as {a1}.').format(a0=(self.client.host), a1=(self.client.username)))
 
     # --- Main area ---
     def _build_body(self):
@@ -1188,7 +1526,7 @@ class MainWindow(ttk.Frame):
         ou_frame = ttk.Frame(body)
         ou_frame.rowconfigure(1, weight=1)
         ou_frame.columnconfigure(0, weight=1)
-        ttk.Label(ou_frame, text="Organizational units").grid(
+        ttk.Label(ou_frame, text=T('Organizational units')).grid(
             row=0, column=0, sticky='w', pady=(0, 4))
         self.ou_tree = ttk.Treeview(ou_frame, show='tree', selectmode='browse')
         self.ou_tree.grid(row=1, column=0, sticky='nsew')
@@ -1231,7 +1569,7 @@ class MainWindow(ttk.Frame):
         right.columnconfigure(0, weight=1)
 
         self.prop_group = prop_group = ttk.LabelFrame(right,
-                                                      text="User properties")
+                                                      text=T('User properties'))
         prop_group.grid(row=0, column=0, sticky='nsew')
         prop_group.rowconfigure(0, weight=1)
         prop_group.columnconfigure(0, weight=1)
@@ -1257,7 +1595,7 @@ class MainWindow(ttk.Frame):
         # copies the selected text (works even if Cmd+C never reaches us).
         self.props.bind('<ButtonRelease-1>', self._props_autocopy)
 
-        self.act_group = ttk.LabelFrame(right, text="Actions")
+        self.act_group = ttk.LabelFrame(right, text=T('Actions'))
         self.act_group.grid(row=1, column=0, sticky='ew', pady=(8, 0))
         self._build_actions()
         body.add(right, weight=2)
@@ -1266,19 +1604,19 @@ class MainWindow(ttk.Frame):
         """Configure list columns for the current mode (users/computers)."""
         if getattr(self, 'mode_var', None) and self.mode_var.get() == 'computers':
             spec = [
-                ('name', 'Name', 190),
-                ('dns', 'DNS name', 200),
-                ('os', 'Operating system', 190),
-                ('desc', 'Description', 150),
-                ('state', 'State', 90),
+                ('name', T('Name'), 190),
+                ('dns', T('DNS name'), 200),
+                ('os', T('Operating system'), 190),
+                ('desc', T('Description'), 150),
+                ('state', T('State'), 90),
             ]
         else:
             spec = [
-                ('name', 'Name', 200),
-                ('sam', 'Login', 130),
+                ('name', T('Name'), 200),
+                ('sam', T('Login'), 130),
                 ('mail', 'E-mail', 200),
-                ('desc', 'Description', 180),
-                ('state', 'State', 100),
+                ('desc', T('Description'), 180),
+                ('state', T('State'), 100),
             ]
         cols = tuple(c[0] for c in spec)
         self.tree.configure(columns=cols)
@@ -1292,27 +1630,43 @@ class MainWindow(ttk.Frame):
             w.destroy()
         if self.mode_var.get() == 'computers':
             actions = [
-                ("Enable", self.on_enable),
-                ("Disable", self.on_disable),
-                ("Rename...", self.on_rename),
-                ("Move (OU)", self.on_move),
-                ("Edit...", self.on_edit),
-                ("Delete", self.on_delete),
+                (T('Enable'), self.on_enable),
+                (T('Disable'), self.on_disable),
+                (T('Rename...'), self.on_rename),
+                (T('Move (OU)'), self.on_move),
+                (T('Edit...'), self.on_edit),
+                (T('Delete'), self.on_delete),
             ]
         else:
             actions = [
-                ("Enable", self.on_enable),
-                ("Disable", self.on_disable),
-                ("Unlock", self.on_unlock),
-                ("Reset password", self.on_reset),
-                ("Pwd never expires", self.on_pwd_never_expires),
-                ("Groups...", self.on_groups),
-                ("Move (OU)", self.on_move),
-                ("Edit...", self.on_edit),
+                (T('Enable'), self.on_enable),
+                (T('Disable'), self.on_disable),
+                (T('Unlock'), self.on_unlock),
+                (T('Reset password'), self.on_reset),
+                (T('Pwd never expires'), self.on_pwd_never_expires),
+                (T('Groups...'), self.on_groups),
+                (T('Move (OU)'), self.on_move),
+                (T('Edit...'), self.on_edit),
             ]
         for i, (label, cmd) in enumerate(actions):
             ttk.Button(self.act_group, text=label, command=cmd, width=18).grid(
                 row=i // 2, column=i % 2, padx=4, pady=4, sticky='ew')
+
+    def _switch_lang(self, event=None):
+        """Switch the interface language and rebuild the main window."""
+        new = 'ru' if self.cmb_lang.get() == 'RU' else 'en'
+        if new == LANG:
+            return
+        set_lang(new)
+        if self.config:
+            self.config.set_lang(new)
+        master, client, config = self.master, self.client, self.config
+        self.destroy()
+        win = MainWindow(master, client, config)
+        # Rebuild the application menu with the new language
+        rebuild_menu = getattr(master, '_build_app_menu', None)
+        if rebuild_menu:
+            rebuild_menu(win)
 
     def on_mode_change(self):
         """Switch between users and computers."""
@@ -1323,9 +1677,7 @@ class MainWindow(ttk.Frame):
         self._apply_columns()
         self._build_actions()
         self.prop_group.config(
-            text="Computer properties" if computers else "User properties")
-        self.chk_subtree.config(
-            text="Show from nested OUs")
+            text=T('Computer properties') if computers else T('User properties'))
         if computers:
             self.btn_create.grid_remove()
         else:
@@ -1340,8 +1692,7 @@ class MainWindow(ttk.Frame):
 
     def _update_status(self, extra=''):
         proto = "LDAPS" if self.client.is_ssl() else "LDAP"
-        base = (f"Connected: {self.client.host} ({proto})   |   "
-                f"Base: {self.client.base_dn}")
+        base = (T('Connected: {a0} ({a1})   |   Base: {a2}').format(a0=(self.client.host), a1=(proto), a2=(self.client.base_dn)))
         self.status.config(text=base + ('   |   ' + extra if extra else ''))
 
     # --- Organizational unit tree ---
@@ -1377,7 +1728,7 @@ class MainWindow(ttk.Frame):
 
     def _short_dn(self, dn):
         if not dn or dn.lower() == self.client.base_dn.lower():
-            return self.client.upn_suffix or 'domain'
+            return self.client.upn_suffix or T('domain')
         parts = []
         for comp in dn.split(','):
             low = comp.lower()
@@ -1419,11 +1770,11 @@ class MainWindow(ttk.Frame):
                 self.tree.insert('', 'end', iid=str(i), values=vals)
             scope_txt = self._short_dn(base)
             if subtree:
-                scope_txt += " (+nested)"
+                scope_txt += T(' (+nested)')
             self._update_status(
-                f"Found: {len(self.users)}  |  scope: {scope_txt}")
+                T('Found: {a0}  |  scope: {a1}').format(a0=(len(self.users)), a1=(scope_txt)))
         except Exception as ex:
-            messagebox.showerror("Search error", str(ex))
+            messagebox.showerror(T('Search error'), str(ex))
         finally:
             self.master.config(cursor='')
 
@@ -1434,14 +1785,13 @@ class MainWindow(ttk.Frame):
     def _selected_user(self):
         sel = self.tree.selection()
         if not sel:
-            messagebox.showinfo("No user selected",
-                                "Select a user in the list first.")
+            messagebox.showinfo(T('No user selected'),
+                                T('Select a user in the list first.'))
             return None
         if len(sel) > 1:
             messagebox.showinfo(
-                "Multiple objects selected",
-                "This action applies to a single object.\n"
-                "Select exactly one item in the list.")
+                T('Multiple objects selected'),
+                T('This action applies to a single object.\nSelect exactly one item in the list.'))
             return None
         return self.users[int(sel[0])]
 
@@ -1453,10 +1803,7 @@ class MainWindow(ttk.Frame):
             self.props.delete('1.0', 'end')
             self.props.insert(
                 'end',
-                f"Selected objects: {len(sel)}\n\n"
-                f"Available bulk actions:\n"
-                f"  Enable / Disable / Move (OU)\n"
-                f"  Add to groups (users)")
+                T('Selected objects: {a0}\n\nAvailable bulk actions:\n  Enable / Disable / Move (OU)\n  Add to groups (users)').format(a0=(len(sel))))
             return
         u = self.users[int(sel[0])]
         if u.get('is_computer'):
@@ -1492,29 +1839,29 @@ class MainWindow(ttk.Frame):
 
     def _show_props(self, u):
         rows = [
-            ("Display name", u['displayName']),
-            ("Login", u['sAMAccountName']),
+            (T('Display name'), u['displayName']),
+            (T('Login'), u['sAMAccountName']),
             ("UPN", u['userPrincipalName']),
-            ("First name", u['givenName']),
-            ("Last name", u['sn']),
+            (T('First name'), u['givenName']),
+            (T('Last name'), u['sn']),
             ("E-mail", u['mail']),
-            ("State", u['state']),
-            ("Locked", "Yes" if u['locked'] else "No"),
-            ("Description", u['description']),
-            ("Title", u['title']),
-            ("Department", u['department']),
-            ("Company", u['company']),
-            ("Office", u['office']),
-            ("Phone", u['phone']),
-            ("Password last set", filetime_to_str(u['pwdLastSet'])),
-            ("Password never expires", "Yes" if u.get('dontExpire') else "No"),
-            ("Password change required", pwd_expiry_text(u)),
-            ("Bad password attempts",
+            (T('State'), u['state']),
+            (T('Locked'), T('Yes') if u['locked'] else T('No')),
+            (T('Description'), u['description']),
+            (T('Title'), u['title']),
+            (T('Department'), u['department']),
+            (T('Company'), u['company']),
+            (T('Office'), u['office']),
+            (T('Phone'), u['phone']),
+            (T('Password last set'), filetime_to_str(u['pwdLastSet'])),
+            (T('Password never expires'), T('Yes') if u.get('dontExpire') else T('No')),
+            (T('Password change required'), pwd_expiry_text(u)),
+            (T('Bad password attempts'),
              '' if u.get('badPwdCount') in (None, '') else str(u.get('badPwdCount'))),
-            ("Last bad password", filetime_to_str(u.get('badPwdTime'))),
-            ("Last logon", filetime_to_str(u['lastLogon'])),
-            ("Created", filetime_to_str(u['whenCreated'])),
-            ("Expires", filetime_to_str(u['accountExpires'])),
+            (T('Last bad password'), filetime_to_str(u.get('badPwdTime'))),
+            (T('Last logon'), filetime_to_str(u['lastLogon'])),
+            (T('Created'), filetime_to_str(u['whenCreated'])),
+            (T('Expires'), filetime_to_str(u['accountExpires'])),
             ("DN", u['dn']),
         ]
         self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
@@ -1527,15 +1874,15 @@ class MainWindow(ttk.Frame):
 
     def _show_computer_props(self, c):
         rows = [
-            ("Name", c['name']),
-            ("Account name", c['sAMAccountName']),
-            ("DNS name", c['dnsHostName']),
-            ("Operating system", c['os']),
-            ("OS version", c['osVersion']),
-            ("State", c['state']),
-            ("Description", c['description']),
-            ("Last logon", filetime_to_str(c['lastLogon'])),
-            ("Created", filetime_to_str(c['whenCreated'])),
+            (T('Name'), c['name']),
+            (T('Account name'), c['sAMAccountName']),
+            (T('DNS name'), c['dnsHostName']),
+            (T('Operating system'), c['os']),
+            (T('OS version'), c['osVersion']),
+            (T('State'), c['state']),
+            (T('Description'), c['description']),
+            (T('Last logon'), filetime_to_str(c['lastLogon'])),
+            (T('Created'), filetime_to_str(c['whenCreated'])),
             ("DN", c['dn']),
         ]
         self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
@@ -1551,7 +1898,7 @@ class MainWindow(ttk.Frame):
         if text is None:
             return
         set_clipboard(self.master, str(text))
-        self._update_status("Copied to clipboard")
+        self._update_status(T('Copied to clipboard'))
 
     def _on_copy_shortcut(self, event=None):
         """Application-wide Cmd+C / Ctrl+C: copy from whichever widget has focus.
@@ -1661,16 +2008,16 @@ class MainWindow(ttk.Frame):
             return 'break'
         if len(sel) > 1:
             m = tk.Menu(self, tearoff=0)
-            m.add_command(label=f"Selected: {len(sel)}", state='disabled')
+            m.add_command(label=T('Selected: {a0}').format(a0=(len(sel))), state='disabled')
             m.add_separator()
-            m.add_command(label="Enable", command=self.on_enable)
-            m.add_command(label="Disable", command=self.on_disable)
-            m.add_command(label="Move (OU)...", command=self.on_move)
+            m.add_command(label=T('Enable'), command=self.on_enable)
+            m.add_command(label=T('Disable'), command=self.on_disable)
+            m.add_command(label=T('Move (OU)...'), command=self.on_move)
             if self.mode_var.get() != 'computers':
-                m.add_command(label="Add to groups...",
+                m.add_command(label=T('Add to groups...'),
                               command=self.on_groups)
             m.add_separator()
-            m.add_command(label="Copy rows",
+            m.add_command(label=T('Copy rows'),
                           command=self._copy_selected_row)
             try:
                 m.tk_popup(event.x_root, event.y_root)
@@ -1683,33 +2030,33 @@ class MainWindow(ttk.Frame):
             return self._show_computer_menu(event, u)
 
         m = tk.Menu(self, tearoff=0)
-        m.add_command(label="Copy login",
+        m.add_command(label=T('Copy login'),
                       command=lambda: self._copy_text(u['sAMAccountName']))
-        m.add_command(label="Copy display name",
+        m.add_command(label=T('Copy display name'),
                       command=lambda: self._copy_text(u['name']))
-        m.add_command(label="Copy e-mail",
+        m.add_command(label=T('Copy e-mail'),
                       command=lambda: self._copy_text(u['mail']),
                       state='normal' if u.get('mail') else 'disabled')
-        m.add_command(label="Copy UPN",
+        m.add_command(label=T('Copy UPN'),
                       command=lambda: self._copy_text(u['userPrincipalName']),
                       state='normal' if u.get('userPrincipalName') else 'disabled')
-        m.add_command(label="Copy DN",
+        m.add_command(label=T('Copy DN'),
                       command=lambda: self._copy_text(u['dn']))
-        m.add_command(label="Copy all properties",
+        m.add_command(label=T('Copy all properties'),
                       command=self._copy_all_props)
         m.add_separator()
-        m.add_command(label="Enable", command=self.on_enable)
-        m.add_command(label="Disable", command=self.on_disable)
-        m.add_command(label="Unlock", command=self.on_unlock)
-        m.add_command(label="Reset password...", command=self.on_reset)
+        m.add_command(label=T('Enable'), command=self.on_enable)
+        m.add_command(label=T('Disable'), command=self.on_disable)
+        m.add_command(label=T('Unlock'), command=self.on_unlock)
+        m.add_command(label=T('Reset password...'), command=self.on_reset)
         m.add_command(
-            label=("Password never expires  ✓" if u.get('dontExpire')
-                   else "Password never expires"),
+            label=(T('Password never expires  ✓') if u.get('dontExpire')
+                   else T('Password never expires')),
             command=self.on_pwd_never_expires)
         m.add_separator()
-        m.add_command(label="Groups...", command=self.on_groups)
-        m.add_command(label="Move (OU)...", command=self.on_move)
-        m.add_command(label="Edit...", command=self.on_edit)
+        m.add_command(label=T('Groups...'), command=self.on_groups)
+        m.add_command(label=T('Move (OU)...'), command=self.on_move)
+        m.add_command(label=T('Edit...'), command=self.on_edit)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -1718,25 +2065,25 @@ class MainWindow(ttk.Frame):
 
     def _show_computer_menu(self, event, c):
         m = tk.Menu(self, tearoff=0)
-        m.add_command(label="Copy name",
+        m.add_command(label=T('Copy name'),
                       command=lambda: self._copy_text(c['name']))
-        m.add_command(label="Copy DNS name",
+        m.add_command(label=T('Copy DNS name'),
                       command=lambda: self._copy_text(c['dnsHostName']),
                       state='normal' if c.get('dnsHostName') else 'disabled')
-        m.add_command(label="Copy account name",
+        m.add_command(label=T('Copy account name'),
                       command=lambda: self._copy_text(c['sAMAccountName']))
-        m.add_command(label="Copy DN",
+        m.add_command(label=T('Copy DN'),
                       command=lambda: self._copy_text(c['dn']))
-        m.add_command(label="Copy all properties",
+        m.add_command(label=T('Copy all properties'),
                       command=self._copy_all_props)
         m.add_separator()
-        m.add_command(label="Enable", command=self.on_enable)
-        m.add_command(label="Disable", command=self.on_disable)
+        m.add_command(label=T('Enable'), command=self.on_enable)
+        m.add_command(label=T('Disable'), command=self.on_disable)
         m.add_separator()
-        m.add_command(label="Rename...", command=self.on_rename)
-        m.add_command(label="Move (OU)...", command=self.on_move)
-        m.add_command(label="Edit...", command=self.on_edit)
-        m.add_command(label="Delete", command=self.on_delete)
+        m.add_command(label=T('Rename...'), command=self.on_rename)
+        m.add_command(label=T('Move (OU)...'), command=self.on_move)
+        m.add_command(label=T('Edit...'), command=self.on_edit)
+        m.add_command(label=T('Delete'), command=self.on_delete)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -1765,13 +2112,13 @@ class MainWindow(ttk.Frame):
             cur += 3
 
         m = tk.Menu(self, tearoff=0)
-        m.add_command(label="Copy selection",
+        m.add_command(label=T('Copy selection'),
                       command=self._copy_props_selection,
                       state='normal' if has_sel else 'disabled')
         if row_val is not None:
-            m.add_command(label=f"Copy value ({row_key})",
+            m.add_command(label=T('Copy value ({a0})').format(a0=(row_key)),
                           command=lambda v=row_val: self._copy_text(v))
-        m.add_command(label="Copy all properties", command=self._copy_all_props)
+        m.add_command(label=T('Copy all properties'), command=self._copy_all_props)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -1796,56 +2143,56 @@ class MainWindow(ttk.Frame):
         ok = len(objs) - len(errors)
         if errors:
             messagebox.showwarning(
-                "Partially completed",
-                f"{done_msg}: {ok} of {len(objs)}.\n\nErrors:\n"
+                T('Partially completed'),
+                T('{a0}: {a1} of {a2}.\n\nErrors:\n').format(a0=(done_msg), a1=(ok), a2=(len(objs)))
                 + "\n".join(errors[:10])
                 + ("\n..." if len(errors) > 10 else ""))
         else:
-            messagebox.showinfo("Done", f"{done_msg}: {ok}.")
+            messagebox.showinfo(T('Done'), f"{done_msg}: {ok}.")
         self.do_search()
 
     def on_enable(self):
         objs = self._selected_users()
         if not objs:
-            messagebox.showinfo("No object selected",
-                                "Select one or more objects in the list.")
+            messagebox.showinfo(T('No object selected'),
+                                T('Select one or more objects in the list.'))
             return
         if len(objs) == 1:
             try:
                 self.client.enable_account(objs[0]['dn'])
-                messagebox.showinfo("Done", "Account enabled.")
+                messagebox.showinfo(T('Done'), T('Account enabled.'))
                 self._refresh_selected(objs[0]['dn'])
             except Exception as ex:
-                messagebox.showerror("Error", str(ex))
+                messagebox.showerror(T('Error'), str(ex))
             return
         if not messagebox.askyesno(
-                "Confirm", f"Enable {len(objs)} accounts?"):
+                T('Confirm'), T('Enable {a0} accounts?').format(a0=(len(objs)))):
             return
-        self._bulk_apply(objs, self.client.enable_account, "Enabled")
+        self._bulk_apply(objs, self.client.enable_account, T('Enabled'))
 
     def on_disable(self):
         objs = self._selected_users()
         if not objs:
-            messagebox.showinfo("No object selected",
-                                "Select one or more objects in the list.")
+            messagebox.showinfo(T('No object selected'),
+                                T('Select one or more objects in the list.'))
             return
         if len(objs) == 1:
             u = objs[0]
             if not messagebox.askyesno(
-                    "Confirm",
-                    f"Disable account '{u['sAMAccountName']}'?"):
+                    T('Confirm'),
+                    T("Disable account '{a0}'?").format(a0=(u['sAMAccountName']))):
                 return
             try:
                 self.client.disable_account(u['dn'])
-                messagebox.showinfo("Done", "Account disabled.")
+                messagebox.showinfo(T('Done'), T('Account disabled.'))
                 self._refresh_selected(u['dn'])
             except Exception as ex:
-                messagebox.showerror("Error", str(ex))
+                messagebox.showerror(T('Error'), str(ex))
             return
         if not messagebox.askyesno(
-                "Confirm", f"Disable {len(objs)} accounts?"):
+                T('Confirm'), T('Disable {a0} accounts?').format(a0=(len(objs)))):
             return
-        self._bulk_apply(objs, self.client.disable_account, "Disabled")
+        self._bulk_apply(objs, self.client.disable_account, T('Disabled'))
 
     def on_unlock(self):
         u = self._selected_user()
@@ -1853,10 +2200,10 @@ class MainWindow(ttk.Frame):
             return
         try:
             self.client.unlock_account(u['dn'])
-            messagebox.showinfo("Done", "Account unlocked.")
+            messagebox.showinfo(T('Done'), T('Account unlocked.'))
             self._refresh_selected(u['dn'])
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
 
     def on_reset(self):
         u = self._selected_user()
@@ -1872,38 +2219,30 @@ class MainWindow(ttk.Frame):
             return
         cur = bool(u.get('dontExpire'))
         if cur:
-            msg = (f"Clear the 'password never expires' flag for "
-                   f"'{u['sAMAccountName']}'?\n\n"
-                   f"The password will expire per the domain policy.")
+            msg = (T("Clear the 'password never expires' flag for '{a0}'?\n\nThe password will expire per the domain policy.").format(a0=(u['sAMAccountName'])))
         else:
-            msg = (f"Set the 'password never expires' flag for "
-                   f"'{u['sAMAccountName']}'?\n\n"
-                   f"If a password change at next logon is pending, the "
-                   f"requirement will be removed and the current password "
-                   f"stays valid (same as in ADUC).")
-        if not messagebox.askyesno("Password never expires", msg):
+            msg = (T("Set the 'password never expires' flag for '{a0}'?\n\nIf a password change at next logon is pending, the requirement will be removed and the current password stays valid (same as in ADUC).").format(a0=(u['sAMAccountName'])))
+        if not messagebox.askyesno(T('Password never expires'), msg):
             return
         try:
             cleared = self.client.set_password_never_expires(u['dn'], not cur)
             if cur:
-                done = "Flag cleared: the password expires per the domain policy."
+                done = T('Flag cleared: the password expires per the domain policy.')
             else:
-                done = "Flag set: the password never expires."
+                done = T('Flag set: the password never expires.')
                 if cleared:
-                    done += ("\n\nThe 'change password at next logon' "
-                             "requirement was removed; the current password "
-                             "stays valid.")
-            messagebox.showinfo("Done", done)
+                    done += (T("\n\nThe 'change password at next logon' requirement was removed; the current password stays valid."))
+            messagebox.showinfo(T('Done'), done)
             self._refresh_selected(u['dn'])
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
 
     def on_groups(self):
         objs = [o for o in self._selected_users()
                 if not o.get('is_computer')]
         if not objs:
-            messagebox.showinfo("No user selected",
-                                "Select one or more users in the list.")
+            messagebox.showinfo(T('No user selected'),
+                                T('Select one or more users in the list.'))
             return
         if len(objs) == 1:
             GroupsDialog(self.master, self.client, objs[0])
@@ -1918,9 +2257,8 @@ class MainWindow(ttk.Frame):
         if len(groups) > 5:
             gnames += ", ..."
         if not messagebox.askyesno(
-                "Add to groups",
-                f"Add {len(objs)} users to {len(groups)} group(s)?\n\n"
-                f"Groups: {gnames}"):
+                T('Add to groups'),
+                T('Add {a0} users to {a1} group(s)?\n\nGroups: {a2}').format(a0=(len(objs)), a1=(len(groups)), a2=(gnames))):
             return
         added, skipped, errors = 0, 0, []
         self.master.config(cursor='watch')
@@ -1940,21 +2278,21 @@ class MainWindow(ttk.Frame):
                                 f"{u['sAMAccountName']} -> {g['cn']}: {msg}")
         finally:
             self.master.config(cursor='')
-        summary = f"Added: {added}."
+        summary = T('Added: {a0}.').format(a0=(added))
         if skipped:
-            summary += f"\nAlready members (skipped): {skipped}."
+            summary += T('\nAlready members (skipped): {a0}.').format(a0=(skipped))
         if errors:
-            summary += ("\n\nErrors:\n" + "\n".join(errors[:10])
+            summary += (T('\n\nErrors:\n') + "\n".join(errors[:10])
                         + ("\n..." if len(errors) > 10 else ""))
-            messagebox.showwarning("Partially completed", summary)
+            messagebox.showwarning(T('Partially completed'), summary)
         else:
-            messagebox.showinfo("Done", summary)
+            messagebox.showinfo(T('Done'), summary)
 
     def on_move(self):
         objs = self._selected_users()
         if not objs:
-            messagebox.showinfo("No object selected",
-                                "Select one or more objects in the list.")
+            messagebox.showinfo(T('No object selected'),
+                                T('Select one or more objects in the list.'))
             return
         MoveDialog(self.master, self.client, objs,
                    on_done=self.do_search)
@@ -1993,17 +2331,17 @@ class MainWindow(ttk.Frame):
             return
         label = c.get('name') or c.get('sAMAccountName') or c['dn']
         if not messagebox.askyesno(
-                "Confirm deletion",
-                f"Delete object '{label}'?\n\nThis operation is irreversible."):
+                T('Confirm deletion'),
+                T("Delete object '{a0}'?\n\nThis operation is irreversible.").format(a0=(label))):
             return
         try:
             self.client.delete_object(c['dn'])
-            messagebox.showinfo("Done", "Object deleted.")
+            messagebox.showinfo(T('Done'), T('Object deleted.'))
             self.do_search()
             self.props.delete('1.0', 'end')
             self._prop_rows = []
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
 
     def on_create(self):
         CreateDialog(self.master, self.client, on_done=self.do_search,
@@ -2016,52 +2354,51 @@ class ResetPasswordDialog(tk.Toplevel):
         self.client = client
         self.user = user
         self.on_done = on_done
-        self.title("Reset password")
+        self.title(T('Reset password'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
-        ttk.Label(frm, text=f"User: {user['name']} "
-                            f"({user['sAMAccountName']})",
+        ttk.Label(frm, text=T('User: {a0} ({a1})').format(a0=(user['name']), a1=(user['sAMAccountName'])),
                   font=('', 12, 'bold')).grid(row=0, column=0, columnspan=2,
                                               sticky='w', pady=(0, 12))
-        ttk.Label(frm, text="New password:").grid(row=1, column=0, sticky='w')
+        ttk.Label(frm, text=T('New password:')).grid(row=1, column=0, sticky='w')
         self.e1 = ttk.Entry(frm, width=30, show='•')
         self.e1.grid(row=1, column=1, pady=4)
-        ttk.Label(frm, text="Confirm:").grid(row=2, column=0, sticky='w')
+        ttk.Label(frm, text=T('Confirm:')).grid(row=2, column=0, sticky='w')
         self.e2 = ttk.Entry(frm, width=30, show='•')
         self.e2.grid(row=2, column=1, pady=4)
         self.v_change = tk.BooleanVar(value=True)
         self.v_unlock = tk.BooleanVar(value=True)
-        ttk.Checkbutton(frm, text="Change password at next logon",
+        ttk.Checkbutton(frm, text=T('Change password at next logon'),
                         variable=self.v_change).grid(
             row=3, column=0, columnspan=2, sticky='w', pady=(8, 0))
-        ttk.Checkbutton(frm, text="Unlock the account",
+        ttk.Checkbutton(frm, text=T('Unlock the account'),
                         variable=self.v_unlock).grid(
             row=4, column=0, columnspan=2, sticky='w')
         self.lbl = ttk.Label(frm, text="", foreground='#B00020', wraplength=300)
         self.lbl.grid(row=5, column=0, columnspan=2, sticky='w', pady=(8, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=6, column=0, columnspan=2, sticky='e', pady=(12, 0))
-        ttk.Button(btns, text="Apply", command=self._apply).grid(
+        ttk.Button(btns, text=T('Apply'), command=self._apply).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
         self.e1.focus_set()
 
     def _apply(self):
         if not self.e1.get():
-            self.lbl.config(text="Enter a new password.")
+            self.lbl.config(text=T('Enter a new password.'))
             return
         if self.e1.get() != self.e2.get():
-            self.lbl.config(text="Passwords do not match.")
+            self.lbl.config(text=T('Passwords do not match.'))
             return
         try:
             self.client.reset_password(
                 self.user['dn'], self.e1.get(),
                 unlock=self.v_unlock.get(),
                 change_at_logon=self.v_change.get())
-            messagebox.showinfo("Done", "Password reset.")
+            messagebox.showinfo(T('Done'), T('Password reset.'))
             if self.on_done:
                 self.on_done()
             self.destroy()
@@ -2077,18 +2414,18 @@ class MoveDialog(tk.Toplevel):
         self.users_list = user if isinstance(user, list) else [user]
         user = self.users_list[0]
         self.on_done = on_done
-        self.title("Move to organizational unit")
+        self.title(T('Move to organizational unit'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         if len(self.users_list) == 1:
-            hdr = f"Object: {user['name']} ({user['sAMAccountName']})"
+            hdr = T('Object: {a0} ({a1})').format(a0=(user['name']), a1=(user['sAMAccountName']))
         else:
             names = ", ".join(o['name'] for o in self.users_list[:3])
             if len(self.users_list) > 3:
                 names += ", ..."
-            hdr = f"Objects selected: {len(self.users_list)} ({names})"
+            hdr = T('Objects selected: {a0} ({a1})').format(a0=(len(self.users_list)), a1=(names))
         ttk.Label(frm, text=hdr, font=('', 12, 'bold'),
                   wraplength=420).grid(row=0, column=0, sticky='w',
                                        pady=(0, 10))
@@ -2096,21 +2433,21 @@ class MoveDialog(tk.Toplevel):
         parents = {o['dn'].split(',', 1)[1].lower() if ',' in o['dn'] else ''
                    for o in self.users_list}
         if len(parents) > 1:
-            parent = "(objects are in different containers)"
-        ttk.Label(frm, text="Current location:").grid(row=1, column=0,
+            parent = T('(objects are in different containers)')
+        ttk.Label(frm, text=T('Current location:')).grid(row=1, column=0,
                                                         sticky='w')
         cur = ttk.Entry(frm, width=60)
         cur.insert(0, parent)
         cur.config(state='readonly')
         cur.grid(row=2, column=0, sticky='ew', pady=(2, 8))
-        ttk.Label(frm, text="Target container (OU):").grid(row=3, column=0,
+        ttk.Label(frm, text=T('Target container (OU):')).grid(row=3, column=0,
                                                             sticky='w')
         dest_row = ttk.Frame(frm)
         dest_row.grid(row=4, column=0, sticky='ew', pady=2)
         dest_row.columnconfigure(0, weight=1)
         self.combo = ttk.Combobox(dest_row, width=52)
         self.combo.grid(row=0, column=0, sticky='ew')
-        ttk.Button(dest_row, text="Browse…", width=8,
+        ttk.Button(dest_row, text=T('Browse…'), width=8,
                    command=self._browse_ou).grid(row=0, column=1, padx=(6, 0))
         try:
             self.combo['values'] = self.client.list_ous()
@@ -2120,9 +2457,9 @@ class MoveDialog(tk.Toplevel):
         self.lbl.grid(row=5, column=0, sticky='w', pady=(6, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=6, column=0, sticky='e', pady=(12, 0))
-        ttk.Button(btns, text="Move", command=self._apply).grid(
+        ttk.Button(btns, text=T('Move'), command=self._apply).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
 
     def _browse_ou(self):
@@ -2135,12 +2472,12 @@ class MoveDialog(tk.Toplevel):
     def _apply(self):
         dest = self.combo.get().strip()
         if not dest:
-            self.lbl.config(text="Specify a target container.")
+            self.lbl.config(text=T('Specify a target container.'))
             return
         if len(self.users_list) == 1:
             try:
                 self.client.move_user(self.users_list[0]['dn'], dest)
-                messagebox.showinfo("Done", "Object moved.")
+                messagebox.showinfo(T('Done'), T('Object moved.'))
                 if self.on_done:
                     self.on_done()
                 self.destroy()
@@ -2156,12 +2493,12 @@ class MoveDialog(tk.Toplevel):
         ok = len(self.users_list) - len(errors)
         if errors:
             messagebox.showwarning(
-                "Partially completed",
-                f"Moved: {ok} of {len(self.users_list)}.\n\nErrors:\n"
+                T('Partially completed'),
+                T('Moved: {a0} of {a1}.\n\nErrors:\n').format(a0=(ok), a1=(len(self.users_list)))
                 + "\n".join(errors[:10])
                 + ("\n..." if len(errors) > 10 else ""))
         else:
-            messagebox.showinfo("Done", f"Objects moved: {ok}.")
+            messagebox.showinfo(T('Done'), T('Objects moved: {a0}.').format(a0=(ok)))
         if self.on_done:
             self.on_done()
         self.destroy()
@@ -2175,16 +2512,16 @@ class RenameDialog(tk.Toplevel):
         self.client = client
         self.obj = obj
         self.on_done = on_done
-        self.title("Rename object")
+        self.title(T('Rename object'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         cur_name = obj.get('name') or obj.get('cn') or ''
-        ttk.Label(frm, text=f"Object: {cur_name}",
+        ttk.Label(frm, text=T('Object: {a0}').format(a0=(cur_name)),
                   font=('', 12, 'bold')).grid(row=0, column=0, columnspan=2,
                                               sticky='w', pady=(0, 10))
-        ttk.Label(frm, text="New name:").grid(row=1, column=0, sticky='w')
+        ttk.Label(frm, text=T('New name:')).grid(row=1, column=0, sticky='w')
         self.e_name = ttk.Entry(frm, width=36)
         self.e_name.insert(0, cur_name)
         self.e_name.grid(row=1, column=1, pady=4, padx=(6, 0))
@@ -2194,16 +2531,16 @@ class RenameDialog(tk.Toplevel):
         self.lbl.grid(row=2, column=0, columnspan=2, sticky='w', pady=(6, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=3, column=0, columnspan=2, sticky='e', pady=(12, 0))
-        ttk.Button(btns, text="Rename", command=self._apply).grid(
+        ttk.Button(btns, text=T('Rename'), command=self._apply).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
         self.e_name.bind('<Return>', lambda e: self._apply())
 
     def _apply(self):
         new_name = self.e_name.get().strip()
         if not new_name:
-            self.lbl.config(text="Enter a name.")
+            self.lbl.config(text=T('Enter a name.'))
             return
         cur_name = self.obj.get('name') or self.obj.get('cn') or ''
         if new_name == cur_name:
@@ -2211,7 +2548,7 @@ class RenameDialog(tk.Toplevel):
             return
         try:
             new_dn = self.client.rename_object(self.obj['dn'], new_name)
-            messagebox.showinfo("Done", "Object renamed.")
+            messagebox.showinfo(T('Done'), T('Object renamed.'))
             if self.on_done:
                 self.on_done(new_dn)
             self.destroy()
@@ -2227,7 +2564,7 @@ class GroupPickerDialog(tk.Toplevel):
         self.client = client
         self.exclude = set((d or '').lower() for d in (exclude_dns or []))
         self.selected = []
-        self.title("Select groups")
+        self.title(T('Select groups'))
         self.grab_set()
         self.geometry("520x460")
         frm = ttk.Frame(self, padding=14)
@@ -2239,18 +2576,18 @@ class GroupPickerDialog(tk.Toplevel):
 
         top = ttk.Frame(frm)
         top.grid(row=0, column=0, columnspan=2, sticky='ew')
-        ttk.Label(top, text="Filter:").grid(row=0, column=0, padx=(0, 6))
+        ttk.Label(top, text=T('Filter:')).grid(row=0, column=0, padx=(0, 6))
         self.e_search = ttk.Entry(top, width=34)
         self.e_search.grid(row=0, column=1)
         self.e_search.bind('<Return>', lambda e: self._load())
-        ttk.Button(top, text="Find", command=self._load).grid(
+        ttk.Button(top, text=T('Find'), command=self._load).grid(
             row=0, column=2, padx=(6, 0))
 
-        scope = (f"Groups from OU \"{ACCESS_GROUPS_OU_NAME}\""
-                 if ACCESS_GROUPS_OU_NAME else "Domain groups")
+        scope = (T('Groups from OU "{a0}"').format(a0=(ACCESS_GROUPS_OU_NAME))
+                 if ACCESS_GROUPS_OU_NAME else T('Domain groups'))
         ttk.Label(
             frm,
-            text=f"{scope} (Cmd-click — multi-select):").grid(
+            text=T('{a0} (Cmd-click — multi-select):').format(a0=(scope))).grid(
             row=1, column=0, columnspan=2, sticky='w', pady=(10, 4))
         self.listbox = tk.Listbox(frm, selectmode='extended')
         self.listbox.grid(row=2, column=0, sticky='nsew')
@@ -2260,9 +2597,9 @@ class GroupPickerDialog(tk.Toplevel):
 
         btns = ttk.Frame(frm)
         btns.grid(row=3, column=0, columnspan=2, sticky='e', pady=(10, 0))
-        ttk.Button(btns, text="Select", command=self._ok).grid(
+        ttk.Button(btns, text=T('Select'), command=self._ok).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
 
         self._all = []
@@ -2276,7 +2613,7 @@ class GroupPickerDialog(tk.Toplevel):
             self._all = [g for g in groups
                          if g['dn'].lower() not in self.exclude]
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
             self._all = []
         finally:
             self.config(cursor='')
@@ -2284,7 +2621,7 @@ class GroupPickerDialog(tk.Toplevel):
         for g in self._all:
             self.listbox.insert('end', g['cn'])
         if not self._all:
-            self.listbox.insert('end', "(no groups found)")
+            self.listbox.insert('end', T('(no groups found)'))
             self.listbox.itemconfig(0, foreground='gray')
 
     def _ok(self):
@@ -2303,7 +2640,7 @@ class GroupsDialog(tk.Toplevel):
         super().__init__(master)
         self.client = client
         self.user = user
-        self.title("Group membership")
+        self.title(T('Group membership'))
         self.grab_set()
         frm = ttk.Frame(self, padding=16)
         frm.grid(sticky='nsew')
@@ -2311,7 +2648,7 @@ class GroupsDialog(tk.Toplevel):
         self.columnconfigure(0, weight=1)
         frm.rowconfigure(1, weight=1)
         frm.columnconfigure(0, weight=1)
-        ttk.Label(frm, text=f"Groups: {user['name']} ({user['sAMAccountName']})",
+        ttk.Label(frm, text=T('Groups: {a0} ({a1})').format(a0=(user['name']), a1=(user['sAMAccountName'])),
                   font=('', 12, 'bold')).grid(row=0, column=0, sticky='w',
                                               pady=(0, 8))
         self.listbox = tk.Listbox(frm, height=14, selectmode='extended',
@@ -2323,11 +2660,11 @@ class GroupsDialog(tk.Toplevel):
 
         btns = ttk.Frame(frm)
         btns.grid(row=2, column=0, columnspan=2, sticky='ew', pady=(10, 0))
-        ttk.Button(btns, text="Add...", command=self._add).grid(
+        ttk.Button(btns, text=T('Add...'), command=self._add).grid(
             row=0, column=0)
-        ttk.Button(btns, text="Remove selected", command=self._remove).grid(
+        ttk.Button(btns, text=T('Remove selected'), command=self._remove).grid(
             row=0, column=1, padx=(8, 0))
-        ttk.Button(btns, text="Close", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Close'), command=self.destroy).grid(
             row=0, column=2, padx=(8, 0))
         self.groups = []
         self._reload()
@@ -2339,7 +2676,7 @@ class GroupsDialog(tk.Toplevel):
             for g in self.groups:
                 self.listbox.insert('end', g['cn'])
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
 
     def _add(self):
         exclude = [g['dn'] for g in self.groups]
@@ -2351,7 +2688,7 @@ class GroupsDialog(tk.Toplevel):
                 self.client.add_to_group(self.user['dn'], g['dn'])
                 added += 1
             except Exception as ex:
-                messagebox.showerror("Error", f"{g['cn']}: {ex}")
+                messagebox.showerror(T('Error'), f"{g['cn']}: {ex}")
         if added:
             self._reload()
 
@@ -2359,15 +2696,15 @@ class GroupsDialog(tk.Toplevel):
         sel = self.listbox.curselection()
         if not sel:
             return
-        if not messagebox.askyesno("Confirm",
-                                   f"Remove from the selected groups ({len(sel)})?"):
+        if not messagebox.askyesno(T('Confirm'),
+                                   T('Remove from the selected groups ({a0})?').format(a0=(len(sel)))):
             return
         for i in sel:
             try:
                 self.client.remove_from_group(self.user['dn'],
                                               self.groups[i]['dn'])
             except Exception as ex:
-                messagebox.showerror("Error",
+                messagebox.showerror(T('Error'),
                                      f"{self.groups[i]['cn']}: {ex}")
         self._reload()
 
@@ -2380,19 +2717,19 @@ class ComputerEditDialog(tk.Toplevel):
         self.client = client
         self.comp = comp
         self.on_done = on_done
-        self.title("Edit computer")
+        self.title(T('Edit computer'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
-        ttk.Label(frm, text="Name:").grid(row=0, column=0, sticky='w', pady=3)
+        ttk.Label(frm, text=T('Name:')).grid(row=0, column=0, sticky='w', pady=3)
         ttk.Label(frm, text=comp.get('name') or '').grid(
             row=0, column=1, sticky='w', pady=3)
-        ttk.Label(frm, text="DNS name:").grid(row=1, column=0, sticky='w',
+        ttk.Label(frm, text=T('DNS name:')).grid(row=1, column=0, sticky='w',
                                               pady=3)
         ttk.Label(frm, text=comp.get('dnsHostName') or '—').grid(
             row=1, column=1, sticky='w', pady=3)
-        ttk.Label(frm, text="Description:").grid(row=2, column=0, sticky='w',
+        ttk.Label(frm, text=T('Description:')).grid(row=2, column=0, sticky='w',
                                                  pady=3)
         self.e_desc = ttk.Entry(frm, width=38)
         self.e_desc.insert(0, comp.get('description', '') or '')
@@ -2401,8 +2738,8 @@ class ComputerEditDialog(tk.Toplevel):
         self.lbl.grid(row=3, column=0, columnspan=2, sticky='w', pady=(6, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=4, column=0, columnspan=2, pady=(12, 0))
-        ttk.Button(btns, text="Save", command=self._save).grid(row=0, column=0)
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Save'), command=self._save).grid(row=0, column=0)
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1, padx=(8, 0))
 
     def _save(self):
@@ -2413,7 +2750,7 @@ class ComputerEditDialog(tk.Toplevel):
             if self.on_done:
                 self.on_done()
         except Exception as ex:
-            self.lbl.config(text=f"Error: {ex}")
+            self.lbl.config(text=T('Error: {a0}').format(a0=(ex)))
 
 
 class EditDialog(tk.Toplevel):
@@ -2439,14 +2776,14 @@ class EditDialog(tk.Toplevel):
         self.client = client
         self.user = user
         self.on_done = on_done
-        self.title("Edit properties")
+        self.title(T('Edit properties'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         self.entries = {}
         for i, (label, attr) in enumerate(self.FIELDS):
-            ttk.Label(frm, text=label + ":").grid(row=i, column=0, sticky='w',
+            ttk.Label(frm, text=T(label) + ":").grid(row=i, column=0, sticky='w',
                                                   pady=3)
             e = ttk.Entry(frm, width=38)
             e.insert(0, user.get(self.SRC[attr], '') or '')
@@ -2455,12 +2792,12 @@ class EditDialog(tk.Toplevel):
         r = len(self.FIELDS)
         # Account option: password never expires (UAC bit)
         self.v_dont_expire = tk.BooleanVar(value=bool(user.get('dontExpire')))
-        ttk.Checkbutton(frm, text="Password never expires",
+        ttk.Checkbutton(frm, text=T('Password never expires'),
                         variable=self.v_dont_expire).grid(
             row=r, column=0, columnspan=2, sticky='w', pady=(8, 0))
         r += 1
         # Group membership (Member Of) — applied immediately
-        grp = ttk.LabelFrame(frm, text="Group membership (Member Of)")
+        grp = ttk.LabelFrame(frm, text=T('Group membership (Member Of)'))
         grp.grid(row=r, column=0, columnspan=2, sticky='ew', pady=(10, 0))
         grp.columnconfigure(0, weight=1)
         self.grp_list = tk.Listbox(grp, height=6, selectmode='extended')
@@ -2470,9 +2807,9 @@ class EditDialog(tk.Toplevel):
         self.grp_list.config(yscrollcommand=gsb.set)
         gbtns = ttk.Frame(grp)
         gbtns.grid(row=1, column=0, columnspan=2, sticky='w', padx=6, pady=(0, 6))
-        ttk.Button(gbtns, text="Add...", command=self._add_groups).grid(
+        ttk.Button(gbtns, text=T('Add...'), command=self._add_groups).grid(
             row=0, column=0)
-        ttk.Button(gbtns, text="Remove selected",
+        ttk.Button(gbtns, text=T('Remove selected'),
                    command=self._remove_groups).grid(row=0, column=1, padx=(8, 0))
         self.groups = []
         self._reload_groups()
@@ -2481,9 +2818,9 @@ class EditDialog(tk.Toplevel):
         self.lbl.grid(row=r + 1, column=0, columnspan=2, sticky='w', pady=(8, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=r + 2, column=0, columnspan=2, sticky='e', pady=(10, 0))
-        ttk.Button(btns, text="Save", command=self._save).grid(
+        ttk.Button(btns, text=T('Save'), command=self._save).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
 
     def _reload_groups(self):
@@ -2493,7 +2830,7 @@ class EditDialog(tk.Toplevel):
             for g in self.groups:
                 self.grp_list.insert('end', g['cn'])
         except Exception as ex:
-            messagebox.showerror("Error", str(ex))
+            messagebox.showerror(T('Error'), str(ex))
 
     def _add_groups(self):
         exclude = [g['dn'] for g in self.groups]
@@ -2505,7 +2842,7 @@ class EditDialog(tk.Toplevel):
                 self.client.add_to_group(self.user['dn'], g['dn'])
                 added += 1
             except Exception as ex:
-                messagebox.showerror("Error", f"{g['cn']}: {ex}")
+                messagebox.showerror(T('Error'), f"{g['cn']}: {ex}")
         if added:
             self._reload_groups()
 
@@ -2513,15 +2850,15 @@ class EditDialog(tk.Toplevel):
         sel = self.grp_list.curselection()
         if not sel:
             return
-        if not messagebox.askyesno("Confirm",
-                                   f"Remove from the selected groups ({len(sel)})?"):
+        if not messagebox.askyesno(T('Confirm'),
+                                   T('Remove from the selected groups ({a0})?').format(a0=(len(sel)))):
             return
         for i in sel:
             try:
                 self.client.remove_from_group(self.user['dn'],
                                               self.groups[i]['dn'])
             except Exception as ex:
-                messagebox.showerror("Error", f"{self.groups[i]['cn']}: {ex}")
+                messagebox.showerror(T('Error'), f"{self.groups[i]['cn']}: {ex}")
         self._reload_groups()
 
     def _save(self):
@@ -2531,7 +2868,7 @@ class EditDialog(tk.Toplevel):
             if self.v_dont_expire.get() != bool(self.user.get('dontExpire')):
                 self.client.set_password_never_expires(
                     self.user['dn'], self.v_dont_expire.get())
-            messagebox.showinfo("Done", "Changes saved.")
+            messagebox.showinfo(T('Done'), T('Changes saved.'))
             if self.on_done:
                 self.on_done()
             self.destroy()
@@ -2546,7 +2883,7 @@ class OUTreePickerDialog(tk.Toplevel):
         super().__init__(master)
         self.client = client
         self.selected_dn = None
-        self.title("Select organizational unit (OU)")
+        self.title(T('Select organizational unit (OU)'))
         self.grab_set()
         self.geometry("420x480")
         frm = ttk.Frame(self, padding=12)
@@ -2563,9 +2900,9 @@ class OUTreePickerDialog(tk.Toplevel):
         self.tree.bind('<Double-1>', lambda e: self._ok())
         btns = ttk.Frame(frm)
         btns.grid(row=1, column=0, columnspan=2, sticky='e', pady=(10, 0))
-        ttk.Button(btns, text="Select", command=self._ok).grid(
+        ttk.Button(btns, text=T('Select'), command=self._ok).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
         self._dn_by_item = {}
         self._build(initial)
@@ -2614,7 +2951,7 @@ class CalendarPopup(tk.Toplevel):
     def __init__(self, master, initial=None, on_pick=None):
         super().__init__(master)
         self.on_pick = on_pick
-        self.title("Select date")
+        self.title(T('Select date'))
         self.resizable(False, False)
         self.grab_set()
         cur = initial or datetime.date.today()
@@ -2632,13 +2969,13 @@ class CalendarPopup(tk.Toplevel):
         hdr.grid(row=0, column=0, columnspan=7, sticky='ew', pady=(0, 6))
         hdr.columnconfigure(1, weight=1)
         ttk.Button(hdr, text="◀", width=3, command=self._prev).grid(row=0, column=0)
-        ttk.Label(hdr, text=f"{self.MONTHS[self.month - 1]} {self.year}",
+        ttk.Label(hdr, text=f"{T(self.MONTHS[self.month - 1])} {self.year}",
                   anchor='center', font=('', 12, 'bold')).grid(row=0, column=1,
                                                                sticky='ew')
         ttk.Button(hdr, text="▶", width=3, command=self._next).grid(row=0, column=2)
 
         for i, dname in enumerate(self.WEEKDAYS):
-            ttk.Label(self._frame, text=dname, width=4, anchor='center',
+            ttk.Label(self._frame, text=T(dname), width=4, anchor='center',
                       foreground='#888').grid(row=1, column=i)
 
         cal = calendar.Calendar(firstweekday=0)  # Monday first
@@ -2686,7 +3023,7 @@ class CreateDialog(tk.Toplevel):
         self.client = client
         self.on_done = on_done
         self.selected_groups = []
-        self.title("Create user")
+        self.title(T('Create user'))
         self.resizable(False, False)
         self.grab_set()
         frm = ttk.Frame(self, padding=18)
@@ -2698,47 +3035,47 @@ class CreateDialog(tk.Toplevel):
             e.grid(row=r, column=1, pady=3)
             return e
 
-        self.e_given = row(0, "First name:")
-        self.e_sur = row(1, "Last name:")
-        self.e_display = row(2, "Display name:")
-        self.e_sam = row(3, "Login (sAMAccountName):")
-        self.e_upn = row(4, "UPN suffix:")
+        self.e_given = row(0, T('First name:'))
+        self.e_sur = row(1, T('Last name:'))
+        self.e_display = row(2, T('Display name:'))
+        self.e_sam = row(3, T('Login (sAMAccountName):'))
+        self.e_upn = row(4, T('UPN suffix:'))
         self.e_mail = row(5, "E-mail:")
-        self.e_desc = row(6, "Description:")
-        ttk.Label(frm, text="Password:").grid(row=7, column=0, sticky='w', pady=3)
+        self.e_desc = row(6, T('Description:'))
+        ttk.Label(frm, text=T('Password:')).grid(row=7, column=0, sticky='w', pady=3)
         self.e_pass = ttk.Entry(frm, width=36, show='•')
         self.e_pass.grid(row=7, column=1, pady=3)
 
         # Organizational unit (OU) where the user will be created
-        ttk.Label(frm, text="Organizational unit (OU):").grid(
+        ttk.Label(frm, text=T('Organizational unit (OU):')).grid(
             row=8, column=0, sticky='w', pady=3)
         ou_row = ttk.Frame(frm)
         ou_row.grid(row=8, column=1, sticky='ew', pady=3)
         self.cmb_ou = ttk.Combobox(ou_row, width=27)
         self.cmb_ou.grid(row=0, column=0)
-        ttk.Button(ou_row, text="Browse…", width=8,
+        ttk.Button(ou_row, text=T('Browse…'), width=8,
                    command=self._browse_ou).grid(row=0, column=1, padx=(6, 0))
         self._fill_ou(default_ou)
 
         # Account expiration
-        ttk.Label(frm, text="Expires:").grid(
+        ttk.Label(frm, text=T('Expires:')).grid(
             row=9, column=0, sticky='w', pady=3)
         exp_row = ttk.Frame(frm)
         exp_row.grid(row=9, column=1, sticky='w', pady=3)
         self.v_expire = tk.BooleanVar(value=False)
-        ttk.Checkbutton(exp_row, text="Valid through (incl.):",
+        ttk.Checkbutton(exp_row, text=T('Valid through (incl.):'),
                         variable=self.v_expire,
                         command=self._toggle_expire).grid(row=0, column=0)
         self.e_expire = ttk.Entry(exp_row, width=12)
         self.e_expire.grid(row=0, column=1, padx=(6, 0))
-        self.e_expire.insert(0, DATE_HINT)
+        self.e_expire.insert(0, date_hint())
         self.e_expire.config(state='disabled')
         self.btn_cal = ttk.Button(exp_row, text="📅", width=3,
                                   command=self._open_calendar, state='disabled')
         self.btn_cal.grid(row=0, column=2, padx=(4, 0))
 
         # Groups to add on creation
-        grp = ttk.LabelFrame(frm, text="Groups on creation")
+        grp = ttk.LabelFrame(frm, text=T('Groups on creation'))
         grp.grid(row=10, column=0, columnspan=2, sticky='ew', pady=(8, 0))
         grp.columnconfigure(0, weight=1)
         self.grp_list = tk.Listbox(grp, height=4, selectmode='extended')
@@ -2748,17 +3085,17 @@ class CreateDialog(tk.Toplevel):
         self.grp_list.config(yscrollcommand=gsb.set)
         gb = ttk.Frame(grp)
         gb.grid(row=1, column=0, columnspan=2, sticky='w', padx=6, pady=(0, 6))
-        ttk.Button(gb, text="Select groups...", command=self._pick_groups).grid(
+        ttk.Button(gb, text=T('Select groups...'), command=self._pick_groups).grid(
             row=0, column=0)
-        ttk.Button(gb, text="Remove selected", command=self._unpick).grid(
+        ttk.Button(gb, text=T('Remove selected'), command=self._unpick).grid(
             row=0, column=1, padx=(8, 0))
 
         self.v_change = tk.BooleanVar(value=True)
         self.v_enabled = tk.BooleanVar(value=True)
-        ttk.Checkbutton(frm, text="Change password at next logon",
+        ttk.Checkbutton(frm, text=T('Change password at next logon'),
                         variable=self.v_change).grid(
             row=11, column=1, sticky='w', pady=(6, 0))
-        ttk.Checkbutton(frm, text="Account enabled",
+        ttk.Checkbutton(frm, text=T('Account enabled'),
                         variable=self.v_enabled).grid(
             row=12, column=1, sticky='w')
 
@@ -2766,9 +3103,9 @@ class CreateDialog(tk.Toplevel):
         self.lbl.grid(row=13, column=0, columnspan=2, sticky='w', pady=(8, 0))
         btns = ttk.Frame(frm)
         btns.grid(row=14, column=0, columnspan=2, sticky='e', pady=(10, 0))
-        ttk.Button(btns, text="Create", command=self._create).grid(
+        ttk.Button(btns, text=T('Create'), command=self._create).grid(
             row=0, column=0, padx=(0, 8))
-        ttk.Button(btns, text="Cancel", command=self.destroy).grid(
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
 
         # Pre-fill the UPN suffix
@@ -2799,7 +3136,7 @@ class CreateDialog(tk.Toplevel):
         self._refresh_groups()
         if missing:
             self.lbl.config(
-                text="Default groups not found: " + ", ".join(missing))
+                text=T('Default groups not found: ') + ", ".join(missing))
 
     def _fill_ou(self, default_ou=None):
         try:
@@ -2839,7 +3176,7 @@ class CreateDialog(tk.Toplevel):
         if self.v_expire.get():
             self.e_expire.config(state='normal')
             self.btn_cal.config(state='normal')
-            if self.e_expire.get() == DATE_HINT:
+            if self.e_expire.get() == date_hint():
                 self.e_expire.delete(0, 'end')
             self.e_expire.focus_set()
         else:
@@ -2861,10 +3198,10 @@ class CreateDialog(tk.Toplevel):
     def _create(self):
         sam = self.e_sam.get().strip()
         if not sam:
-            self.lbl.config(text="Specify a login (sAMAccountName).")
+            self.lbl.config(text=T('Specify a login (sAMAccountName).'))
             return
         if not self.e_pass.get():
-            self.lbl.config(text="Specify a password.")
+            self.lbl.config(text=T('Specify a password.'))
             return
 
         # Account expiration
@@ -2875,14 +3212,14 @@ class CreateDialog(tk.Toplevel):
                 expire = parse_date(txt)
             except ValueError:
                 self.lbl.config(
-                    text=f"Expiration: enter a date in {DATE_HINT} format.")
+                    text=T('Expiration: enter a date in {a0} format.').format(a0=(date_hint())))
                 return
 
         # Check that the login is not already taken in the domain
         try:
             if self.client.user_exists(sam):
                 self.lbl.config(
-                    text=f"A user with login \"{sam}\" already exists in the domain.")
+                    text=T('A user with login "{a0}" already exists in the domain.').format(a0=(sam)))
                 return
         except Exception:
             pass  # if the check failed, try to create anyway; AD will reject duplicates
@@ -2916,10 +3253,10 @@ class CreateDialog(tk.Toplevel):
                     errs.append(f"{g['cn']}: {ex}")
             if errs:
                 messagebox.showwarning(
-                    "User created, but not added to all groups",
+                    T('User created, but not added to all groups'),
                     "\n".join(errs))
             else:
-                messagebox.showinfo("Done", "User created.")
+                messagebox.showinfo(T('Done'), T('User created.'))
             if self.on_done:
                 self.on_done()
             self.destroy()
@@ -2984,15 +3321,34 @@ def _install_mac_keybindings(root):
 
 def main():
     root = tk.Tk()
-    root.title("ADUC-Ext (macOS)")
+    root.title("ADUC-Ext")
     root.geometry("1400x700")
     _install_mac_keybindings(root)
     root.withdraw()  # hidden until a successful login
 
     config = ConfigStore()
     client = ADClient()
-    login = LoginDialog(root, client, config)
-    root.wait_window(login)
+
+    # Interface language: saved choice, otherwise the system locale
+    saved = config.get_lang()
+    if saved:
+        set_lang(saved)
+    else:
+        try:
+            import locale
+            loc = (locale.getlocale()[0] or
+                   os.environ.get('LANG', '') or '')
+            set_lang('ru' if loc.lower().startswith('ru') else 'en')
+        except Exception:
+            set_lang('en')
+
+    # The login dialog can switch the language; it then asks to be reopened.
+    while True:
+        login = LoginDialog(root, client, config)
+        root.wait_window(login)
+        if getattr(login, 'relaunch', False):
+            continue
+        break
 
     if not login.success:
         root.destroy()
@@ -3003,21 +3359,25 @@ def main():
 
     # macOS routes Cmd+C/Cmd+A through the application's Edit menu, so
     # provide one; its commands call our own copy logic (pbcopy on macOS).
-    menubar = tk.Menu(root)
-    edit_menu = tk.Menu(menubar, tearoff=0)
-    edit_menu.add_command(label="Cut", accelerator="Cmd+X",
-                          command=lambda: root.focus_get() and
-                          root.focus_get().event_generate('<<Cut>>'))
-    edit_menu.add_command(label="Copy", accelerator="Cmd+C",
-                          command=win._on_copy_shortcut)
-    edit_menu.add_command(label="Paste", accelerator="Cmd+V",
-                          command=lambda: root.focus_get() and
-                          root.focus_get().event_generate('<<Paste>>'))
-    edit_menu.add_separator()
-    edit_menu.add_command(label="Select All", accelerator="Cmd+A",
-                          command=win._on_select_all)
-    menubar.add_cascade(label="Edit", menu=edit_menu)
-    root.config(menu=menubar)
+    def _build_app_menu(w):
+        menubar = tk.Menu(root)
+        edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu.add_command(label=T('Cut'), accelerator="Cmd+X",
+                              command=lambda: root.focus_get() and
+                              root.focus_get().event_generate('<<Cut>>'))
+        edit_menu.add_command(label=T('Copy'), accelerator="Cmd+C",
+                              command=w._on_copy_shortcut)
+        edit_menu.add_command(label=T('Paste'), accelerator="Cmd+V",
+                              command=lambda: root.focus_get() and
+                              root.focus_get().event_generate('<<Paste>>'))
+        edit_menu.add_separator()
+        edit_menu.add_command(label=T('Select All'), accelerator="Cmd+A",
+                              command=w._on_select_all)
+        menubar.add_cascade(label=T('Edit'), menu=edit_menu)
+        root.config(menu=menubar)
+
+    root._build_app_menu = _build_app_menu
+    _build_app_menu(win)
 
     root.mainloop()
 

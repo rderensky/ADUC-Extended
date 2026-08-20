@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.2-orange)
+![Version](https://img.shields.io/badge/version-1.1.0-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -20,7 +20,8 @@ and macOS (Python + Tkinter).
 
 ---
 
-Both platform builds ship an **English** and a **Russian** variant. On startup the
+A single bilingual application: the interface language (**English / Русский**)
+switches on the fly — in the login window and in the main window. On startup the
 app prompts for credentials and performs all operations under the specified account.
 
 ## Features
@@ -41,22 +42,20 @@ app prompts for credentials and performs all operations under the specified acco
   cancels a pending change-at-next-logon requirement).
 - Attribute editing; double-click on a list row opens the edit dialog.
 - Domain list with switching; a domain switch uses the active session credentials.
+- Interface language switching (English / Русский) on the fly; dates follow the
+  language: `YYYY-MMM-DD` (EN) or `DD MMM YYYY` (RU).
 
 ## Repository layout
 
 ```
 ADUC-Ext/
 ├── windows/                 # Windows version (PowerShell + WPF)
-│   ├── ADUC-Ext.ps1         # English
-│   ├── ADUC-Ext-ru.ps1      # Russian
-│   ├── build_exe.ps1        # build .exe (English)
-│   ├── build_exe_ru.ps1     # build .exe (Russian)
+│   ├── ADUC-Ext.ps1         # bilingual (EN/RU)
+│   ├── build_exe.ps1        # build .exe
 │   └── aduc_ext.ico
 ├── macos/                   # macOS version (Python + Tkinter)
-│   ├── aduc_ext.py          # English
-│   ├── aduc_ext_ru.py       # Russian
-│   ├── build_app.sh         # build .app (English)
-│   ├── build_app_ru.sh      # build .app (Russian)
+│   ├── aduc_ext.py          # bilingual (EN/RU)
+│   ├── build_app.sh         # build .app
 │   └── aduc_ext.icns
 ├── assets/                  # icon
 ├── README.md · README_ru.md
@@ -69,26 +68,23 @@ ADUC-Ext/
 
 ```powershell
 cd windows
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext.ps1      # English
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext-ru.ps1   # Russian
+powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext.ps1
 ```
 
 Requires Windows PowerShell 5.1 and the **ActiveDirectory** module (RSAT). If the
 module is missing, the app offers to install RSAT automatically (administrator
-rights required). Build a standalone `.exe` with `build_exe.ps1` / `build_exe_ru.ps1`.
+rights required). Build a standalone `.exe` with `build_exe.ps1`.
 
 ### macOS
 
 ```bash
 cd macos
-python3 aduc_ext.py      # English
-python3 aduc_ext_ru.py   # Russian
+python3 aduc_ext.py
 ```
 
 Requires Python 3.8+ with Tkinter; the `ldap3` package is installed automatically
 on first run. LDAPS (port 636) is recommended — password changes and creating an
-account with a password require a secure connection. Build a `.app` with
-`build_app.sh` / `build_app_ru.sh`.
+account with a password require a secure connection. Build a `.app` with `build_app.sh`.
 
 ## Configuration
 
@@ -103,12 +99,12 @@ At the top of each source file you can set:
 
 ## Settings storage
 
-The domain list is stored locally (passwords are never saved):
+The domain list and the interface language are stored locally (passwords are
+never saved):
 
-| Version | Windows | macOS |
-|---|---|---|
-| English | `%APPDATA%\ADUC-Ext\domains.json` | `~/.aduc_ext_domains.json` |
-| Russian | `%APPDATA%\ADUC-Ext-ru\domains.json` | `~/.aduc_ext_ru_domains.json` |
+| Windows | macOS |
+|---|---|
+| `%APPDATA%\ADUC-Ext\domains.json` | `~/.aduc_ext_domains.json` |
 
 ## Security notes
 

@@ -10,7 +10,7 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.0.2-orange)
+![Version](https://img.shields.io/badge/version-1.1.0-orange)
 
 [English](README.md) · **Русская версия**
 
@@ -20,7 +20,8 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 
 ---
 
-Обе сборки содержат **английский** и **русский** варианты. При запуске приложение
+Единое двуязычное приложение: язык интерфейса (**English / Русский**)
+переключается на лету — в окне входа и в главном окне. При запуске приложение
 запрашивает учётные данные и выполняет все операции от имени указанной учётной записи.
 
 ## Возможности
@@ -44,24 +45,21 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
   установке снимается требование смены пароля при следующем входе).
 - Изменение атрибутов; двойной клик по строке открывает окно редактирования.
 - Список доменов с переключением; смена домена под учётными данными активной сессии.
+- Переключение языка интерфейса (English / Русский) на лету; формат дат зависит
+  от языка: `YYYY-MMM-DD` (EN) или `ДД МММ ГГГГ` (RU).
 
-Даты в русской версии — в формате `ДД МММ ГГГГ` (например, `14 авг 2026`).
 
 ## Структура репозитория
 
 ```
 ADUC-Ext/
 ├── windows/                 # Версия для Windows (PowerShell + WPF)
-│   ├── ADUC-Ext.ps1         # английская
-│   ├── ADUC-Ext-ru.ps1      # русская
-│   ├── build_exe.ps1        # сборка .exe (английская)
-│   ├── build_exe_ru.ps1     # сборка .exe (русская)
+│   ├── ADUC-Ext.ps1         # двуязычная (EN/RU)
+│   ├── build_exe.ps1        # сборка .exe
 │   └── aduc_ext.ico
 ├── macos/                   # Версия для macOS (Python + Tkinter)
-│   ├── aduc_ext.py          # английская
-│   ├── aduc_ext_ru.py       # русская
-│   ├── build_app.sh         # сборка .app (английская)
-│   ├── build_app_ru.sh      # сборка .app (русская)
+│   ├── aduc_ext.py          # двуязычная (EN/RU)
+│   ├── build_app.sh         # сборка .app
 │   └── aduc_ext.icns
 ├── assets/                  # иконка
 ├── README.md · README_ru.md
@@ -74,26 +72,23 @@ ADUC-Ext/
 
 ```powershell
 cd windows
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext-ru.ps1   # русская
-powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext.ps1      # английская
+powershell.exe -ExecutionPolicy Bypass -STA -File .\ADUC-Ext.ps1
 ```
 
 Нужны Windows PowerShell 5.1 и модуль **ActiveDirectory** (RSAT). При его отсутствии
 приложение предложит установить RSAT автоматически (нужны права администратора).
-Сборка `.exe` — скриптами `build_exe_ru.ps1` / `build_exe.ps1`.
+Сборка `.exe` — скриптом `build_exe.ps1`.
 
 ### macOS
 
 ```bash
 cd macos
-python3 aduc_ext_ru.py   # русская
-python3 aduc_ext.py      # английская
+python3 aduc_ext.py
 ```
 
 Нужен Python 3.8+ с Tkinter; пакет `ldap3` ставится автоматически при первом
 запуске. Рекомендуется LDAPS (порт 636): смена пароля и создание учётной записи
-с паролем требуют защищённого соединения. Сборка `.app` — `build_app_ru.sh` /
-`build_app.sh`.
+с паролем требуют защищённого соединения. Сборка `.app` — `build_app.sh`.
 
 ## Настройка
 
@@ -109,12 +104,11 @@ python3 aduc_ext.py      # английская
 
 ## Хранение настроек
 
-Список доменов сохраняется локально (пароли не хранятся):
+Список доменов и язык интерфейса сохраняются локально (пароли не хранятся):
 
-| Версия | Windows | macOS |
-|---|---|---|
-| Английская | `%APPDATA%\ADUC-Ext\domains.json` | `~/.aduc_ext_domains.json` |
-| Русская | `%APPDATA%\ADUC-Ext-ru\domains.json` | `~/.aduc_ext_ru_domains.json` |
+| Windows | macOS |
+|---|---|
+| `%APPDATA%\ADUC-Ext\domains.json` | `~/.aduc_ext_domains.json` |
 
 ## Безопасность
 
