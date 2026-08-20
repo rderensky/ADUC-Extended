@@ -65,7 +65,7 @@ ADUC-Ext/
 │   └── aduc_ext.icns
 ├── assets/                  # иконка
 ├── README.md · README_ru.md
-└── RELEASE_NOTES.md
+└── RELEASE_NOTES.md · RELEASE_NOTES_ru.md
 ```
 
 ## Быстрый старт
