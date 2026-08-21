@@ -1857,11 +1857,19 @@ function Show-GroupsDialog {
         $list.Items.Clear()
         try {
             $p = Get-ADParams
-            Get-ADPrincipalGroupMembership @p -Identity $User.DistinguishedName |
-                Sort-Object name | ForEach-Object {
+            # memberOf via Get-ADUser: unlike the group-membership cmdlet, this
+            # honors -Credential (no "user has not been authenticated" error
+            # from non-domain-joined machines).
+            $adu = Get-ADUser @p -Identity $User.DistinguishedName -Properties memberOf
+            @($adu.memberOf) | Where-Object { $_ } | ForEach-Object {
+                $gdn = [string]$_
+                $m = [regex]::Match($gdn, '^CN=((?:\\.|[^,\\])*)')
+                $gname = if ($m.Success) { $m.Groups[1].Value -replace '\\(.)', '$1' } else { $gdn }
+                [pscustomobject]@{ Name = $gname; Dn = $gdn }
+            } | Sort-Object Name | ForEach-Object {
                     $it = New-Object System.Windows.Controls.ListBoxItem
-                    $it.Content = $_.name
-                    $it.Tag = $_.distinguishedName
+                    $it.Content = $_.Name
+                    $it.Tag = $_.Dn
                     $list.Items.Add($it) | Out-Null
                 }
         } catch { Show-Error ((L "Failed to retrieve the group list: {0}") -f ($_.Exception.Message)) }
@@ -1987,11 +1995,19 @@ function Show-EditDialog {
         $egroups.Items.Clear()
         try {
             $p = Get-ADParams
-            Get-ADPrincipalGroupMembership @p -Identity $User.DistinguishedName |
-                Sort-Object name | ForEach-Object {
+            # memberOf via Get-ADUser: unlike the group-membership cmdlet, this
+            # honors -Credential (no "user has not been authenticated" error
+            # from non-domain-joined machines).
+            $adu = Get-ADUser @p -Identity $User.DistinguishedName -Properties memberOf
+            @($adu.memberOf) | Where-Object { $_ } | ForEach-Object {
+                $gdn = [string]$_
+                $m = [regex]::Match($gdn, '^CN=((?:\\.|[^,\\])*)')
+                $gname = if ($m.Success) { $m.Groups[1].Value -replace '\\(.)', '$1' } else { $gdn }
+                [pscustomobject]@{ Name = $gname; Dn = $gdn }
+            } | Sort-Object Name | ForEach-Object {
                     $it = New-Object System.Windows.Controls.ListBoxItem
-                    $it.Content = $_.name
-                    $it.Tag = $_.distinguishedName
+                    $it.Content = $_.Name
+                    $it.Tag = $_.Dn
                     $egroups.Items.Add($it) | Out-Null
                 }
         } catch { Show-Error ((L "Failed to retrieve groups: {0}") -f ($_.Exception.Message)) }
