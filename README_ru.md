@@ -10,7 +10,7 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.1.0-orange)
+![Version](https://img.shields.io/badge/version-1.2.0-orange)
 
 [English](README.md) · **Русская версия**
 
@@ -38,6 +38,10 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 - Сброс пароля.
 - Управление членством в группах, включая групповое добавление выбранных
   пользователей в группы.
+- Работа с группами (переключатель «Пользователи / Компьютеры / Группы»):
+  создание, изменение, переименование, перенос, удаление групп (в т.ч.
+  массовое); список участников по двойному клику, добавление участников
+  через дерево AD или поиск (отключённые учётные записи исключаются).
 - Перемещение учётных записей между подразделениями.
 - Множественный выбор с групповыми действиями: включить, отключить,
   переместить в OU.

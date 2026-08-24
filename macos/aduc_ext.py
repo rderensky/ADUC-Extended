@@ -27,6 +27,7 @@ Run:
 import os
 import sys
 import ssl
+import socket
 import json
 import calendar
 import datetime
@@ -293,7 +294,44 @@ RU_STRINGS = {
     "Copy": "Копировать",
     "Paste": "Вставить",
     "Select All": "Выделить всё",
-    "Edit": "Правка"
+    "Edit": "Правка",
+    'Container on the left — its users on the right; the search spans the whole subtree. Cmd-click — multi-select.':
+        'Слева контейнер — справа его пользователи; поиск идёт по всему поддереву. Cmd-клик — множественный выбор.',
+    'Domain controller "{a0}" is unreachable (port {a1}).\n'
+    'Check the server name and network connectivity.':
+        'Контроллер домена «{a0}» недоступен (порт {a1}).\n'
+        'Проверьте имя сервера и сетевую доступность.',
+    '(no users found)': '(пользователи не найдены)',
+    'Category': 'Категория',
+    'Category:': 'Категория:',
+    'Container (OU):': 'Контейнер (OU):',
+    'Create group': 'Создание группы',
+    'Create group...': 'Создать группу...',
+    'Delete {a0} groups?\n\nThis operation is irreversible.': 'Удалить группы ({a0})?\n\nЭта операция необратима.',
+    'Deleted: {a0}.': 'Удалено: {a0}.',
+    'Distribution': 'Рассылки',
+    'Domain local': 'Локальная в домене',
+    'Edit group': 'Изменить группу',
+    'Enter a group name.': 'Укажите имя группы.',
+    'Global': 'Глобальная',
+    'Group created.': 'Группа создана.',
+    'Group members': 'Участники группы',
+    'Group name:': 'Имя группы:',
+    'Group properties': 'Свойства группы',
+    'Group: {a0}': 'Группа: {a0}',
+    'Groups': 'Группы',
+    'Login:': 'Логин:',
+    'Members': 'Участники',
+    'Members...': 'Участники...',
+    'Remove selected members ({a0}) from the group?': 'Удалить выбранных участников ({a0}) из группы?',
+    'Removed: {a0}.': 'Удалено из группы: {a0}.',
+    'Scope': 'Область',
+    'Scope:': 'Область:',
+    'Security': 'Безопасности',
+    'Select users': 'Выбор пользователей',
+    'Selected objects: {a0}\n\nAvailable bulk actions:\n  Move (OU) / Delete': 'Выбрано объектов: {a0}\n\nДоступные групповые действия:\n  Переместить (OU) / Удалить',
+    'Universal': 'Универсальная',
+    'Users (Cmd-click — multi-select):': 'Пользователи (Cmd-клик — множественный выбор):',
 }
 
 
@@ -405,6 +443,17 @@ COMPUTER_ATTRS = [
     'distinguishedName', 'whenCreated', 'lastLogonTimestamp',
 ]
 
+GROUP_ATTRS = [
+    'cn', 'name', 'sAMAccountName', 'description', 'groupType',
+    'distinguishedName', 'whenCreated', 'mail',
+]
+
+# groupType bits
+GT_GLOBAL = 0x00000002
+GT_DOMAIN_LOCAL = 0x00000004
+GT_UNIVERSAL = 0x00000008
+GT_SECURITY = 0x80000000
+
 # userAccountControl bits
 UAC_DISABLED = 0x0002          # ACCOUNTDISABLE
 UAC_NORMAL_ACCOUNT = 0x0200    # NORMAL_ACCOUNT
@@ -502,6 +551,24 @@ class ADClient:
         """Establishes a connection and verifies credentials (bind)."""
         if port is None:
             port = 636 if use_ssl else 389
+
+        # Fail fast when the directory server is unreachable: without this
+        # probe the RESTARTABLE strategy would keep retrying for minutes.
+        try:
+            probe = socket.create_connection((host, port), timeout=5)
+            probe.close()
+        except OSError as ex:
+            raise RuntimeError(
+                T('Domain controller "{a0}" is unreachable (port {a1}).\nCheck the server name and network connectivity.').format(
+                    a0=(host), a1=(port))) from ex
+
+        # Bound automatic reconnect retries (defaults retry for a long time)
+        try:
+            from ldap3.utils.config import set_config_parameter
+            set_config_parameter('RESTARTABLE_TRIES', 2)
+            set_config_parameter('RESTARTABLE_SLEEPTIME', 1)
+        except Exception:
+            pass
 
         tls = None
         if use_ssl:
@@ -921,6 +988,150 @@ class ADClient:
             'uac': uac,
             'is_computer': True,
         }
+
+    # ---- Group operations ----
+    def search_ad_groups(self, query=None, base=None, scope=SUBTREE):
+        """query — search text; base — container/OU DN; scope — LEVEL/SUBTREE.
+        Returns all matching groups (paged, no limit)."""
+        base = base or self.base_dn
+        query = (query or '').strip().replace('*', '')
+        if query:
+            q = _escape_filter(query)
+            flt = (
+                "(&(objectCategory=group)"
+                f"(|(cn=*{q}*)(name=*{q}*)(sAMAccountName=*{q}*)"
+                f"(description=*{q}*)))"
+            )
+            scope = SUBTREE  # text search always spans the whole base subtree
+        else:
+            flt = "(objectCategory=group)"
+
+        entries = self._paged_search(base, flt, GROUP_ATTRS, scope)
+        result = [self._group_to_dict(e) for e in entries]
+        result.sort(key=lambda x: (x.get('name') or '').lower())
+        return result
+
+    def get_group(self, dn):
+        self.conn.search(dn, "(objectClass=group)", search_scope='BASE',
+                         attributes=GROUP_ATTRS)
+        if not self.conn.entries:
+            return None
+        return self._group_to_dict(self.conn.entries[0])
+
+    def _group_to_dict(self, e):
+        def v(attr, default=''):
+            try:
+                val = e[attr].value
+                return val if val is not None else default
+            except Exception:
+                return default
+
+        gt = v('groupType', 0) or 0
+        try:
+            gt = int(gt)
+        except (ValueError, TypeError):
+            gt = 0
+        if gt < 0:
+            gt += 2 ** 32
+        if gt & GT_GLOBAL:
+            scope = T('Global')
+        elif gt & GT_DOMAIN_LOCAL:
+            scope = T('Domain local')
+        elif gt & GT_UNIVERSAL:
+            scope = T('Universal')
+        else:
+            scope = ''
+        category = T('Security') if gt & GT_SECURITY else T('Distribution')
+
+        name = v('name') or v('cn') or str(e.entry_dn).split(',')[0][3:]
+        return {
+            'name': name,
+            'cn': v('cn') or name,
+            'sAMAccountName': v('sAMAccountName'),
+            'description': v('description'),
+            'mail': v('mail'),
+            'scope': scope,
+            'category': category,
+            'groupType': gt,
+            'dn': str(e.entry_dn),
+            'whenCreated': v('whenCreated'),
+            'is_group': True,
+        }
+
+    def get_group_members(self, dn):
+        """Group members as [{'name', 'dn'}] read from the 'member' attribute."""
+        self.conn.search(dn, "(objectClass=group)", search_scope='BASE',
+                         attributes=['member'])
+        if not self.conn.entries:
+            return []
+        member = self.conn.entries[0]['member'].value
+        if member is None:
+            return []
+        if isinstance(member, str):
+            member = [member]
+        out = []
+        for mdn in member:
+            rdn = mdn.split(',', 1)[0]
+            nm = rdn.split('=', 1)[1] if '=' in rdn else rdn
+            nm = nm.replace('\\,', ',').replace('\\\\', '\\')
+            out.append({'name': nm, 'dn': mdn})
+        out.sort(key=lambda m: m['name'].lower())
+        return out
+
+    def create_group(self, ou, name, sam, description=None,
+                     scope='global', security=True):
+        """Create a group. scope: 'global' | 'domainlocal' | 'universal'."""
+        if not ou:
+            ou = "CN=Users," + self.base_dn
+        dn = f"CN={_escape_dn(name)},{ou}"
+        gt = {'global': GT_GLOBAL, 'domainlocal': GT_DOMAIN_LOCAL,
+              'universal': GT_UNIVERSAL}.get(scope, GT_GLOBAL)
+        if security:
+            gt |= GT_SECURITY
+        if gt >= 2 ** 31:
+            gt -= 2 ** 32  # LDAP stores groupType as a signed 32-bit value
+        attrs = {
+            'objectClass': ['top', 'group'],
+            'sAMAccountName': sam or name,
+            'groupType': gt,
+        }
+        if description:
+            attrs['description'] = description
+        self.conn.add(dn, attributes=attrs)
+        self._check()
+        return dn
+
+    def add_group_members(self, group_dn, user_dns):
+        """Add users to a group one by one.
+        Returns (added, already, errors[])."""
+        added, already, errors = 0, 0, []
+        for udn in user_dns:
+            try:
+                self.conn.modify(group_dn,
+                                 {'member': [(MODIFY_ADD, [udn])]})
+                self._check()
+                added += 1
+            except Exception as ex:
+                msg = str(ex)
+                if 'entryalreadyexists' in msg.lower().replace(' ', ''):
+                    already += 1
+                else:
+                    errors.append(f"{udn}: {msg}")
+        return added, already, errors
+
+    def remove_group_members(self, group_dn, user_dns):
+        """Remove users from a group one by one.
+        Returns (removed, errors[])."""
+        removed, errors = 0, []
+        for udn in user_dns:
+            try:
+                self.conn.modify(group_dn,
+                                 {'member': [(MODIFY_DELETE, [udn])]})
+                self._check()
+                removed += 1
+            except Exception as ex:
+                errors.append(f"{udn}: {ex}")
+        return removed, errors
 
     def rename_object(self, dn, new_name):
         """Rename an object (change its CN/RDN) within the same container."""
@@ -1450,6 +1661,10 @@ class MainWindow(ttk.Frame):
                         variable=self.mode_var,
                         command=self.on_mode_change).grid(row=0, column=2,
                                                           padx=(8, 0))
+        ttk.Radiobutton(mode_row, text=T('Groups'), value='groups',
+                        variable=self.mode_var,
+                        command=self.on_mode_change).grid(row=0, column=3,
+                                                          padx=(8, 0))
 
         # Nested OUs
         self.include_subtree = tk.BooleanVar(value=False)
@@ -1602,13 +1817,22 @@ class MainWindow(ttk.Frame):
 
     def _apply_columns(self):
         """Configure list columns for the current mode (users/computers)."""
-        if getattr(self, 'mode_var', None) and self.mode_var.get() == 'computers':
+        mode = self.mode_var.get() if getattr(self, 'mode_var', None) else 'users'
+        if mode == 'computers':
             spec = [
                 ('name', T('Name'), 190),
                 ('dns', T('DNS name'), 200),
                 ('os', T('Operating system'), 190),
                 ('desc', T('Description'), 150),
                 ('state', T('State'), 90),
+            ]
+        elif mode == 'groups':
+            spec = [
+                ('name', T('Name'), 220),
+                ('sam', T('Login'), 150),
+                ('scope', T('Scope'), 120),
+                ('category', T('Category'), 110),
+                ('desc', T('Description'), 220),
             ]
         else:
             spec = [
@@ -1628,13 +1852,23 @@ class MainWindow(ttk.Frame):
         """(Re)build the action buttons for the current mode."""
         for w in self.act_group.winfo_children():
             w.destroy()
-        if self.mode_var.get() == 'computers':
+        mode = self.mode_var.get()
+        if mode == 'computers':
             actions = [
                 (T('Enable'), self.on_enable),
                 (T('Disable'), self.on_disable),
                 (T('Rename...'), self.on_rename),
                 (T('Move (OU)'), self.on_move),
                 (T('Edit...'), self.on_edit),
+                (T('Delete'), self.on_delete),
+            ]
+        elif mode == 'groups':
+            actions = [
+                (T('Create group...'), self.on_create_group),
+                (T('Members...'), self.on_group_members),
+                (T('Edit...'), self.on_edit),
+                (T('Rename...'), self.on_rename),
+                (T('Move (OU)'), self.on_move),
                 (T('Delete'), self.on_delete),
             ]
         else:
@@ -1669,19 +1903,20 @@ class MainWindow(ttk.Frame):
             rebuild_menu(win)
 
     def on_mode_change(self):
-        """Switch between users and computers."""
-        computers = self.mode_var.get() == 'computers'
+        """Switch between users, computers and groups."""
+        mode = self.mode_var.get()
         self.e_search.delete(0, 'end')
         self.props.delete('1.0', 'end')
         self._prop_rows = []
         self._apply_columns()
         self._build_actions()
-        self.prop_group.config(
-            text=T('Computer properties') if computers else T('User properties'))
-        if computers:
-            self.btn_create.grid_remove()
-        else:
+        titles = {'computers': T('Computer properties'),
+                  'groups': T('Group properties')}
+        self.prop_group.config(text=titles.get(mode, T('User properties')))
+        if mode == 'users':
             self.btn_create.grid()
+        else:
+            self.btn_create.grid_remove()
         self.do_search()
 
     def _build_statusbar(self):
@@ -1752,18 +1987,24 @@ class MainWindow(ttk.Frame):
             text = self.e_search.get().strip()
             subtree = bool(text) or self.include_subtree.get()
             scope = SUBTREE if subtree else LEVEL
-            computers = self.mode_var.get() == 'computers'
-            if computers:
+            mode = self.mode_var.get()
+            if mode == 'computers':
                 self.users = self.client.search_computers(
+                    query=text, base=base, scope=scope)
+            elif mode == 'groups':
+                self.users = self.client.search_ad_groups(
                     query=text, base=base, scope=scope)
             else:
                 self.users = self.client.search_users(
                     query=text, base=base, scope=scope)
             self.tree.delete(*self.tree.get_children())
             for i, u in enumerate(self.users):
-                if computers:
+                if mode == 'computers':
                     vals = (u['name'], u.get('dnsHostName', ''),
                             u.get('osFull', ''), u['description'], u['state'])
+                elif mode == 'groups':
+                    vals = (u['name'], u['sAMAccountName'], u['scope'],
+                            u['category'], u['description'])
                 else:
                     vals = (u['name'], u['sAMAccountName'], u['mail'],
                             u['description'], u['state'])
@@ -1801,18 +2042,22 @@ class MainWindow(ttk.Frame):
             return
         if len(sel) > 1:
             self.props.delete('1.0', 'end')
-            self.props.insert(
-                'end',
-                T('Selected objects: {a0}\n\nAvailable bulk actions:\n  Enable / Disable / Move (OU)\n  Add to groups (users)').format(a0=(len(sel))))
+            if self.mode_var.get() == 'groups':
+                txt = T('Selected objects: {a0}\n\nAvailable bulk actions:\n  Move (OU) / Delete').format(a0=(len(sel)))
+            else:
+                txt = T('Selected objects: {a0}\n\nAvailable bulk actions:\n  Enable / Disable / Move (OU)\n  Add to groups (users)').format(a0=(len(sel)))
+            self.props.insert('end', txt)
             return
         u = self.users[int(sel[0])]
-        if u.get('is_computer'):
+        if u.get('is_group'):
+            self._show_group_props(u)
+        elif u.get('is_computer'):
             self._show_computer_props(u)
         else:
             self._show_props(u)
 
     def _refresh_selected(self, dn):
-        if self.mode_var.get() == 'computers':
+        if self.mode_var.get() in ('computers', 'groups'):
             # Computer list uses different columns; re-run the search and
             # keep the same row selected if it is still present.
             self.do_search()
@@ -2010,12 +2255,16 @@ class MainWindow(ttk.Frame):
             m = tk.Menu(self, tearoff=0)
             m.add_command(label=T('Selected: {a0}').format(a0=(len(sel))), state='disabled')
             m.add_separator()
-            m.add_command(label=T('Enable'), command=self.on_enable)
-            m.add_command(label=T('Disable'), command=self.on_disable)
-            m.add_command(label=T('Move (OU)...'), command=self.on_move)
-            if self.mode_var.get() != 'computers':
-                m.add_command(label=T('Add to groups...'),
-                              command=self.on_groups)
+            if self.mode_var.get() == 'groups':
+                m.add_command(label=T('Move (OU)...'), command=self.on_move)
+                m.add_command(label=T('Delete'), command=self.on_delete)
+            else:
+                m.add_command(label=T('Enable'), command=self.on_enable)
+                m.add_command(label=T('Disable'), command=self.on_disable)
+                m.add_command(label=T('Move (OU)...'), command=self.on_move)
+                if self.mode_var.get() != 'computers':
+                    m.add_command(label=T('Add to groups...'),
+                                  command=self.on_groups)
             m.add_separator()
             m.add_command(label=T('Copy rows'),
                           command=self._copy_selected_row)
@@ -2026,6 +2275,8 @@ class MainWindow(ttk.Frame):
             return 'break'
         u = self.users[int(sel[0])]
 
+        if u.get('is_group'):
+            return self._show_group_menu(event, u)
         if u.get('is_computer'):
             return self._show_computer_menu(event, u)
 
@@ -2083,6 +2334,52 @@ class MainWindow(ttk.Frame):
         m.add_command(label=T('Rename...'), command=self.on_rename)
         m.add_command(label=T('Move (OU)...'), command=self.on_move)
         m.add_command(label=T('Edit...'), command=self.on_edit)
+        m.add_command(label=T('Delete'), command=self.on_delete)
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+        return 'break'
+
+    def _show_group_props(self, g):
+        try:
+            members = self.client.get_group_members(g['dn'])
+        except Exception:
+            members = []
+        rows = [
+            (T('Name'), g['name']),
+            (T('Login'), g['sAMAccountName']),
+            (T('Scope'), g['scope']),
+            (T('Category'), g['category']),
+            (T('Description'), g['description']),
+            ('E-mail', g.get('mail', '')),
+            (T('Members'), str(len(members))),
+            (T('Created'), filetime_to_str(g['whenCreated'])),
+            ("DN", g['dn']),
+        ]
+        self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
+        self.props.delete('1.0', 'end')
+        for k, val in self._prop_rows:
+            self.props.insert('end', f"{k}:\n", ('label',))
+            self.props.insert('end', f"{val}\n\n")
+        self.props.tag_config('label', foreground='#555',
+                              font=('Menlo', 10, 'bold'))
+
+    def _show_group_menu(self, event, g):
+        m = tk.Menu(self, tearoff=0)
+        m.add_command(label=T('Copy name'),
+                      command=lambda: self._copy_text(g['name']))
+        m.add_command(label=T('Copy login'),
+                      command=lambda: self._copy_text(g['sAMAccountName']))
+        m.add_command(label=T('Copy DN'),
+                      command=lambda: self._copy_text(g['dn']))
+        m.add_command(label=T('Copy all properties'),
+                      command=self._copy_all_props)
+        m.add_separator()
+        m.add_command(label=T('Members...'), command=self.on_group_members)
+        m.add_command(label=T('Edit...'), command=self.on_edit)
+        m.add_command(label=T('Rename...'), command=self.on_rename)
+        m.add_command(label=T('Move (OU)...'), command=self.on_move)
         m.add_command(label=T('Delete'), command=self.on_delete)
         try:
             m.tk_popup(event.x_root, event.y_root)
@@ -2298,20 +2595,26 @@ class MainWindow(ttk.Frame):
                    on_done=self.do_search)
 
     def _on_tree_double(self, event):
-        """Double-click on a list row opens the edit dialog."""
+        """Double-click on a list row: edit dialog; for a group — its members."""
         row = self.tree.identify_row(event.y)
         if not row:
             return
         self.tree.selection_set(row)
         self.tree.focus(row)
-        self.on_edit()
+        if self.mode_var.get() == 'groups':
+            self.on_group_members()
+        else:
+            self.on_edit()
         return 'break'
 
     def on_edit(self):
         u = self._selected_user()
         if not u:
             return
-        if u.get('is_computer'):
+        if u.get('is_group'):
+            GroupEditDialog(self.master, self.client, u,
+                            on_done=lambda: self._refresh_selected(u['dn']))
+        elif u.get('is_computer'):
             ComputerEditDialog(self.master, self.client, u,
                                on_done=lambda: self._refresh_selected(u['dn']))
         else:
@@ -2326,6 +2629,33 @@ class MainWindow(ttk.Frame):
                      on_done=lambda dn: self._refresh_selected(dn))
 
     def on_delete(self):
+        # Groups mode supports deleting several selected groups at once
+        if self.mode_var.get() == 'groups':
+            objs = self._selected_users()
+            if len(objs) > 1:
+                if not messagebox.askyesno(
+                        T('Confirm deletion'),
+                        T('Delete {a0} groups?\n\nThis operation is irreversible.').format(a0=(len(objs)))):
+                    return
+                errors = []
+                for g in objs:
+                    try:
+                        self.client.delete_object(g['dn'])
+                    except Exception as ex:
+                        errors.append(f"{g.get('name')}: {ex}")
+                self.do_search()
+                self.props.delete('1.0', 'end')
+                self._prop_rows = []
+                if errors:
+                    messagebox.showwarning(
+                        T('Partially completed'),
+                        T('Deleted: {a0}.').format(a0=(len(objs) - len(errors)))
+                        + '\n\n' + '\n'.join(errors[:10]))
+                else:
+                    messagebox.showinfo(
+                        T('Done'),
+                        T('Deleted: {a0}.').format(a0=(len(objs))))
+                return
         c = self._selected_user()
         if not c:
             return
@@ -2346,6 +2676,17 @@ class MainWindow(ttk.Frame):
     def on_create(self):
         CreateDialog(self.master, self.client, on_done=self.do_search,
                      default_ou=self._current_base())
+
+    def on_create_group(self):
+        GroupCreateDialog(self.master, self.client, on_done=self.do_search,
+                          default_ou=self._current_base())
+
+    def on_group_members(self):
+        g = self._selected_user()
+        if not g or not g.get('is_group'):
+            return
+        GroupMembersDialog(self.master, self.client, g,
+                           on_done=lambda: self._refresh_selected(g['dn']))
 
 
 class ResetPasswordDialog(tk.Toplevel):
@@ -2874,6 +3215,407 @@ class EditDialog(tk.Toplevel):
             self.destroy()
         except Exception as ex:
             self.lbl.config(text=str(ex))
+
+
+class GroupCreateDialog(tk.Toplevel):
+    """Create a new group: name, sAMAccountName, description, scope,
+    category and target OU."""
+
+    def __init__(self, master, client, on_done=None, default_ou=None):
+        super().__init__(master)
+        self.client = client
+        self.on_done = on_done
+        self.title(T('Create group'))
+        self.resizable(False, False)
+        self.grab_set()
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+
+        ttk.Label(frm, text=T('Group name:')).grid(row=0, column=0,
+                                                   sticky='w', pady=3)
+        self.e_name = ttk.Entry(frm, width=36)
+        self.e_name.grid(row=0, column=1, pady=3, sticky='ew')
+        self.e_name.bind('<KeyRelease>', self._sync_sam)
+
+        ttk.Label(frm, text=T('Login (sAMAccountName):')).grid(
+            row=1, column=0, sticky='w', pady=3)
+        self.e_sam = ttk.Entry(frm, width=36)
+        self.e_sam.grid(row=1, column=1, pady=3, sticky='ew')
+        self._sam_edited = False
+        self.e_sam.bind('<Key>', lambda e: setattr(self, '_sam_edited', True))
+
+        ttk.Label(frm, text=T('Description:')).grid(row=2, column=0,
+                                                    sticky='w', pady=3)
+        self.e_desc = ttk.Entry(frm, width=36)
+        self.e_desc.grid(row=2, column=1, pady=3, sticky='ew')
+
+        ttk.Label(frm, text=T('Scope:')).grid(row=3, column=0,
+                                              sticky='w', pady=3)
+        self.v_scope = tk.StringVar(value='global')
+        sc = ttk.Frame(frm)
+        sc.grid(row=3, column=1, sticky='w')
+        ttk.Radiobutton(sc, text=T('Global'), value='global',
+                        variable=self.v_scope).grid(row=0, column=0)
+        ttk.Radiobutton(sc, text=T('Domain local'), value='domainlocal',
+                        variable=self.v_scope).grid(row=0, column=1,
+                                                    padx=(8, 0))
+        ttk.Radiobutton(sc, text=T('Universal'), value='universal',
+                        variable=self.v_scope).grid(row=0, column=2,
+                                                    padx=(8, 0))
+
+        ttk.Label(frm, text=T('Category:')).grid(row=4, column=0,
+                                                 sticky='w', pady=3)
+        self.v_sec = tk.StringVar(value='security')
+        ct = ttk.Frame(frm)
+        ct.grid(row=4, column=1, sticky='w')
+        ttk.Radiobutton(ct, text=T('Security'), value='security',
+                        variable=self.v_sec).grid(row=0, column=0)
+        ttk.Radiobutton(ct, text=T('Distribution'), value='distribution',
+                        variable=self.v_sec).grid(row=0, column=1,
+                                                  padx=(8, 0))
+
+        ttk.Label(frm, text=T('Container (OU):')).grid(row=5, column=0,
+                                                       sticky='w', pady=3)
+        ou_row = ttk.Frame(frm)
+        ou_row.grid(row=5, column=1, sticky='ew', pady=3)
+        ou_row.columnconfigure(0, weight=1)
+        self.e_ou = ttk.Entry(ou_row, width=28)
+        if default_ou:
+            self.e_ou.insert(0, default_ou)
+        self.e_ou.grid(row=0, column=0, sticky='ew')
+        ttk.Button(ou_row, text=T('Browse…'), width=9,
+                   command=self._browse_ou).grid(row=0, column=1, padx=(6, 0))
+
+        self.lbl = ttk.Label(frm, text="", foreground='#B00020',
+                             wraplength=380)
+        self.lbl.grid(row=6, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=7, column=0, columnspan=2, pady=(12, 0))
+        ttk.Button(btns, text=T('Create'), command=self._apply).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1)
+
+    def _sync_sam(self, event=None):
+        if not self._sam_edited:
+            self.e_sam.delete(0, 'end')
+            self.e_sam.insert(0, self.e_name.get())
+
+    def _browse_ou(self):
+        picker = OUTreePickerDialog(
+            self, self.client, initial=self.e_ou.get().strip() or None)
+        self.wait_window(picker)
+        if picker.selected_dn:
+            self.e_ou.delete(0, 'end')
+            self.e_ou.insert(0, picker.selected_dn)
+
+    def _apply(self):
+        name = self.e_name.get().strip()
+        sam = self.e_sam.get().strip() or name
+        if not name:
+            self.lbl.config(text=T('Enter a group name.'))
+            return
+        try:
+            self.client.create_group(
+                self.e_ou.get().strip(), name, sam,
+                description=self.e_desc.get().strip() or None,
+                scope=self.v_scope.get(),
+                security=(self.v_sec.get() == 'security'))
+            messagebox.showinfo(T('Done'), T('Group created.'))
+            if self.on_done:
+                self.on_done()
+            self.destroy()
+        except Exception as ex:
+            self.lbl.config(text=str(ex))
+
+
+class GroupEditDialog(tk.Toplevel):
+    """Edit group attributes (description, e-mail)."""
+
+    def __init__(self, master, client, group, on_done=None):
+        super().__init__(master)
+        self.client = client
+        self.group = group
+        self.on_done = on_done
+        self.title(T('Edit group'))
+        self.resizable(False, False)
+        self.grab_set()
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        ttk.Label(frm, text=T('Name:')).grid(row=0, column=0, sticky='w',
+                                             pady=3)
+        ttk.Label(frm, text=group.get('name') or '').grid(
+            row=0, column=1, sticky='w', pady=3)
+        ttk.Label(frm, text=T('Login:')).grid(row=1, column=0, sticky='w',
+                                              pady=3)
+        ttk.Label(frm, text=group.get('sAMAccountName') or '—').grid(
+            row=1, column=1, sticky='w', pady=3)
+        ttk.Label(frm, text=T('Description:')).grid(row=2, column=0,
+                                                    sticky='w', pady=3)
+        self.e_desc = ttk.Entry(frm, width=38)
+        self.e_desc.insert(0, group.get('description', '') or '')
+        self.e_desc.grid(row=2, column=1, pady=3)
+        ttk.Label(frm, text="E-mail:").grid(row=3, column=0, sticky='w',
+                                            pady=3)
+        self.e_mail = ttk.Entry(frm, width=38)
+        self.e_mail.insert(0, group.get('mail', '') or '')
+        self.e_mail.grid(row=3, column=1, pady=3)
+        self.lbl = ttk.Label(frm, text="", foreground='#b00')
+        self.lbl.grid(row=4, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=5, column=0, columnspan=2, pady=(12, 0))
+        ttk.Button(btns, text=T('Save'), command=self._save).grid(
+            row=0, column=0)
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1, padx=(8, 0))
+
+    def _save(self):
+        try:
+            self.client.update_attributes(
+                self.group['dn'], {'description': self.e_desc.get(),
+                                   'mail': self.e_mail.get()})
+            self.destroy()
+            if self.on_done:
+                self.on_done()
+        except Exception as ex:
+            self.lbl.config(text=T('Error: {a0}').format(a0=(ex)))
+
+
+class UserPickerDialog(tk.Toplevel):
+    """Search and pick one or more users."""
+
+    def __init__(self, master, client, exclude_dns=None):
+        super().__init__(master)
+        self.client = client
+        self.exclude = set((d or '').lower() for d in (exclude_dns or []))
+        self.selected = []
+        self.title(T('Select users'))
+        self.grab_set()
+        self.geometry("760x500")
+        frm = ttk.Frame(self, padding=14)
+        frm.grid(sticky='nsew')
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        frm.rowconfigure(2, weight=1)
+        frm.columnconfigure(0, weight=1)
+
+        top = ttk.Frame(frm)
+        top.grid(row=0, column=0, sticky='ew')
+        ttk.Label(top, text=T('Filter:')).grid(row=0, column=0, padx=(0, 6))
+        self.e_search = ttk.Entry(top, width=34)
+        self.e_search.grid(row=0, column=1)
+        self.e_search.bind('<Return>', lambda e: self._load())
+        ttk.Button(top, text=T('Find'), command=self._load).grid(
+            row=0, column=2, padx=(6, 0))
+
+        ttk.Label(frm, text=T('Container on the left — its users on the right; the search spans the whole subtree. Cmd-click — multi-select.'),
+                  wraplength=700).grid(
+            row=1, column=0, sticky='w', pady=(10, 4))
+
+        body = ttk.Panedwindow(frm, orient='horizontal')
+        body.grid(row=2, column=0, sticky='nsew')
+
+        # AD hierarchy (like the main window's OU tree)
+        tree_frame = ttk.Frame(body)
+        tree_frame.rowconfigure(0, weight=1)
+        tree_frame.columnconfigure(0, weight=1)
+        self.ou_tree = ttk.Treeview(tree_frame, show='tree',
+                                    selectmode='browse')
+        self.ou_tree.grid(row=0, column=0, sticky='nsew')
+        tsb = ttk.Scrollbar(tree_frame, orient='vertical',
+                            command=self.ou_tree.yview)
+        tsb.grid(row=0, column=1, sticky='ns')
+        self.ou_tree.configure(yscrollcommand=tsb.set)
+        self.ou_tree.bind('<<TreeviewSelect>>', self._on_ou_select)
+        body.add(tree_frame, weight=2)
+
+        list_frame = ttk.Frame(body)
+        list_frame.rowconfigure(0, weight=1)
+        list_frame.columnconfigure(0, weight=1)
+        self.listbox = tk.Listbox(list_frame, selectmode='extended')
+        self.listbox.grid(row=0, column=0, sticky='nsew')
+        sb = ttk.Scrollbar(list_frame, orient='vertical',
+                           command=self.listbox.yview)
+        sb.grid(row=0, column=1, sticky='ns')
+        self.listbox.config(yscrollcommand=sb.set)
+        body.add(list_frame, weight=3)
+
+        btns = ttk.Frame(frm)
+        btns.grid(row=3, column=0, sticky='e', pady=(10, 0))
+        ttk.Button(btns, text=T('Select'), command=self._ok).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1)
+
+        self._all = []
+        self._ou_dn_by_item = {}
+        self._loading_tree = False
+        self._load_tree()
+        self.e_search.focus_set()
+        self._load()
+
+    def _load_tree(self):
+        """AD hierarchy: OUs and standard containers, like the main window."""
+        self._loading_tree = True
+        self.ou_tree.delete(*self.ou_tree.get_children())
+        self._ou_dn_by_item = {}
+        item_by_dn = {}
+        root_label = self.client.upn_suffix or self.client.base_dn
+        root = self.ou_tree.insert('', 'end', text=root_label, open=True)
+        self._ou_dn_by_item[root] = self.client.base_dn
+        item_by_dn[self.client.base_dn.lower()] = root
+        try:
+            nodes = self.client.list_tree_nodes()
+        except Exception:
+            nodes = []
+        for dn in nodes:
+            parent_dn = dn.split(',', 1)[1] if ',' in dn else ''
+            parent_item = item_by_dn.get(parent_dn.lower(), root)
+            rdn = dn.split(',', 1)[0]
+            label = rdn.split('=', 1)[1] if '=' in rdn else rdn
+            item = self.ou_tree.insert(parent_item, 'end', text=label)
+            self._ou_dn_by_item[item] = dn
+            item_by_dn[dn.lower()] = item
+        self.ou_tree.selection_set(root)
+        self._loading_tree = False
+
+    def _picker_base(self):
+        sel = self.ou_tree.selection()
+        if sel and sel[0] in self._ou_dn_by_item:
+            return self._ou_dn_by_item[sel[0]]
+        return self.client.base_dn
+
+    def _on_ou_select(self, event=None):
+        if self._loading_tree:
+            return
+        # Browsing the hierarchy shows the container's users (one level)
+        self.e_search.delete(0, 'end')
+        self._load()
+
+    def _load(self):
+        self.config(cursor='watch')
+        self.update_idletasks()
+        try:
+            text = self.e_search.get().strip()
+            base = self._picker_base()
+            scope = SUBTREE if text else LEVEL
+            users = self.client.search_users(query=text, base=base,
+                                             scope=scope)
+            # Disabled accounts are not offered for membership
+            self._all = [u for u in users
+                         if u['dn'].lower() not in self.exclude
+                         and u.get('enabled', True)]
+        except Exception as ex:
+            messagebox.showerror(T('Error'), str(ex))
+            self._all = []
+        finally:
+            self.config(cursor='')
+        self.listbox.delete(0, 'end')
+        for u in self._all:
+            self.listbox.insert(
+                'end', f"{u['name']} ({u['sAMAccountName']})")
+        if not self._all:
+            self.listbox.insert('end', T('(no users found)'))
+            self.listbox.itemconfig(0, foreground='gray')
+
+    def _ok(self):
+        if not self._all:
+            self.selected = []
+        else:
+            self.selected = [self._all[i]
+                             for i in self.listbox.curselection()
+                             if i < len(self._all)]
+        self.destroy()
+
+
+class GroupMembersDialog(tk.Toplevel):
+    """Group members: view, add (multi) and remove (multi)."""
+
+    def __init__(self, master, client, group, on_done=None):
+        super().__init__(master)
+        self.client = client
+        self.group = group
+        self.on_done = on_done
+        self.title(T('Group members'))
+        self.grab_set()
+        self.geometry("560x480")
+        frm = ttk.Frame(self, padding=14)
+        frm.grid(sticky='nsew')
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        frm.rowconfigure(1, weight=1)
+        frm.columnconfigure(0, weight=1)
+
+        ttk.Label(frm, text=T('Group: {a0}').format(a0=(group['name'])),
+                  font=('', 12, 'bold')).grid(row=0, column=0, columnspan=2,
+                                              sticky='w', pady=(0, 8))
+        self.listbox = tk.Listbox(frm, selectmode='extended')
+        self.listbox.grid(row=1, column=0, sticky='nsew')
+        sb = ttk.Scrollbar(frm, orient='vertical', command=self.listbox.yview)
+        sb.grid(row=1, column=1, sticky='ns')
+        self.listbox.config(yscrollcommand=sb.set)
+
+        btns = ttk.Frame(frm)
+        btns.grid(row=2, column=0, columnspan=2, sticky='w', pady=(10, 0))
+        ttk.Button(btns, text=T('Add...'), command=self._add).grid(
+            row=0, column=0)
+        ttk.Button(btns, text=T('Remove selected'),
+                   command=self._remove).grid(row=0, column=1, padx=(8, 0))
+        ttk.Button(btns, text=T('Close'), command=self._close).grid(
+            row=0, column=2, padx=(24, 0))
+
+        self.members = []
+        self._reload()
+
+    def _reload(self):
+        try:
+            self.members = self.client.get_group_members(self.group['dn'])
+        except Exception as ex:
+            messagebox.showerror(T('Error'), str(ex))
+            self.members = []
+        self.listbox.delete(0, 'end')
+        for m in self.members:
+            self.listbox.insert('end', m['name'])
+        self.title(T('Group members') + f" ({len(self.members)})")
+
+    def _add(self):
+        picker = UserPickerDialog(
+            self, self.client,
+            exclude_dns=[m['dn'] for m in self.members])
+        self.wait_window(picker)
+        if not picker.selected:
+            return
+        added, already, errors = self.client.add_group_members(
+            self.group['dn'], [u['dn'] for u in picker.selected])
+        if errors:
+            messagebox.showwarning(
+                T('Partially completed'),
+                T('Added: {a0}.').format(a0=(added)) + '\n\n'
+                + '\n'.join(errors[:10]))
+        self._reload()
+
+    def _remove(self):
+        idx = list(self.listbox.curselection())
+        sel = [self.members[i] for i in idx if i < len(self.members)]
+        if not sel:
+            return
+        if not messagebox.askyesno(
+                T('Confirm'),
+                T('Remove selected members ({a0}) from the group?').format(a0=(len(sel)))):
+            return
+        removed, errors = self.client.remove_group_members(
+            self.group['dn'], [m['dn'] for m in sel])
+        if errors:
+            messagebox.showwarning(
+                T('Partially completed'),
+                T('Removed: {a0}.').format(a0=(removed)) + '\n\n'
+                + '\n'.join(errors[:10]))
+        self._reload()
+
+    def _close(self):
+        self.destroy()
+        if self.on_done:
+            self.on_done()
 
 
 class OUTreePickerDialog(tk.Toplevel):

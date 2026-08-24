@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.1.0-orange)
+![Version](https://img.shields.io/badge/version-1.2.0-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -36,6 +36,10 @@ app prompts for credentials and performs all operations under the specified acco
 - Enable, disable, and unlock accounts.
 - Password reset.
 - Group membership management, including bulk add of selected users to groups.
+- Group administration (Users / Computers / Groups mode toggle): create,
+  edit, rename, move, delete groups (bulk deletion included); a member list
+  opens on double-click, with members added via the AD hierarchy tree or
+  search (disabled accounts are excluded).
 - Move accounts between organizational units.
 - Multi-select with bulk actions: enable, disable, move to an OU.
 - Manage the "password never expires" flag (like ADUC, enabling it also

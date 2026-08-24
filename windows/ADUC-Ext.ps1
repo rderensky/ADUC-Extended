@@ -282,6 +282,27 @@ $Script:RuStrings = @{
     "Delete object '{0}'?`r`n`r`nThis operation is irreversible." = "Удалить объект «{0}»?`r`n`r`nЭта операция необратима."
     "Object deleted." = "Объект удалён."
     "Failed to delete: {0}" = "Не удалось удалить: {0}"
+    "Groups" = "Группы"
+    "Group properties" = "Свойства группы"
+    "Scope" = "Область"
+    "Category" = "Категория"
+    "Members" = "Участники"
+    "Members..." = "Участники..."
+    "Create group..." = "Создать группу..."
+    "Global" = "Глобальная"
+    "Domain local" = "Локальная в домене"
+    "Universal" = "Универсальная"
+    "Security" = "Безопасности"
+    "Distribution" = "Рассылки"
+    "Enter a group name." = "Укажите имя группы."
+    "Group created." = "Группа создана."
+    "Group: {0}" = "Группа: {0}"
+    "Deleted: {0}." = "Удалено: {0}."
+    "Removed: {0}." = "Удалено из группы: {0}."
+    "Remove selected members ({0}) from the group?" = "Удалить выбранных участников ({0}) из группы?"
+    "Delete {0} groups?`r`n`r`nThis operation is irreversible." = "Удалить группы ({0})?`r`n`r`nЭта операция необратима."
+    "Selected objects: {0}`r`n`r`nAvailable bulk actions:`r`nMove (OU) / Delete" = "Выбрано объектов: {0}`r`n`r`nДоступные групповые действия:`r`nПереместить (OU) / Удалить"
+    'Domain controller "{0}" is unreachable. Check the server name and network connectivity.' = 'Контроллер домена «{0}» недоступен. Проверьте имя сервера и сетевую доступность.'
 }
 
 $Script:XamlRu = @{
@@ -400,6 +421,22 @@ $Script:XamlRu = @{
     "Text=`"Phone:`"" = "Text=`"Телефон:`""
     "Content=`"Password never expires`"" = "Content=`"Срок действия пароля не ограничен`""
     "Text=`"Group membership (Member Of):`"" = "Text=`"Группы доступа (Member Of):`""
+    "Content=`"Groups`"" = "Content=`"Группы`""
+    "Content=`"Create group...`"" = "Content=`"Создать группу...`""
+    "Content=`"Members...`"" = "Content=`"Участники...`""
+    "Header=`"Members...`"" = "Header=`"Участники...`""
+    "Title=`"Create group`"" = "Title=`"Создание группы`""
+    "Text=`"Group name:`"" = "Text=`"Имя группы:`""
+    "Text=`"Login (sAMAccountName):`"" = "Text=`"Логин (sAMAccountName):`""
+    "Text=`"Scope:`"" = "Text=`"Область:`""
+    "Text=`"Category:`"" = "Text=`"Категория:`""
+    "Text=`"Container (OU):`"" = "Text=`"Контейнер (OU):`""
+    "Content=`"Browse...`"" = "Content=`"Обзор...`""
+    "Title=`"Edit group`"" = "Title=`"Изменить группу`""
+    "Text=`"Login:`"" = "Text=`"Логин:`""
+    "Title=`"Select users`"" = "Title=`"Выбор пользователей`""
+    "Title=`"Group members`"" = "Title=`"Участники группы`""
+    "Text=`"Container on the left — its users on the right; the search spans the whole subtree.`"" = "Text=`"Слева контейнер — справа его пользователи; поиск идёт по всему поддереву.`""
 }
 
 function L {
@@ -542,6 +579,21 @@ function Confirm-Action {
 }
 
 # Common parameters for all AD cmdlet calls (credential + server)
+# Fast reachability probe: without it an unreachable DC makes the AD
+# cmdlets wait for minutes with no way to cancel. ADWS port 9389.
+function Test-DCReachable {
+    param([string]$Server, [int]$TimeoutMs = 5000)
+    if ([string]::IsNullOrWhiteSpace($Server)) { return $true }  # current domain
+    try {
+        $c = New-Object System.Net.Sockets.TcpClient
+        $t = $c.BeginConnect($Server, 9389, $null, $null)
+        if (-not $t.AsyncWaitHandle.WaitOne($TimeoutMs)) { $c.Close(); return $false }
+        $c.EndConnect($t)
+        $c.Close()
+        return $true
+    } catch { return $false }
+}
+
 function Get-ADParams {
     $p = @{ Credential = $Global:ADConnection.Credential }
     if ($Global:ADConnection.Server) { $p['Server'] = $Global:ADConnection.Server }
@@ -821,6 +873,12 @@ function Show-LoginWindow {
             $testParams = @{ Credential = $cred; ErrorAction = 'Stop' }
             if ($server) { $testParams['Server'] = $server }
 
+            # Fail fast when the directory server is unreachable
+            if (-not (Test-DCReachable $server)) {
+                $lblStatus.Text = ((L 'Domain controller "{0}" is unreachable. Check the server name and network connectivity.') -f ($server))
+                return
+            }
+
             # Test AD call to verify the credentials
             $domainInfo = Get-ADDomain @testParams
 
@@ -891,6 +949,8 @@ $MainXaml = @"
                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
                     <RadioButton Name="RbComputers" Content="Computers" GroupName="ObjMode"
                                  VerticalAlignment="Center"/>
+                    <RadioButton Name="RbGroups" Content="Groups" GroupName="ObjMode"
+                                 VerticalAlignment="Center" Margin="10,0,0,0"/>
                     <CheckBox Name="ChkSubtree" Content="Nested OUs" VerticalAlignment="Center"
                               Margin="24,0,0,0" ToolTip="Show objects from nested organizational units"/>
                 </StackPanel>
@@ -951,6 +1011,7 @@ $MainXaml = @"
                         <MenuItem Name="CmGroups"      Header="Groups..."/>
                         <MenuItem Name="CmMove"        Header="Move (OU)..."/>
                         <MenuItem Name="CmEdit"        Header="Edit..."/>
+                        <MenuItem Name="CmMembers"     Header="Members..." Visibility="Collapsed"/>
                         <MenuItem Name="CmRename"      Header="Rename..." Visibility="Collapsed"/>
                         <MenuItem Name="CmDelete"      Header="Delete" Visibility="Collapsed"/>
                     </ContextMenu>
@@ -987,6 +1048,8 @@ $MainXaml = @"
                         <Button Name="BtnMove"     Content="Move (OU)"        Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnEdit"     Content="Edit..."          Width="130" Height="32" Margin="4"/>
                         <Button Name="BtnRename"   Content="Rename..."        Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
+                        <Button Name="BtnCreateGroup" Content="Create group..." Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
+                        <Button Name="BtnMembers"  Content="Members..."       Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
                         <Button Name="BtnDelete"   Content="Delete"           Width="130" Height="32" Margin="4" Visibility="Collapsed"/>
                     </WrapPanel>
                 </GroupBox>
@@ -1108,6 +1171,79 @@ function Search-ADComputers {
             _IsComputer       = $true
         }
     }
+}
+
+# --- Groups ---
+$Script:GroupProps = @(
+    'Name','SamAccountName','Description','GroupScope','GroupCategory',
+    'DistinguishedName','whenCreated','mail'
+)
+
+function Get-GroupScopeLabel {
+    param($g)
+    switch ("$($g.GroupScope)") {
+        'Global'      { return (L 'Global') }
+        'DomainLocal' { return (L 'Domain local') }
+        'Universal'   { return (L 'Universal') }
+        default       { return "$($g.GroupScope)" }
+    }
+}
+
+function Get-GroupCategoryLabel {
+    param($g)
+    if ("$($g.GroupCategory)" -eq 'Distribution') { return (L 'Distribution') }
+    return (L 'Security')
+}
+
+function Search-ADGroupsList {
+    param(
+        [string]$Query,
+        [string]$SearchBase,
+        [string]$Scope = 'Subtree'   # Base | OneLevel | Subtree
+    )
+    $p = Get-ADParams
+    $p['Properties'] = $Script:GroupProps
+    if ($SearchBase) { $p['SearchBase'] = $SearchBase }
+    if ($Scope)      { $p['SearchScope'] = $Scope }
+
+    if ([string]::IsNullOrWhiteSpace($Query)) {
+        $p['Filter'] = '*'
+    }
+    else {
+        $q = $Query.Replace('*','').Trim()
+        $wild = "*$q*"
+        $p['Filter'] = {
+            (Name -like $wild) -or (SamAccountName -like $wild) -or
+            (Description -like $wild)
+        }.GetNewClosure()
+    }
+
+    Get-ADGroup @p | Sort-Object Name | ForEach-Object {
+        [pscustomobject]@{
+            Name              = $_.Name
+            SamAccountName    = $_.SamAccountName
+            Scope             = Get-GroupScopeLabel $_
+            Category          = Get-GroupCategoryLabel $_
+            Description       = $_.Description
+            DistinguishedName = $_.DistinguishedName
+            _AD               = $_
+            _IsGroup          = $true
+        }
+    }
+}
+
+function Get-GroupMemberList {
+    # Group members as @{Name; Dn} read from the 'member' attribute
+    # (works with explicit credentials, unlike Get-ADGroupMember in some setups)
+    param([string]$Dn)
+    $p = Get-ADParams
+    $g = Get-ADGroup @p -Identity $Dn -Properties member
+    @($g.member) | Where-Object { $_ } | ForEach-Object {
+        $mdn = [string]$_
+        $m = [regex]::Match($mdn, '^CN=((?:\\.|[^,\\])*)')
+        $nm = if ($m.Success) { $m.Groups[1].Value -replace '\\(.)', '$1' } else { $mdn }
+        [pscustomobject]@{ Name = $nm; Dn = $mdn }
+    } | Sort-Object Name
 }
 
 #endregion
@@ -1521,6 +1657,393 @@ function Show-MoveDialog {
     $cancel.Add_Click({ $w.Close() })
     $w.ShowDialog() | Out-Null
     return $script:MoveOk
+}
+
+# --- Create a group ---
+$GroupCreateXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Create group" Height="360" Width="500" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Grid.Column="0" Name="GcLblName" Text="Group name:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="0" Grid.Column="1" Name="GcName" Margin="0,4" Padding="4"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Name="GcLblSam" Text="Login (sAMAccountName):" VerticalAlignment="Center" TextWrapping="Wrap"/>
+        <TextBox   Grid.Row="1" Grid.Column="1" Name="GcSam" Margin="0,4" Padding="4"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Name="GcLblDesc" Text="Description:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="2" Grid.Column="1" Name="GcDesc" Margin="0,4" Padding="4"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Name="GcLblScope" Text="Scope:" VerticalAlignment="Center"/>
+        <ComboBox  Grid.Row="3" Grid.Column="1" Name="GcScope" Margin="0,4"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Name="GcLblCat" Text="Category:" VerticalAlignment="Center"/>
+        <ComboBox  Grid.Row="4" Grid.Column="1" Name="GcCat" Margin="0,4"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" Name="GcLblOu" Text="Container (OU):" VerticalAlignment="Center"/>
+        <DockPanel Grid.Row="5" Grid.Column="1" Margin="0,4">
+            <Button DockPanel.Dock="Right" Name="GcBrowse" Content="Browse..." Width="90" Margin="6,0,0,0"/>
+            <TextBox Name="GcOu" Padding="4"/>
+        </DockPanel>
+        <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Name="GcStatus" Foreground="Firebrick"
+                   TextWrapping="Wrap" Margin="0,6,0,0"/>
+        <StackPanel Grid.Row="7" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="GcOk" Content="Create" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="GcCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-GroupCreateDialog {
+    param($Owner, [string]$DefaultOU)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $GroupCreateXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    $w.Owner = $Owner
+    $name=$w.FindName("GcName"); $sam=$w.FindName("GcSam"); $desc=$w.FindName("GcDesc")
+    $scope=$w.FindName("GcScope"); $cat=$w.FindName("GcCat")
+    $ou=$w.FindName("GcOu"); $browse=$w.FindName("GcBrowse")
+    $st=$w.FindName("GcStatus"); $ok=$w.FindName("GcOk"); $cancel=$w.FindName("GcCancel")
+
+    foreach ($v in @((L 'Global'), (L 'Domain local'), (L 'Universal'))) { [void]$scope.Items.Add($v) }
+    $scope.SelectedIndex = 0
+    foreach ($v in @((L 'Security'), (L 'Distribution'))) { [void]$cat.Items.Add($v) }
+    $cat.SelectedIndex = 0
+    if ($DefaultOU) { $ou.Text = $DefaultOU }
+
+    $script:GcSamEdited = $false
+    $sam.Add_PreviewKeyDown({ $script:GcSamEdited = $true })
+    $name.Add_TextChanged({ if (-not $script:GcSamEdited) { $sam.Text = $name.Text } })
+    $browse.Add_Click({
+        $picked = Show-OUTreePicker -Owner $w -Initial $ou.Text
+        if ($picked) { $ou.Text = $picked }
+    })
+
+    $script:GroupCreateOk = $false
+    $ok.Add_Click({
+        $st.Text = ""
+        $n = $name.Text.Trim()
+        if ([string]::IsNullOrWhiteSpace($n)) { $st.Text = (L "Enter a group name."); return }
+        try {
+            $p = Get-ADParams
+            $p['Name'] = $n
+            $p['SamAccountName'] = if ($sam.Text.Trim()) { $sam.Text.Trim() } else { $n }
+            $p['GroupScope'] = switch ($scope.SelectedIndex) {
+                1 { 'DomainLocal' } 2 { 'Universal' } default { 'Global' } }
+            $p['GroupCategory'] = if ($cat.SelectedIndex -eq 1) { 'Distribution' } else { 'Security' }
+            if ($ou.Text.Trim()) { $p['Path'] = $ou.Text.Trim() }
+            if ($desc.Text.Trim()) { $p['Description'] = $desc.Text.Trim() }
+            New-ADGroup @p
+            $script:GroupCreateOk = $true
+            $w.Close()
+        }
+        catch { $st.Text = ((L "Error: {0}") -f ($_.Exception.Message)) }
+    })
+    $cancel.Add_Click({ $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:GroupCreateOk
+}
+
+# --- Edit group attributes (description, e-mail) ---
+$GroupEditXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Edit group" Height="260" Width="470" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="110"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Grid.Column="0" Name="GeLblName" Text="Name:" Margin="0,0,10,6"/>
+        <TextBlock Grid.Row="0" Grid.Column="1" Name="GeName" Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Name="GeLblSam" Text="Login:" Margin="0,0,10,6"/>
+        <TextBlock Grid.Row="1" Grid.Column="1" Name="GeSam" Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Name="GeLblDesc" Text="Description:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="2" Grid.Column="1" Name="GeDesc" Margin="0,4" Padding="4"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="E-mail:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="3" Grid.Column="1" Name="GeMail" Margin="0,4" Padding="4"/>
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Name="GeStatus" Foreground="Firebrick"
+                   TextWrapping="Wrap" Margin="0,6,0,0"/>
+        <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="GeOk" Content="Save" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="GeCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-GroupEditDialog {
+    param($Owner, $Group)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $GroupEditXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    $w.Owner = $Owner
+    $ad = $Group._AD
+    $w.FindName("GeName").Text = [string]$ad.Name
+    $w.FindName("GeSam").Text  = [string]$ad.SamAccountName
+    $desc = $w.FindName("GeDesc"); $mail = $w.FindName("GeMail")
+    $st=$w.FindName("GeStatus"); $ok=$w.FindName("GeOk"); $cancel=$w.FindName("GeCancel")
+    $desc.Text = [string]$ad.Description
+    $mail.Text = [string]$ad.mail
+
+    $script:GroupEditOk = $false
+    $ok.Add_Click({
+        $st.Text = ""
+        try {
+            $p = Get-ADParams
+            $d = $desc.Text.Trim()
+            if ($d) { Set-ADGroup @p -Identity $Group.DistinguishedName -Description $d }
+            else    { Set-ADGroup @p -Identity $Group.DistinguishedName -Clear description }
+            $m = $mail.Text.Trim()
+            if ($m) { Set-ADGroup @p -Identity $Group.DistinguishedName -Replace @{mail=$m} }
+            else    { try { Set-ADGroup @p -Identity $Group.DistinguishedName -Clear mail } catch { } }
+            $script:GroupEditOk = $true
+            $w.Close()
+        }
+        catch { $st.Text = ((L "Error: {0}") -f ($_.Exception.Message)) }
+    })
+    $cancel.Add_Click({ $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:GroupEditOk
+}
+
+# --- Pick users (search + multi-select) ---
+$UserPickXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select users" Height="520" Width="760"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,6">
+            <Button DockPanel.Dock="Right" Name="UpFind" Content="Find" Width="80" Margin="6,0,0,0"/>
+            <TextBox Name="UpSearch" Padding="4"/>
+        </DockPanel>
+        <TextBlock Grid.Row="1" Name="UpHint"
+                   Text="Container on the left — its users on the right; the search spans the whole subtree."
+                   Foreground="#666" TextWrapping="Wrap" Margin="0,0,0,6"/>
+        <Grid Grid.Row="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1.1*"/>
+                <ColumnDefinition Width="5"/>
+                <ColumnDefinition Width="2*"/>
+            </Grid.ColumnDefinitions>
+            <TreeView Grid.Column="0" Name="UpTree"/>
+            <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#DDD"/>
+            <ListBox Grid.Column="2" Name="UpList" SelectionMode="Extended"/>
+        </Grid>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Name="UpOk" Content="Select" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="UpCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-UserPickerDialog {
+    param($Owner, [string[]]$ExcludeDNs)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $UserPickXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $search=$w.FindName("UpSearch"); $find=$w.FindName("UpFind")
+    $list=$w.FindName("UpList"); $ok=$w.FindName("UpOk"); $cancel=$w.FindName("UpCancel")
+    $tree=$w.FindName("UpTree")
+
+    $exclude = @{}
+    foreach ($d in $ExcludeDNs) { if ($d) { $exclude[$d.ToLower()] = $true } }
+
+    # AD hierarchy (OUs + standard containers), same data as the main tree
+    $script:UpTreeLoading = $true
+    $baseDN = $Global:ADConnection.BaseDN
+    $rootItem = New-Object System.Windows.Controls.TreeViewItem
+    $rootItem.Header = if ($Global:ADConnection.DnsRoot) { $Global:ADConnection.DnsRoot } else { $baseDN }
+    $rootItem.Tag = $baseDN
+    $rootItem.IsExpanded = $true
+    $tree.Items.Add($rootItem) | Out-Null
+    $map = @{}; $map[$baseDN.ToLower()] = $rootItem
+    try {
+        $p1 = Get-ADParams
+        $ous = @(Get-ADOrganizationalUnit @p1 -Filter * |
+                 Select-Object -ExpandProperty DistinguishedName)
+        $p2 = Get-ADParams
+        $conts = @(Get-ADObject @p2 -SearchBase $baseDN -SearchScope OneLevel `
+                     -LDAPFilter '(|(objectClass=container)(objectClass=builtinDomain))' |
+                   Select-Object -ExpandProperty DistinguishedName)
+    }
+    catch { $ous = @(); $conts = @() }
+    $all = @($ous + $conts) | Where-Object { $_ -and ($_.ToLower() -ne $baseDN.ToLower()) }
+    $all = $all | Sort-Object @{ Expression = { ($_ -split ',').Count } }, @{ Expression = { $_ } }
+    foreach ($dn in $all) {
+        $parentDN = ($dn -split ',', 2)[1]
+        $parentItem = $map[$parentDN.ToLower()]
+        if (-not $parentItem) { $parentItem = $rootItem }
+        $rdn = ($dn -split ',', 2)[0]
+        $label = ($rdn -split '=', 2)[1]
+        $item = New-Object System.Windows.Controls.TreeViewItem
+        $item.Header = $label
+        $item.Tag = $dn
+        $parentItem.Items.Add($item) | Out-Null
+        $map[$dn.ToLower()] = $item
+    }
+    $rootItem.IsSelected = $true
+    $script:UpTreeLoading = $false
+
+    $load = {
+        $list.Items.Clear()
+        try {
+            $base = $null
+            $sel = $tree.SelectedItem
+            if ($sel -and $sel.Tag) { $base = [string]$sel.Tag }
+            $text = $search.Text
+            # Browsing shows the container's users; a search spans the subtree
+            $scope = if ([string]::IsNullOrWhiteSpace($text)) { 'OneLevel' } else { 'Subtree' }
+            foreach ($u in @(Search-ADUsers -Query $text -SearchBase $base -Scope $scope)) {
+                if ($exclude.ContainsKey($u.DistinguishedName.ToLower())) { continue }
+                # Disabled accounts are not offered for membership
+                if ($u._AD.Enabled -eq $false) { continue }
+                $it = New-Object System.Windows.Controls.ListBoxItem
+                $it.Content = "$($u.Name) ($($u.SamAccountName))"
+                $it.Tag = $u.DistinguishedName
+                $list.Items.Add($it) | Out-Null
+            }
+        } catch { Show-Error ((L "Search error: {0}") -f ($_.Exception.Message)) }
+    }
+    & $load
+    $find.Add_Click({ & $load })
+    $search.Add_KeyDown({ param($s, $e) if ($e.Key -eq 'Return') { & $load } })
+    $tree.Add_SelectedItemChanged({
+        if ($script:UpTreeLoading) { return }
+        $search.Text = ""
+        & $load
+    })
+
+    $script:PickedUsers = @()
+    $ok.Add_Click({
+        $script:PickedUsers = @($list.SelectedItems | ForEach-Object { [string]$_.Tag })
+        $w.Close()
+    })
+    $cancel.Add_Click({ $script:PickedUsers = @(); $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:PickedUsers
+}
+
+# --- Group members (view, add, remove — multi-select) ---
+$MembersXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Group members" Height="500" Width="560"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="MbLbl" Text="" FontWeight="SemiBold" Margin="0,0,0,10"/>
+        <ListBox Grid.Row="1" Name="MbList" SelectionMode="Extended"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+            <Button Name="MbAdd" Content="Add..." Width="150" Height="30"/>
+            <Button Name="MbRemove" Content="Remove selected" Width="200" Height="30" Margin="10,0,0,0"/>
+        </StackPanel>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="MbClose" Content="Close" Width="100" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-GroupMembersDialog {
+    param($Owner, $Group)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $MembersXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    $w.Owner = $Owner
+    $lbl=$w.FindName("MbLbl"); $list=$w.FindName("MbList")
+    $add=$w.FindName("MbAdd"); $remove=$w.FindName("MbRemove"); $close=$w.FindName("MbClose")
+
+    $reload = {
+        $list.Items.Clear()
+        try {
+            $script:MbMembers = @(Get-GroupMemberList -Dn $Group.DistinguishedName)
+        } catch {
+            $script:MbMembers = @()
+            Show-Error ((L "Failed to retrieve groups: {0}") -f ($_.Exception.Message))
+        }
+        foreach ($m in $script:MbMembers) {
+            $it = New-Object System.Windows.Controls.ListBoxItem
+            $it.Content = $m.Name
+            $it.Tag = $m.Dn
+            $list.Items.Add($it) | Out-Null
+        }
+        $lbl.Text = ((L "Group: {0}") -f ($Group.Name)) + "   (" + $script:MbMembers.Count + ")"
+    }
+    & $reload
+
+    $add.Add_Click({
+        $exclude = @($script:MbMembers | ForEach-Object { $_.Dn })
+        $picked = @(Show-UserPickerDialog -Owner $w -ExcludeDNs $exclude)
+        if (-not $picked -or $picked.Count -eq 0) { return }
+        $added = 0; $errors = @()
+        foreach ($udn in $picked) {
+            try {
+                $p = Get-ADParams
+                Add-ADGroupMember @p -Identity $Group.DistinguishedName -Members $udn
+                $added++
+            } catch { $errors += "${udn}: $($_.Exception.Message)" }
+        }
+        if ($errors.Count -gt 0) {
+            $txt = ($errors | Select-Object -First 10) -join "`r`n"
+            Show-Error (((L "Added: {0}.") -f ($added)) + "`r`n`r`n" + $txt) (L "Partially completed")
+        }
+        & $reload
+    })
+
+    $remove.Add_Click({
+        $sel = @($list.SelectedItems)
+        if ($sel.Count -eq 0) { return }
+        if (-not (Confirm-Action ((L "Remove selected members ({0}) from the group?") -f ($sel.Count)))) { return }
+        $removed = 0; $errors = @()
+        foreach ($it in $sel) {
+            try {
+                $p = Get-ADParams
+                Remove-ADGroupMember @p -Identity $Group.DistinguishedName -Members ([string]$it.Tag) -Confirm:$false
+                $removed++
+            } catch { $errors += "$($it.Content): $($_.Exception.Message)" }
+        }
+        if ($errors.Count -gt 0) {
+            $txt = ($errors | Select-Object -First 10) -join "`r`n"
+            Show-Error (((L "Removed: {0}.") -f ($removed)) + "`r`n`r`n" + $txt) (L "Partially completed")
+        }
+        & $reload
+    })
+
+    $close.Add_Click({ $w.Close() })
+    $w.ShowDialog() | Out-Null
 }
 
 # --- Rename an object (change its name/CN) ---
@@ -2123,6 +2646,9 @@ $BtnMove    = $MainWin.FindName("BtnMove")
 $BtnEdit    = $MainWin.FindName("BtnEdit")
 $BtnRename  = $MainWin.FindName("BtnRename")
 $BtnDelete  = $MainWin.FindName("BtnDelete")
+$BtnCreateGroup = $MainWin.FindName("BtnCreateGroup")
+$BtnMembers = $MainWin.FindName("BtnMembers")
+$RbGroups   = $MainWin.FindName("RbGroups")
 $BtnPwdNoExpire = $MainWin.FindName("BtnPwdNoExpire")
 $RbUsers    = $MainWin.FindName("RbUsers")
 $RbComputers= $MainWin.FindName("RbComputers")
@@ -2180,7 +2706,24 @@ function Update-PropsPanel {
         return
     }
     $ad = $User._AD
-    if ($User._IsComputer) {
+    if ($User._IsGroup) {
+        $memberCount = ''
+        try {
+            $memberCount = @(Get-GroupMemberList -Dn $ad.DistinguishedName).Count
+        } catch { }
+        $rows = [ordered]@{
+            (L "Name")        = $ad.Name
+            (L "Login")       = $ad.SamAccountName
+            (L "Scope")       = (Get-GroupScopeLabel $ad)
+            (L "Category")    = (Get-GroupCategoryLabel $ad)
+            (L "Description") = $ad.Description
+            "E-mail"          = $ad.mail
+            (L "Members")     = $memberCount
+            (L "Created")     = $ad.whenCreated
+            "DN"              = $ad.DistinguishedName
+        }
+    }
+    elseif ($User._IsComputer) {
         $rows = [ordered]@{
             (L "Name")             = $ad.Name
             (L "Account name")     = $ad.SamAccountName
@@ -2334,6 +2877,8 @@ function Invoke-Search {
 
         if ($RbComputers.IsChecked) {
             $results = @(Search-ADComputers -Query $text -SearchBase $base -Scope $scope)
+        } elseif ($RbGroups -and $RbGroups.IsChecked) {
+            $results = @(Search-ADGroupsList -Query $text -SearchBase $base -Scope $scope)
         } else {
             $results = @(Search-ADUsers -Query $text -SearchBase $base -Scope $scope)
         }
@@ -2393,7 +2938,7 @@ function Refresh-SelectedUser {
 
 # --- Set list columns for the current mode (users / computers) ---
 function Set-GridColumns {
-    param([switch]$Computers)
+    param([switch]$Computers, [switch]$Groups)
     $GridUsers.Columns.Clear()
     $mk = {
         param($header, $bind, $wStar)
@@ -2409,6 +2954,12 @@ function Set-GridColumns {
         $GridUsers.Columns.Add((& $mk (L 'Operating system') 'OS' 1.5)) | Out-Null
         $GridUsers.Columns.Add((& $mk (L 'Description') 'Description' 1.4)) | Out-Null
         $GridUsers.Columns.Add((& $mk (L 'State') 'State' 1.0)) | Out-Null
+    } elseif ($Groups) {
+        $GridUsers.Columns.Add((& $mk (L 'Name') 'Name' 1.7)) | Out-Null
+        $GridUsers.Columns.Add((& $mk (L 'Login') 'SamAccountName' 1.2)) | Out-Null
+        $GridUsers.Columns.Add((& $mk (L 'Scope') 'Scope' 1.0)) | Out-Null
+        $GridUsers.Columns.Add((& $mk (L 'Category') 'Category' 1.0)) | Out-Null
+        $GridUsers.Columns.Add((& $mk (L 'Description') 'Description' 1.7)) | Out-Null
     } else {
         $GridUsers.Columns.Add((& $mk (L 'Name') 'Name' 1.6)) | Out-Null
         $GridUsers.Columns.Add((& $mk (L 'Login') 'SamAccountName' 1.2)) | Out-Null
@@ -2419,27 +2970,47 @@ function Set-GridColumns {
 }
 
 # --- Switch between users and computers ---
+function Get-CurrentMode {
+    if ($RbComputers -and $RbComputers.IsChecked) { return 'computers' }
+    if ($RbGroups -and $RbGroups.IsChecked) { return 'groups' }
+    return 'users'
+}
+
 function Switch-Mode {
-    $computers = [bool]$RbComputers.IsChecked
+    $mode = Get-CurrentMode
+    $computers = ($mode -eq 'computers')
+    $groups = ($mode -eq 'groups')
     $TxtSearch.Text = ""
     $PanelProps.Children.Clear()
     $Script:PropRows = @()
-    Set-GridColumns -Computers:$computers
-    $GrpProps.Header = if ($computers) { (L "Computer properties") } else { (L "User properties") }
+    Set-GridColumns -Computers:$computers -Groups:$groups
+    $GrpProps.Header = switch ($mode) {
+        'computers' { (L "Computer properties") }
+        'groups'    { (L "Group properties") }
+        default     { (L "User properties") }
+    }
 
-    # Action buttons (Edit stays visible in both modes — it routes by object type)
-    $userBtns = @($BtnUnlock, $BtnResetPwd, $BtnPwdNoExpire, $BtnGroups)
-    $compBtns = @($BtnRename, $BtnDelete)
-    foreach ($b in $userBtns) { if ($b) { $b.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } } }
-    foreach ($b in $compBtns) { if ($b) { $b.Visibility = if ($computers) { 'Visible' } else { 'Collapsed' } } }
-    if ($BtnCreate) { $BtnCreate.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } }
+    # Action buttons (Edit stays visible in every mode — it routes by object type)
+    $userBtns  = @($BtnUnlock, $BtnResetPwd, $BtnPwdNoExpire, $BtnGroups)
+    $acctBtns  = @($BtnEnable, $BtnDisable)          # users + computers
+    $renBtns   = @($BtnRename, $BtnDelete)           # computers + groups
+    $grpBtns   = @($BtnCreateGroup, $BtnMembers)     # groups only
+    foreach ($b in $userBtns) { if ($b) { $b.Visibility = if ($mode -eq 'users') { 'Visible' } else { 'Collapsed' } } }
+    foreach ($b in $acctBtns) { if ($b) { $b.Visibility = if ($groups) { 'Collapsed' } else { 'Visible' } } }
+    foreach ($b in $renBtns)  { if ($b) { $b.Visibility = if ($mode -eq 'users') { 'Collapsed' } else { 'Visible' } } }
+    foreach ($b in $grpBtns)  { if ($b) { $b.Visibility = if ($groups) { 'Visible' } else { 'Collapsed' } } }
+    if ($BtnCreate) { $BtnCreate.Visibility = if ($mode -eq 'users') { 'Visible' } else { 'Collapsed' } }
 
     # Context-menu items
     $cm = $GridUsers.ContextMenu
     $userItems = @('CmCopyMail','CmCopyUpn','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups')
-    $compItems = @('CmRename','CmDelete')
-    foreach ($n in $userItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($computers) { 'Collapsed' } else { 'Visible' } } }
-    foreach ($n in $compItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($computers) { 'Visible' } else { 'Collapsed' } } }
+    $acctItems = @('CmEnable','CmDisable')
+    $renItems  = @('CmRename','CmDelete')
+    $grpItems  = @('CmMembers')
+    foreach ($n in $userItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($mode -eq 'users') { 'Visible' } else { 'Collapsed' } } }
+    foreach ($n in $acctItems) { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($groups) { 'Collapsed' } else { 'Visible' } } }
+    foreach ($n in $renItems)  { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($mode -eq 'users') { 'Collapsed' } else { 'Visible' } } }
+    foreach ($n in $grpItems)  { $mi = Get-CmItem($n); if ($mi) { $mi.Visibility = if ($groups) { 'Visible' } else { 'Collapsed' } } }
 
     Invoke-Search
 }
@@ -2464,6 +3035,11 @@ $BtnSwitchDomain.Add_Click({
         return
     }
     if ($target.ToLower() -eq ("$($Global:ADConnection.Server)").ToLower()) { return }
+
+    if (-not (Test-DCReachable $target)) {
+        Show-Error ((L 'Domain controller "{0}" is unreachable. Check the server name and network connectivity.') -f ($target))
+        return
+    }
 
     $MainWin.Cursor = [System.Windows.Input.Cursors]::Wait
     try {
@@ -2509,7 +3085,11 @@ $GridUsers.Add_SelectionChanged({
         $PanelProps.Children.Clear()
         $Script:PropRows = @()
         $tb = New-Object System.Windows.Controls.TextBlock
-        $tb.Text = ((L "Selected objects: {0}`r`n`r`nAvailable bulk actions:`r`nEnable / Disable / Move (OU)`r`nAdd to groups (users)") -f ($GridUsers.SelectedItems.Count))
+        $tb.Text = if ((Get-CurrentMode) -eq 'groups') {
+            ((L "Selected objects: {0}`r`n`r`nAvailable bulk actions:`r`nMove (OU) / Delete") -f ($GridUsers.SelectedItems.Count))
+        } else {
+            ((L "Selected objects: {0}`r`n`r`nAvailable bulk actions:`r`nEnable / Disable / Move (OU)`r`nAdd to groups (users)") -f ($GridUsers.SelectedItems.Count))
+        }
         $tb.TextWrapping = 'Wrap'
         $PanelProps.Children.Add($tb) | Out-Null
     } else {
@@ -2691,7 +3271,13 @@ $BtnMove.Add_Click({
 
 $BtnEdit.Add_Click({
     $u = Get-SelectedUser; if (-not $u) { return }
-    if ($u._IsComputer) {
+    if ($u._IsGroup) {
+        if (Show-GroupEditDialog -Owner $MainWin -Group $u) {
+            Show-Info (L "Changes saved.")
+            Invoke-Search
+        }
+    }
+    elseif ($u._IsComputer) {
         if (Show-ComputerEditDialog -Owner $MainWin -Comp $u) {
             Show-Info (L "Changes saved.")
             Invoke-Search
@@ -2701,6 +3287,23 @@ $BtnEdit.Add_Click({
         Show-Info (L "Changes saved.")
         Invoke-Search
     }
+})
+
+$BtnCreateGroup.Add_Click({
+    $base = $null
+    $sel = $TreeOU.SelectedItem
+    if ($sel -and $sel.Tag) { $base = [string]$sel.Tag }
+    if (Show-GroupCreateDialog -Owner $MainWin -DefaultOU $base) {
+        Show-Info (L "Group created.")
+        Invoke-Search
+    }
+})
+
+$BtnMembers.Add_Click({
+    $u = Get-SelectedUser; if (-not $u) { return }
+    if (-not $u._IsGroup) { return }
+    Show-GroupMembersDialog -Owner $MainWin -Group $u
+    Invoke-Search
 })
 
 # Double-click on a grid row opens the edit dialog (users and computers)
@@ -2721,7 +3324,12 @@ $GridUsers.Add_MouseDoubleClick({
         }
     } catch { $isRow = [bool]$GridUsers.SelectedItem }
     if ($isRow -and $GridUsers.SelectedItem) {
-        $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+        if ($GridUsers.SelectedItem._IsGroup) {
+            # Double-click on a group opens its member list
+            $BtnMembers.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+        } else {
+            $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+        }
     }
 })
 
@@ -2734,6 +3342,26 @@ $BtnRename.Add_Click({
 })
 
 $BtnDelete.Add_Click({
+    # Groups mode: allow deleting several selected groups at once
+    if ((Get-CurrentMode) -eq 'groups' -and $GridUsers.SelectedItems.Count -gt 1) {
+        $items = @($GridUsers.SelectedItems)
+        if (-not (Confirm-Action ((L "Delete {0} groups?`r`n`r`nThis operation is irreversible.") -f ($items.Count)))) { return }
+        $errors = @()
+        foreach ($g in $items) {
+            try {
+                $p = Get-ADParams
+                Remove-ADObject @p -Identity $g.DistinguishedName -Confirm:$false
+            } catch { $errors += "$($g.Name): $($_.Exception.Message)" }
+        }
+        $PanelProps.Children.Clear(); $Script:PropRows = @()
+        Invoke-Search
+        if ($errors.Count -gt 0) {
+            Show-Error (((L "Deleted: {0}.") -f ($items.Count - $errors.Count)) + "`r`n`r`n" + (($errors | Select-Object -First 10) -join "`r`n")) (L "Partially completed")
+        } else {
+            Show-Info ((L "Deleted: {0}.") -f ($items.Count))
+        }
+        return
+    }
     $u = Get-SelectedUser; if (-not $u) { return }
     $label = if ($u.Name) { $u.Name } else { $u.SamAccountName }
     if (-not (Confirm-Action ((L "Delete object '{0}'?`r`n`r`nThis operation is irreversible.") -f ($label)))) { return }
@@ -2750,6 +3378,7 @@ $BtnDelete.Add_Click({
 # Object type switch
 $RbUsers.Add_Checked({ if ($GridUsers) { Switch-Mode } })
 $RbComputers.Add_Checked({ if ($GridUsers) { Switch-Mode } })
+if ($RbGroups) { $RbGroups.Add_Checked({ if ($GridUsers) { Switch-Mode } }) }
 
 # --- Context menu of the user list ---
 $cmGrid = $GridUsers.ContextMenu
@@ -2790,6 +3419,9 @@ function Apply-MainLanguage {
     $BtnDelete.Content = (L 'Delete')
     $RbUsers.Content = (L 'Users')
     $RbComputers.Content = (L 'Computers')
+    if ($RbGroups) { $RbGroups.Content = (L 'Groups') }
+    if ($BtnCreateGroup) { $BtnCreateGroup.Content = (L 'Create group...') }
+    if ($BtnMembers) { $BtnMembers.Content = (L 'Members...') }
     $ChkSubtree.Content = (L 'Nested OUs')
     $ChkSubtree.ToolTip = (L 'Show objects from nested organizational units')
     if ($GrpActions) { $GrpActions.Header = (L 'Actions') }
@@ -2810,6 +3442,7 @@ function Apply-MainLanguage {
         @('CmGroups',     'Groups...'),
         @('CmMove',       'Move (OU)...'),
         @('CmEdit',       'Edit...'),
+        @('CmMembers',    'Members...'),
         @('CmRename',     'Rename...'),
         @('CmDelete',     'Delete'))) {
         $mi = Get-CmItem $pair[0]
@@ -2851,20 +3484,24 @@ $cmGrid.Add_Opened({
     $has = [bool]$u
     $multi = ($GridUsers.SelectedItems.Count -gt 1)
     if ($multi) {
-        # Multi-selection: only bulk actions (Enable / Disable / Move) apply
-        foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyMail','CmCopyUpn','CmCopyDn','CmCopyAll','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmEdit','CmRename','CmDelete') {
+        $mode = Get-CurrentMode
+        # Multi-selection: only bulk actions apply
+        foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyMail','CmCopyUpn','CmCopyDn','CmCopyAll','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmMembers','CmEdit','CmRename','CmDelete') {
             $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $false }
         }
         foreach ($n in 'CmEnable','CmDisable','CmMove') {
-            $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $true }
+            $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = ($mode -ne 'groups') }
         }
-        # Bulk add-to-groups is available for users (not in computers mode)
+        $mi = Get-CmItem('CmMove'); if ($mi) { $mi.IsEnabled = $true }
+        # Groups mode: bulk delete of the selected groups
+        $mi = Get-CmItem('CmDelete'); if ($mi) { $mi.IsEnabled = ($mode -eq 'groups') }
+        # Bulk add-to-groups is available for users only
         $mi = Get-CmItem('CmGroups')
-        if ($mi) { $mi.IsEnabled = (-not [bool]$RbComputers.IsChecked) }
+        if ($mi) { $mi.IsEnabled = ($mode -eq 'users') }
         $mi = Get-CmItem('CmPwdNoExpire'); if ($mi) { $mi.IsChecked = $false }
         return
     }
-    foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyDn','CmCopyAll','CmEnable','CmDisable','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmMove','CmEdit','CmRename','CmDelete') {
+    foreach ($n in 'CmCopyLogin','CmCopyName','CmCopyDn','CmCopyAll','CmEnable','CmDisable','CmUnlock','CmResetPwd','CmPwdNoExpire','CmGroups','CmMembers','CmMove','CmEdit','CmRename','CmDelete') {
         $mi = Get-CmItem($n); if ($mi) { $mi.IsEnabled = $has }
     }
     $mi = Get-CmItem('CmCopyMail'); if ($mi) { $mi.IsEnabled = ($has -and -not [string]::IsNullOrEmpty([string]$u.Mail)) }
@@ -2887,6 +3524,7 @@ $mi = Get-CmItem 'CmPwdNoExpire'; if ($mi) { $mi.Add_Click({ $BtnPwdNoExpire.Rai
 $mi = Get-CmItem 'CmGroups'; if ($mi) { $mi.Add_Click(   { $BtnGroups.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmMove'; if ($mi) { $mi.Add_Click(     { $BtnMove.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmEdit'; if ($mi) { $mi.Add_Click(     { $BtnEdit.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
+$mi = Get-CmItem 'CmMembers'; if ($mi) { $mi.Add_Click( { $BtnMembers.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmRename'; if ($mi) { $mi.Add_Click(   { $BtnRename.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmDelete'; if ($mi) { $mi.Add_Click(   { $BtnDelete.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 # Initial load: OU tree (selecting the root triggers the search)
