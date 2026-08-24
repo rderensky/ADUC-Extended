@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.2.0-orange)
+![Version](https://img.shields.io/badge/version-1.2.1-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -48,6 +48,9 @@ app prompts for credentials and performs all operations under the specified acco
 - Domain list with switching; a domain switch uses the active session credentials.
 - Interface language switching (English / Русский) on the fly; dates follow the
   language: `YYYY-MMM-DD` (EN) or `DD MMM YYYY` (RU).
+- Editing shortcuts in input fields: delete the line (Cmd+Backspace on macOS,
+  Shift+Backspace on Windows) or one word (Ctrl+Backspace); Esc closes the
+  active dialog and never closes the main window.
 
 ## Repository layout
 

@@ -2600,6 +2600,50 @@ function Show-EditDialog {
 
 #region ------------------------- Application startup -------------------------
 
+# --- Text-editing shortcuts in all input fields ---
+# Shift+Backspace deletes the line (to its start); Ctrl+Backspace deletes
+# one word (built into WPF TextBox). Registered as a class handler so every
+# TextBox — including editable ComboBox editors — gets the behavior.
+$__editKeyHandler = [System.Windows.Input.KeyEventHandler]{
+    param($s, $e)
+    if ($e.Key -ne [System.Windows.Input.Key]::Back) { return }
+    $mods = [System.Windows.Input.Keyboard]::Modifiers
+    if (-not ($mods -band [System.Windows.Input.ModifierKeys]::Shift)) { return }
+    $tb = $s
+    try {
+        $i = $tb.CaretIndex
+        $ls = 0
+        try {
+            $line = $tb.GetLineIndexFromCharacterIndex($i)
+            if ($line -ge 0) { $ls = $tb.GetCharacterIndexFromLineIndex($line) }
+        } catch { $ls = 0 }
+        if ($i -gt $ls) {
+            $tb.Select($ls, $i - $ls)
+            $tb.SelectedText = ''
+            $tb.CaretIndex = $ls
+        }
+        $e.Handled = $true
+    } catch { }
+}
+[System.Windows.EventManager]::RegisterClassHandler(
+    [System.Windows.Controls.TextBox],
+    [System.Windows.UIElement]::PreviewKeyDownEvent,
+    $__editKeyHandler)
+
+# PasswordBox has no caret API: Shift+Backspace clears the whole field
+$__pwdKeyHandler = [System.Windows.Input.KeyEventHandler]{
+    param($s, $e)
+    if ($e.Key -ne [System.Windows.Input.Key]::Back) { return }
+    if ([System.Windows.Input.Keyboard]::Modifiers -band [System.Windows.Input.ModifierKeys]::Shift) {
+        try { $s.Clear() } catch { }
+        $e.Handled = $true
+    }
+}
+[System.Windows.EventManager]::RegisterClassHandler(
+    [System.Windows.Controls.PasswordBox],
+    [System.Windows.UIElement]::PreviewKeyDownEvent,
+    $__pwdKeyHandler)
+
 # 1. Check the AD module
 if (-not (Test-ADModule)) { return }
 

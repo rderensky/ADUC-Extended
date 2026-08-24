@@ -10,7 +10,7 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.2.0-orange)
+![Version](https://img.shields.io/badge/version-1.2.1-orange)
 
 [English](README.md) · **Русская версия**
 
@@ -51,6 +51,9 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 - Список доменов с переключением; смена домена под учётными данными активной сессии.
 - Переключение языка интерфейса (English / Русский) на лету; формат дат зависит
   от языка: `YYYY-MMM-DD` (EN) или `ДД МММ ГГГГ` (RU).
+- Горячие клавиши в полях ввода: удаление строки (Cmd+Backspace на macOS,
+  Shift+Backspace на Windows) и слова (Ctrl+Backspace); Esc закрывает
+  активный диалог и никогда — главное окно.
 
 
 ## Структура репозитория

@@ -4007,8 +4007,8 @@ class CreateDialog(tk.Toplevel):
 
 
 def _install_mac_keybindings(root):
-    """macOS-style shortcuts: Cmd-delete a word in text fields
-    and Cmd-click for multi-select in lists."""
+    """macOS-style shortcuts in text fields: Cmd+Backspace deletes the
+    line, Ctrl+Backspace deletes one word; Cmd-click multi-select in lists."""
     def del_prev_word(event):
         w = event.widget
         try:
@@ -4042,8 +4042,23 @@ def _install_mac_keybindings(root):
             w.delete(pos, i)
         return 'break'
 
-    for cls in ('Entry', 'TEntry'):
-        root.bind_class(cls, '<Command-BackSpace>', del_prev_word)
+    def del_line_start(event):
+        """Delete from the beginning of the line to the cursor
+        (macOS-standard Cmd+Backspace)."""
+        w = event.widget
+        try:
+            pos = w.index('insert')
+        except Exception:
+            return None
+        if pos > 0:
+            w.delete(0, pos)
+        return 'break'
+
+    for cls in ('Entry', 'TEntry', 'TCombobox'):
+        # Cmd+Backspace — delete the line (to its start), like macOS
+        root.bind_class(cls, '<Command-BackSpace>', del_line_start)
+        # Ctrl+Backspace — delete one word back
+        root.bind_class(cls, '<Control-BackSpace>', del_prev_word)
         root.bind_class(cls, '<Command-Delete>', del_next_word)
 
     def lb_cmd_click(event):
@@ -4061,11 +4076,35 @@ def _install_mac_keybindings(root):
     root.bind_class('Listbox', '<Command-Button-1>', lb_cmd_click)
 
 
+def _install_escape_binding(root):
+    """Esc closes the topmost modal dialog; the main window is never
+    closed by Esc."""
+    def on_escape(event=None):
+        try:
+            w = root.focus_get()
+            top = w.winfo_toplevel() if w is not None else None
+        except Exception:
+            top = None
+        if top is None or top is root:
+            return None  # main window — ignore Esc
+        try:
+            top.grab_release()
+        except Exception:
+            pass
+        try:
+            top.destroy()
+        except Exception:
+            pass
+        return 'break'
+    root.bind_all('<Escape>', on_escape, add='+')
+
+
 def main():
     root = tk.Tk()
     root.title("ADUC-Ext")
     root.geometry("1400x700")
     _install_mac_keybindings(root)
+    _install_escape_binding(root)
     root.withdraw()  # hidden until a successful login
 
     config = ConfigStore()
