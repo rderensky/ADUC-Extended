@@ -10,7 +10,7 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.2.1-orange)
+![Version](https://img.shields.io/badge/version-1.2.2-orange)
 
 [English](README.md) · **Русская версия**
 
@@ -54,6 +54,14 @@ Windows (PowerShell + WPF) и macOS (Python + Tkinter).
 - Горячие клавиши в полях ввода: удаление строки (Cmd+Backspace на macOS,
   Shift+Backspace на Windows) и слова (Ctrl+Backspace); Esc закрывает
   активный диалог и никогда — главное окно.
+- Вложенные группы: в окне редактирования группы — управление группами,
+  в которые входит сама группа (Член групп), как в оснастке ADUC.
+- Подбор участников с «корзиной»: двойной клик собирает пользователей из
+  любого OU или поиска в один список — несколько участников из разных OU
+  добавляются за один раз.
+- Надёжный буфер обмена на macOS (Tk 9): Cmd+V/C/X/Z/A работают во всех
+  полях, в английской и русской раскладках; контекстное меню по правому
+  клику и отмена ввода (Cmd+Z).
 
 
 ## Структура репозитория

@@ -249,6 +249,7 @@ RU_STRINGS = {
     "Save": "Сохранить",
     "Edit properties": "Изменение свойств",
     "Group membership (Member Of)": "Группы доступа (Member Of)",
+    "Member of (groups)": "Член групп",
     "Changes saved.": "Изменения сохранены.",
     "Select organizational unit (OU)": "Выбор подразделения (OU)",
     "January": "Январь",
@@ -295,8 +296,13 @@ RU_STRINGS = {
     "Paste": "Вставить",
     "Select All": "Выделить всё",
     "Edit": "Правка",
+    "Undo": "Отменить",
     'Container on the left — its users on the right; the search spans the whole subtree. Cmd-click — multi-select.':
         'Слева контейнер — справа его пользователи; поиск идёт по всему поддереву. Cmd-клик — множественный выбор.',
+    'Container on the left — its users on the right; the search spans the whole subtree. Double-click adds a user to the list below; repeat the search or switch OUs to collect users from different places.':
+        'Слева контейнер — справа его пользователи; поиск идёт по всему поддереву. Двойной клик добавляет пользователя в список ниже; повторяйте поиск или переключайте OU, чтобы собрать пользователей из разных мест.',
+    'Selected to add ({a0}):': 'Выбрано для добавления ({a0}):',
+    'Add': 'Добавить',
     'Domain controller "{a0}" is unreachable (port {a1}).\n'
     'Check the server name and network connectivity.':
         'Контроллер домена «{a0}» недоступен (порт {a1}).\n'
@@ -766,7 +772,8 @@ class ADClient:
         return nodes
 
     def get_user_groups(self, dn):
-        self.conn.search(dn, "(objectClass=user)", search_scope='BASE',
+        """memberOf of any object (user, group, computer) as a group list."""
+        self.conn.search(dn, "(objectClass=*)", search_scope='BASE',
                          attributes=['memberOf'])
         if not self.conn.entries:
             return []
@@ -1369,13 +1376,258 @@ def pwd_expiry_text(u):
 # ============================================================================
 #  GUI
 # ============================================================================
+def _pb_env():
+    """Environment for pbcopy/pbpaste with a forced UTF-8 locale.
+
+    Both tools convert text to/from the current locale encoding. An app
+    launched from Finder has no LANG set, so the C (ASCII) locale applies
+    and every non-Latin character (e.g. Cyrillic) is flattened to '?'.
+    """
+    env = dict(os.environ)
+    env['LANG'] = 'en_US.UTF-8'
+    env['LC_ALL'] = 'en_US.UTF-8'
+    env['LC_CTYPE'] = 'UTF-8'
+    return env
+
+
+def get_clipboard(root):
+    """Read text from the system clipboard. On macOS use pbpaste (reliable
+    with Tk 9, where Tk's own clipboard path is broken); elsewhere use Tk."""
+    if sys.platform == 'darwin':
+        try:
+            r = subprocess.run(['pbpaste'], capture_output=True, timeout=5,
+                               env=_pb_env())
+            if r.returncode == 0:
+                return r.stdout.decode('utf-8', 'replace')
+        except Exception:
+            pass
+    try:
+        return root.clipboard_get()
+    except Exception:
+        return ''
+
+
+_LAST_PASTE_TS = [0.0]
+_LAST_PASTE_SIG = [None]
+_LAST_UNDO_TS = [0.0]
+
+
+def _undo_push(w):
+    """Snapshot a text widget's value before a change (for Cmd+Z)."""
+    try:
+        if isinstance(w, tk.Text):
+            val = w.get('1.0', 'end-1c')
+        else:
+            val = w.get()
+        st = getattr(w, '_undo_stack', None)
+        if st is None:
+            st = w._undo_stack = []
+        if st and st[-1] == val:
+            return
+        st.append(val)
+        del st[:-100]
+    except Exception:
+        pass
+
+
+def undo_in_widget(root, w):
+    """Cmd+Z: restore the previous value of the focused text field."""
+    import time
+    now = time.monotonic()
+    if now - _LAST_UNDO_TS[0] < 0.30:
+        return 'break'
+    if w is None:
+        return None
+    st = getattr(w, '_undo_stack', None)
+    if not st:
+        return 'break'
+    _LAST_UNDO_TS[0] = now  # claim the window only when actually undoing
+    val = st.pop()
+    try:
+        if isinstance(w, tk.Text):
+            w.delete('1.0', 'end')
+            w.insert('1.0', val)
+        else:
+            w.delete(0, 'end')
+            w.insert(0, val)
+            w.icursor('end')
+        w._last_val = val
+    except Exception:
+        pass
+    return 'break'
+
+
+def undo_in_focused(root):
+    try:
+        w = root.focus_get()
+    except Exception:
+        w = None
+    if w is None or not isinstance(w, (tk.Entry, ttk.Entry, ttk.Combobox,
+                                       tk.Text)):
+        w = getattr(root, '_last_text_widget', None)
+    return undo_in_widget(root, w)
+
+
+def paste_into_widget(root, w):
+    """Paste clipboard text into a specific Entry/Combobox/Text widget.
+
+    Deduplicated: on macOS one Cmd+V can arrive through several routes
+    (the window menu accelerator, the key binding, key auto-repeat), so a
+    repeat within 300 ms is ignored, and a paste of the SAME text into
+    the SAME widget is ignored for 1.2 s — whatever route delivers it."""
+    import time
+    now = time.monotonic()
+    if now - _LAST_PASTE_TS[0] < 0.30:
+        return 'break'
+    if w is None:
+        return None
+    try:
+        if not int(w.winfo_exists()):
+            return None
+    except Exception:
+        return None
+    text = get_clipboard(root)
+    if not text:
+        return 'break'
+    if (_LAST_PASTE_SIG[0] == (str(w), text)
+            and now - _LAST_PASTE_TS[0] < 1.2):
+        return 'break'
+    _undo_push(w)
+    _LAST_PASTE_TS[0] = now  # claim the window only when actually pasting
+    _LAST_PASTE_SIG[0] = (str(w), text)
+    try:
+        if isinstance(w, tk.Text):
+            try:
+                w.delete('sel.first', 'sel.last')
+            except Exception:
+                pass
+            w.insert('insert', text)
+        else:
+            # Entry-like widgets (tk.Entry, ttk.Entry, ttk.Combobox)
+            flat = text.rstrip('\r\n')
+            try:
+                w.delete('sel.first', 'sel.last')
+            except Exception:
+                pass
+            w.insert('insert', flat)
+        try:
+            w._last_val = w.get() if not isinstance(w, tk.Text) \
+                else w.get('1.0', 'end-1c')
+        except Exception:
+            pass
+    except Exception:
+        return None
+    return 'break'
+
+
+def paste_into_focused(root):
+    """Paste into the focused field; falls back to the last text field
+    that had focus (menus and grabs can leave focus_get() empty)."""
+    try:
+        w = root.focus_get()
+    except Exception:
+        w = None
+    if w is None or not isinstance(w, (tk.Entry, ttk.Entry, ttk.Combobox,
+                                       tk.Text)):
+        w = getattr(root, '_last_text_widget', None)
+    return paste_into_widget(root, w)
+
+
+def select_all_in_widget(root, w):
+    """Cmd+A: select the whole content of a text field."""
+    if w is None:
+        return None
+    try:
+        if isinstance(w, tk.Text):
+            w.tag_add('sel', '1.0', 'end-1c')
+            w.mark_set('insert', 'end-1c')
+        else:
+            w.select_range(0, 'end')
+            w.icursor('end')
+        return 'break'
+    except Exception:
+        return None
+
+
+def _focused_text_widget(root):
+    try:
+        w = root.focus_get()
+    except Exception:
+        w = None
+    if w is None or not isinstance(w, (tk.Entry, ttk.Entry, ttk.Combobox,
+                                       tk.Text)):
+        w = getattr(root, '_last_text_widget', None)
+    return w
+
+
+def select_all_in_focused(root):
+    return select_all_in_widget(root, _focused_text_widget(root))
+
+
+def copy_in_focused(root):
+    try:
+        w = _focused_text_widget(root)
+        if w is None:
+            return None
+        if isinstance(w, tk.Text):
+            sel = w.get('sel.first', 'sel.last')
+        else:
+            if not w.selection_present():
+                return None
+            sel = w.selection_get()
+        set_clipboard(root, sel)
+        return 'break'
+    except Exception:
+        return None
+
+
+def cut_in_focused(root):
+    try:
+        w = _focused_text_widget(root)
+        if w is None:
+            return None
+        if isinstance(w, tk.Text):
+            sel = w.get('sel.first', 'sel.last')
+        else:
+            if not w.selection_present():
+                return None
+            sel = w.selection_get()
+        _undo_push(w)
+        set_clipboard(root, sel)
+        w.delete('sel.first', 'sel.last')
+        return 'break'
+    except Exception:
+        return None
+
+
+def modal_grab(win):
+    """Dialog modality. On macOS a Tk grab blocks menu key equivalents —
+    the only route Cmd+V/C/Z take in Tk 9 — so dialogs there are kept
+    grab-less: transient() still keeps them above the parent window.
+    transient() is applied only when the parent is actually visible:
+    a transient of a withdrawn window inherits its hidden state (the
+    login dialog would never appear)."""
+    try:
+        parent = win.master.winfo_toplevel() if win.master else None
+        if parent is not None and parent.winfo_viewable():
+            win.transient(parent)
+    except Exception:
+        pass
+    if sys.platform != 'darwin':
+        try:
+            win.grab_set()
+        except Exception:
+            pass
+
+
 def set_clipboard(root, text):
     """Put text on the system clipboard. On macOS use pbcopy (reliable with
     Tk 9, where Tk's own clipboard path is broken); elsewhere use Tk."""
     text = '' if text is None else str(text)
     if sys.platform == 'darwin':
         try:
-            subprocess.run(['pbcopy'], input=text.encode('utf-8'), check=True)
+            subprocess.run(['pbcopy'], input=text.encode('utf-8'),
+                           check=True, env=_pb_env())
             return True
         except Exception:
             pass
@@ -1560,7 +1812,7 @@ class LoginDialog(tk.Toplevel):
             self.deiconify()
             self.lift()
             self.focus_force()
-            self.grab_set()
+            modal_grab(self)
             if not self.e_host.get().strip():
                 self.e_host.focus_set()
             elif not self.e_user.get().strip():
@@ -2697,7 +2949,7 @@ class ResetPasswordDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Reset password'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         ttk.Label(frm, text=T('User: {a0} ({a1})').format(a0=(user['name']), a1=(user['sAMAccountName'])),
@@ -2757,7 +3009,7 @@ class MoveDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Move to organizational unit'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         if len(self.users_list) == 1:
@@ -2855,7 +3107,7 @@ class RenameDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Rename object'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         cur_name = obj.get('name') or obj.get('cn') or ''
@@ -2906,7 +3158,7 @@ class GroupPickerDialog(tk.Toplevel):
         self.exclude = set((d or '').lower() for d in (exclude_dns or []))
         self.selected = []
         self.title(T('Select groups'))
-        self.grab_set()
+        modal_grab(self)
         self.geometry("520x460")
         frm = ttk.Frame(self, padding=14)
         frm.grid(sticky='nsew')
@@ -2982,7 +3234,7 @@ class GroupsDialog(tk.Toplevel):
         self.client = client
         self.user = user
         self.title(T('Group membership'))
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=16)
         frm.grid(sticky='nsew')
         self.rowconfigure(0, weight=1)
@@ -3060,7 +3312,7 @@ class ComputerEditDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Edit computer'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         ttk.Label(frm, text=T('Name:')).grid(row=0, column=0, sticky='w', pady=3)
@@ -3119,7 +3371,7 @@ class EditDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Edit properties'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         self.entries = {}
@@ -3227,7 +3479,7 @@ class GroupCreateDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Create group'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
 
@@ -3339,7 +3591,7 @@ class GroupEditDialog(tk.Toplevel):
         self.on_done = on_done
         self.title(T('Edit group'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
         ttk.Label(frm, text=T('Name:')).grid(row=0, column=0, sticky='w',
@@ -3360,14 +3612,76 @@ class GroupEditDialog(tk.Toplevel):
         self.e_mail = ttk.Entry(frm, width=38)
         self.e_mail.insert(0, group.get('mail', '') or '')
         self.e_mail.grid(row=3, column=1, pady=3)
+
+        # Member Of — groups this group belongs to (like the ADUC
+        # "Member Of" tab for a group); changes are applied immediately
+        mo = ttk.LabelFrame(frm, text=T('Member of (groups)'))
+        mo.grid(row=4, column=0, columnspan=2, sticky='ew', pady=(10, 0))
+        mo.columnconfigure(0, weight=1)
+        self.mo_list = tk.Listbox(mo, height=6, selectmode='extended')
+        self.mo_list.grid(row=0, column=0, sticky='ew', padx=6, pady=6)
+        mosb = ttk.Scrollbar(mo, orient='vertical',
+                             command=self.mo_list.yview)
+        mosb.grid(row=0, column=1, sticky='ns')
+        self.mo_list.config(yscrollcommand=mosb.set)
+        mobtns = ttk.Frame(mo)
+        mobtns.grid(row=1, column=0, columnspan=2, sticky='w', padx=6,
+                    pady=(0, 6))
+        ttk.Button(mobtns, text=T('Add...'), command=self._mo_add).grid(
+            row=0, column=0)
+        ttk.Button(mobtns, text=T('Remove selected'),
+                   command=self._mo_remove).grid(row=0, column=1,
+                                                 padx=(8, 0))
+        self.mo_groups = []
+        self._mo_reload()
+
         self.lbl = ttk.Label(frm, text="", foreground='#b00')
-        self.lbl.grid(row=4, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        self.lbl.grid(row=5, column=0, columnspan=2, sticky='w', pady=(6, 0))
         btns = ttk.Frame(frm)
-        btns.grid(row=5, column=0, columnspan=2, pady=(12, 0))
+        btns.grid(row=6, column=0, columnspan=2, pady=(12, 0))
         ttk.Button(btns, text=T('Save'), command=self._save).grid(
             row=0, column=0)
         ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1, padx=(8, 0))
+
+    def _mo_reload(self):
+        self.mo_list.delete(0, 'end')
+        try:
+            self.mo_groups = self.client.get_user_groups(self.group['dn'])
+            for g in self.mo_groups:
+                self.mo_list.insert('end', g['cn'])
+        except Exception as ex:
+            messagebox.showerror(T('Error'), str(ex))
+
+    def _mo_add(self):
+        exclude = [g['dn'] for g in self.mo_groups] + [self.group['dn']]
+        picker = GroupPickerDialog(self, self.client, exclude_dns=exclude)
+        self.wait_window(picker)
+        added = 0
+        for g in picker.selected:
+            try:
+                self.client.add_to_group(self.group['dn'], g['dn'])
+                added += 1
+            except Exception as ex:
+                messagebox.showerror(T('Error'), f"{g['cn']}: {ex}")
+        if added:
+            self._mo_reload()
+
+    def _mo_remove(self):
+        sel = self.mo_list.curselection()
+        if not sel:
+            return
+        if not messagebox.askyesno(T('Confirm'),
+                                   T('Remove from the selected groups ({a0})?').format(a0=(len(sel)))):
+            return
+        for i in sel:
+            try:
+                self.client.remove_from_group(self.group['dn'],
+                                              self.mo_groups[i]['dn'])
+            except Exception as ex:
+                messagebox.showerror(T('Error'),
+                                     f"{self.mo_groups[i]['cn']}: {ex}")
+        self._mo_reload()
 
     def _save(self):
         try:
@@ -3382,7 +3696,12 @@ class GroupEditDialog(tk.Toplevel):
 
 
 class UserPickerDialog(tk.Toplevel):
-    """Search and pick one or more users."""
+    """Search and pick one or more users.
+
+    A basket dialog: double-click adds a user to the selection list at
+    the bottom, then a new search or another OU can be browsed without
+    leaving the window — users from different OUs are collected into one
+    list and added together."""
 
     def __init__(self, master, client, exclude_dns=None):
         super().__init__(master)
@@ -3390,8 +3709,8 @@ class UserPickerDialog(tk.Toplevel):
         self.exclude = set((d or '').lower() for d in (exclude_dns or []))
         self.selected = []
         self.title(T('Select users'))
-        self.grab_set()
-        self.geometry("760x500")
+        modal_grab(self)
+        self.geometry("760x640")
         frm = ttk.Frame(self, padding=14)
         frm.grid(sticky='nsew')
         self.rowconfigure(0, weight=1)
@@ -3408,7 +3727,7 @@ class UserPickerDialog(tk.Toplevel):
         ttk.Button(top, text=T('Find'), command=self._load).grid(
             row=0, column=2, padx=(6, 0))
 
-        ttk.Label(frm, text=T('Container on the left — its users on the right; the search spans the whole subtree. Cmd-click — multi-select.'),
+        ttk.Label(frm, text=T('Container on the left — its users on the right; the search spans the whole subtree. Double-click adds a user to the list below; repeat the search or switch OUs to collect users from different places.'),
                   wraplength=700).grid(
             row=1, column=0, sticky='w', pady=(10, 4))
 
@@ -3438,21 +3757,80 @@ class UserPickerDialog(tk.Toplevel):
                            command=self.listbox.yview)
         sb.grid(row=0, column=1, sticky='ns')
         self.listbox.config(yscrollcommand=sb.set)
+        self.listbox.bind('<Double-1>', self._pick_current)
         body.add(list_frame, weight=3)
 
+        # The basket: users collected for adding (from any OU / search)
+        self.picked_frame = ttk.LabelFrame(
+            frm, text=T('Selected to add ({a0}):').format(a0=0))
+        self.picked_frame.grid(row=3, column=0, sticky='ew', pady=(10, 0))
+        self.picked_frame.columnconfigure(0, weight=1)
+        self.picked_list = tk.Listbox(self.picked_frame, height=5,
+                                      selectmode='extended')
+        self.picked_list.grid(row=0, column=0, sticky='ew', padx=6, pady=6)
+        psb = ttk.Scrollbar(self.picked_frame, orient='vertical',
+                            command=self.picked_list.yview)
+        psb.grid(row=0, column=1, sticky='ns')
+        self.picked_list.config(yscrollcommand=psb.set)
+        self.picked_list.bind('<Double-1>', self._unpick_current)
+        pbtns = ttk.Frame(self.picked_frame)
+        pbtns.grid(row=1, column=0, columnspan=2, sticky='w', padx=6,
+                   pady=(0, 6))
+        ttk.Button(pbtns, text=T('Remove selected'),
+                   command=self._unpick_selected).grid(row=0, column=0)
+
         btns = ttk.Frame(frm)
-        btns.grid(row=3, column=0, sticky='e', pady=(10, 0))
-        ttk.Button(btns, text=T('Select'), command=self._ok).grid(
+        btns.grid(row=4, column=0, sticky='e', pady=(10, 0))
+        ttk.Button(btns, text=T('Add'), command=self._ok).grid(
             row=0, column=0, padx=(0, 8))
         ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
             row=0, column=1)
 
         self._all = []
+        self._picked = []
         self._ou_dn_by_item = {}
         self._loading_tree = False
         self._load_tree()
         self.e_search.focus_set()
         self._load()
+
+    def _refresh_picked(self):
+        self.picked_list.delete(0, 'end')
+        for u in self._picked:
+            self.picked_list.insert(
+                'end', f"{u['name']} ({u['sAMAccountName']})")
+        self.picked_frame.config(
+            text=T('Selected to add ({a0}):').format(a0=(len(self._picked))))
+
+    def _pick_current(self, event=None):
+        try:
+            i = self.listbox.nearest(event.y) if event is not None else -1
+        except Exception:
+            i = -1
+        if i < 0 or i >= len(self._all):
+            return 'break'
+        u = self._all[i]
+        if all(u['dn'].lower() != p['dn'].lower() for p in self._picked):
+            self._picked.append(u)
+            self._refresh_picked()
+        return 'break'
+
+    def _unpick_current(self, event=None):
+        try:
+            i = self.picked_list.nearest(event.y) if event is not None else -1
+        except Exception:
+            i = -1
+        if 0 <= i < len(self._picked):
+            del self._picked[i]
+            self._refresh_picked()
+        return 'break'
+
+    def _unpick_selected(self):
+        sel = sorted(self.picked_list.curselection(), reverse=True)
+        for i in sel:
+            if i < len(self._picked):
+                del self._picked[i]
+        self._refresh_picked()
 
     def _load_tree(self):
         """AD hierarchy: OUs and standard containers, like the main window."""
@@ -3519,12 +3897,18 @@ class UserPickerDialog(tk.Toplevel):
             self.listbox.itemconfig(0, foreground='gray')
 
     def _ok(self):
-        if not self._all:
-            self.selected = []
-        else:
-            self.selected = [self._all[i]
-                             for i in self.listbox.curselection()
-                             if i < len(self._all)]
+        # The basket plus whatever is highlighted in the results (so the
+        # old flow — highlight and press Add — still works)
+        picked = list(self._picked)
+        have = set(p['dn'].lower() for p in picked)
+        if self._all:
+            for i in self.listbox.curselection():
+                if i < len(self._all):
+                    u = self._all[i]
+                    if u['dn'].lower() not in have:
+                        picked.append(u)
+                        have.add(u['dn'].lower())
+        self.selected = picked
         self.destroy()
 
 
@@ -3537,7 +3921,7 @@ class GroupMembersDialog(tk.Toplevel):
         self.group = group
         self.on_done = on_done
         self.title(T('Group members'))
-        self.grab_set()
+        modal_grab(self)
         self.geometry("560x480")
         frm = ttk.Frame(self, padding=14)
         frm.grid(sticky='nsew')
@@ -3626,7 +4010,7 @@ class OUTreePickerDialog(tk.Toplevel):
         self.client = client
         self.selected_dn = None
         self.title(T('Select organizational unit (OU)'))
-        self.grab_set()
+        modal_grab(self)
         self.geometry("420x480")
         frm = ttk.Frame(self, padding=12)
         frm.grid(sticky='nsew')
@@ -3695,7 +4079,7 @@ class CalendarPopup(tk.Toplevel):
         self.on_pick = on_pick
         self.title(T('Select date'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         cur = initial or datetime.date.today()
         self.year = cur.year
         self.month = cur.month
@@ -3767,7 +4151,7 @@ class CreateDialog(tk.Toplevel):
         self.selected_groups = []
         self.title(T('Create user'))
         self.resizable(False, False)
-        self.grab_set()
+        modal_grab(self)
         frm = ttk.Frame(self, padding=18)
         frm.grid()
 
@@ -4075,6 +4459,277 @@ def _install_mac_keybindings(root):
 
     root.bind_class('Listbox', '<Command-Button-1>', lb_cmd_click)
 
+    if sys.platform == 'darwin':
+        # (Latin-layout bindings; routed through _hotkey below so that a
+        # held key pastes only once — see auto-repeat suppression.)
+        for seq, act in (('<Command-Key-v>', 'paste'),
+                         ('<Command-Key-V>', 'paste'),
+                         ('<Command-Key-z>', 'undo'),
+                         ('<Command-Key-Z>', 'undo'),
+                         ('<Command-Key-c>', 'copy'),
+                         ('<Command-Key-C>', 'copy'),
+                         ('<Command-Key-x>', 'cut'),
+                         ('<Command-Key-X>', 'cut'),
+                         ('<Command-Key-a>', 'selectall'),
+                         ('<Command-Key-A>', 'selectall')):
+            root.bind_all(seq, lambda e, a=act: _hotkey(a, e), add='+')
+
+        # Layout-independent dispatcher. With a non-Latin keyboard layout
+        # (e.g. Russian) Cmd+V is delivered with keysym Cyrillic_em, so
+        # neither the <Command-Key-v> bindings above nor the menu key
+        # equivalents ("Cmd+V") ever match — the shortcut looks dead.
+        # This generic <KeyPress> handler recognises the shortcut by the
+        # macOS virtual keycode (layout-independent) and by the Cyrillic
+        # keysym, and dispatches to the same actions. Paste/undo are
+        # debounced internally, so a second delivery of the same
+        # keystroke through another route is harmless.
+        _VK_ACTIONS = {9: 'paste', 6: 'undo', 0: 'selectall',
+                       8: 'copy', 7: 'cut'}
+        _KS_ACTIONS = {
+            'v': 'paste', 'м': 'paste', 'cyrillic_em': 'paste',
+            'z': 'undo', 'я': 'undo', 'cyrillic_ya': 'undo',
+            'a': 'selectall', 'ф': 'selectall',
+            'cyrillic_ef': 'selectall',
+            'c': 'copy', 'с': 'copy', 'cyrillic_es': 'copy',
+            'x': 'cut', 'ч': 'cut', 'cyrillic_che': 'cut',
+        }
+        _ACTIONS = {'paste': paste_into_focused, 'undo': undo_in_focused,
+                    'selectall': select_all_in_focused,
+                    'copy': copy_in_focused, 'cut': cut_in_focused}
+
+        # Auto-repeat suppression: holding Cmd+V makes macOS repeat the
+        # KeyPress, and repeats spaced wider than the paste debounce used
+        # to paste again (the intermittent "double paste"). A shortcut
+        # fires once per physical press: repeats are ignored until the
+        # key's KeyRelease arrives (with a time cap as a safety net in
+        # case a release is lost on focus changes).
+        _HELD_KEYS = {}
+
+        def _hotkey(action, event=None):
+            import time
+            if event is not None:
+                now = time.monotonic()
+                last = _HELD_KEYS.get(event.keycode)
+                _HELD_KEYS[event.keycode] = now
+                if last is not None and now - last < 0.8:
+                    return 'break'
+            return _ACTIONS[action](root)
+
+        def _on_key_release(event):
+            _HELD_KEYS.pop(event.keycode, None)
+
+        root.bind_all('<KeyRelease>', _on_key_release, add='+')
+
+        def _cmd_dispatch(event):
+            try:
+                state = int(event.state)
+            except Exception:
+                return None
+            # Command is Mod1 (0x8) on Tk/Aqua; 0x10 is accepted too in
+            # case the mapping differs between Tk builds. Control combos
+            # are left alone.
+            if not (state & 0x18) or (state & 0x4):
+                return None
+            action = _KS_ACTIONS.get((event.keysym or '').lower())
+            if action is None:
+                action = _VK_ACTIONS.get(event.keycode)
+            if action is None:
+                return None
+            return _hotkey(action, event)
+
+        root.bind_all('<KeyPress>', _cmd_dispatch, add='+')
+        # Explicit Cyrillic-keysym bindings: at the same binding level Tk
+        # fires only the most specific match, so these take over from the
+        # generic <KeyPress> handler when the RU layout is active.
+        for seq, act in (('<Command-Cyrillic_em>', 'paste'),
+                         ('<Command-Cyrillic_ya>', 'undo'),
+                         ('<Command-Cyrillic_ef>', 'selectall'),
+                         ('<Command-Cyrillic_es>', 'copy'),
+                         ('<Command-Cyrillic_che>', 'cut')):
+            try:
+                root.bind_all(seq,
+                              lambda e, a=act: _hotkey(a, e), add='+')
+            except Exception:
+                pass
+
+        # Tk maps Cmd+V to the native <<Paste>> class binding; with the key
+        # now reaching widgets that would paste a second time. Unmap it —
+        # pasting is fully handled by our pbpaste-based code.
+        try:
+            for seq in list(root.event_info('<<Paste>>')):
+                if 'Command' in seq or 'Meta' in seq:
+                    root.event_delete('<<Paste>>', seq)
+        except Exception:
+            pass
+
+        # THE actual "double paste" source on Tk 9 (proven by the debug
+        # log: one "paste: inserting" yet doubled text): the Entry/Text
+        # CLASS <<Paste>> binding still fires — in Tk 9 the virtual event
+        # is attached to a sequence the cleanup above does not match —
+        # and class bindings run BEFORE bind_all, so Tk's native insert
+        # lands first and ours follows. Cyrillic pasted single because
+        # the native equivalent only matches the Latin 'v'. Replace the
+        # class-level virtual-event handlers with our clipboard code;
+        # 'break' stops the remaining bindtags, so exactly one route
+        # inserts, and every route is deduplicated in paste_into_widget.
+        def _cls_paste(event):
+            return paste_into_widget(root, event.widget) or 'break'
+
+        def _cls_copy(event):
+            return copy_in_focused(root) or 'break'
+
+        def _cls_cut(event):
+            return cut_in_focused(root) or 'break'
+
+        def _cls_selall(event):
+            return select_all_in_widget(root, event.widget) or 'break'
+
+        def _cls_undo(event):
+            return undo_in_widget(root, event.widget) or 'break'
+
+        for cls in ('Entry', 'TEntry', 'TCombobox', 'Text'):
+            root.bind_class(cls, '<<Paste>>', _cls_paste)
+            root.bind_class(cls, '<<Copy>>', _cls_copy)
+            root.bind_class(cls, '<<Cut>>', _cls_cut)
+            root.bind_class(cls, '<<SelectAll>>', _cls_selall)
+            root.bind_class(cls, '<<Undo>>', _cls_undo)
+
+
+
+
+def _make_edit_menubar(root, win):
+    """Edit menubar for a window: Cut/Copy/Paste/Select All using our
+    clipboard helpers (pbcopy/pbpaste on macOS)."""
+    menubar = tk.Menu(win)
+    edit_menu = tk.Menu(menubar, tearoff=0)
+
+    # NOTE: on Tk 9 / macOS command keystrokes with a Latin layout are also
+    # delivered through menu key equivalents (accelerator=); paste/undo are
+    # debounced, so a double delivery (menu + key binding) is harmless.
+    edit_menu.add_command(label=T('Undo'), accelerator="Cmd+Z",
+                          command=lambda: undo_in_focused(root))
+    edit_menu.add_separator()
+    edit_menu.add_command(label=T('Cut'), accelerator="Cmd+X",
+                          command=lambda: cut_in_focused(root))
+    edit_menu.add_command(label=T('Copy'), accelerator="Cmd+C",
+                          command=lambda: copy_in_focused(root))
+    edit_menu.add_command(label=T('Paste'), accelerator="Cmd+V",
+                          command=lambda: paste_into_focused(root))
+    edit_menu.add_separator()
+    edit_menu.add_command(label=T('Select All'), accelerator="Cmd+A",
+                          command=lambda: select_all_in_focused(root))
+    menubar.add_cascade(label=T('Edit'), menu=edit_menu)
+    return menubar
+
+
+def _install_focus_tracking(root):
+    """Remember the last text field that had focus: menu interaction on
+    macOS can clear focus_get(), which used to break pasting."""
+    def on_focus(event):
+        w = event.widget
+        root._last_text_widget = w
+        try:
+            w._last_val = w.get() if not isinstance(w, tk.Text) \
+                else w.get('1.0', 'end-1c')
+        except Exception:
+            pass
+
+    def on_key(event):
+        # Runs after Tk's own insert: if the value changed, remember the
+        # previous one for Cmd+Z (typing burst = char-level snapshots)
+        w = event.widget
+        try:
+            cur = w.get() if not isinstance(w, tk.Text) \
+                else w.get('1.0', 'end-1c')
+            prev = getattr(w, '_last_val', None)
+            if prev is not None and cur != prev:
+                st = getattr(w, '_undo_stack', None)
+                if st is None:
+                    st = w._undo_stack = []
+                if not st or st[-1] != prev:
+                    st.append(prev)
+                    del st[:-100]
+            w._last_val = cur
+        except Exception:
+            pass
+
+    for cls in ('Entry', 'TEntry', 'TCombobox', 'Text'):
+        root.bind_class(cls, '<FocusIn>', on_focus, add='+')
+        root.bind_class(cls, '<KeyRelease>', on_key, add='+')
+
+
+def _install_dialog_menus(root):
+    """Every dialog (Toplevel) gets its own Edit menubar when mapped:
+    with a modal grab active, macOS routes Cmd+V to the frontmost
+    window's menu, so each dialog needs one of its own."""
+    def on_map(event):
+        w = event.widget
+        if not isinstance(w, tk.Toplevel):
+            return
+        try:
+            if not w.cget('menu'):
+                w.config(menu=_make_edit_menubar(root, w))
+        except Exception:
+            pass
+    root.bind_class('Toplevel', '<Map>', on_map, add='+')
+
+
+def _install_entry_context_menu(root):
+    """Right-click context menu (Cut/Copy/Paste/Select All) on all
+    Entry-like fields — a keyboard-independent paste path."""
+    def show_menu(event):
+        w = event.widget
+        try:
+            w.focus_set()
+        except Exception:
+            pass
+        m = tk.Menu(w, tearoff=0)
+
+        def _cut():
+            try:
+                if w.selection_present():
+                    set_clipboard(root, w.selection_get())
+                    w.delete('sel.first', 'sel.last')
+            except Exception:
+                pass
+
+        def _copy():
+            try:
+                set_clipboard(root, w.selection_get())
+            except Exception:
+                pass
+
+        def _paste():
+            paste_into_widget(root, w)
+
+        def _select_all():
+            try:
+                w.select_range(0, 'end')
+            except Exception:
+                pass
+
+        has_sel = False
+        try:
+            has_sel = bool(w.selection_present())
+        except Exception:
+            pass
+        m.add_command(label=T('Cut'), command=_cut,
+                      state='normal' if has_sel else 'disabled')
+        m.add_command(label=T('Copy'), command=_copy,
+                      state='normal' if has_sel else 'disabled')
+        m.add_command(label=T('Paste'), command=_paste)
+        m.add_separator()
+        m.add_command(label=T('Select All'), command=_select_all)
+        try:
+            m.tk_popup(event.x_root, event.y_root)
+        finally:
+            m.grab_release()
+        return 'break'
+
+    for cls in ('Entry', 'TEntry', 'TCombobox'):
+        for seq in ('<Button-2>', '<Button-3>', '<Control-Button-1>'):
+            root.bind_class(cls, seq, show_menu)
+
 
 def _install_escape_binding(root):
     """Esc closes the topmost modal dialog; the main window is never
@@ -4105,6 +4760,9 @@ def main():
     root.geometry("1400x700")
     _install_mac_keybindings(root)
     _install_escape_binding(root)
+    _install_focus_tracking(root)
+    _install_dialog_menus(root)
+    _install_entry_context_menu(root)
     root.withdraw()  # hidden until a successful login
 
     config = ConfigStore()
@@ -4143,14 +4801,16 @@ def main():
     def _build_app_menu(w):
         menubar = tk.Menu(root)
         edit_menu = tk.Menu(menubar, tearoff=0)
+        edit_menu.add_command(label=T('Undo'), accelerator="Cmd+Z",
+                              command=lambda: undo_in_focused(root))
+        edit_menu.add_separator()
         edit_menu.add_command(label=T('Cut'), accelerator="Cmd+X",
                               command=lambda: root.focus_get() and
                               root.focus_get().event_generate('<<Cut>>'))
         edit_menu.add_command(label=T('Copy'), accelerator="Cmd+C",
                               command=w._on_copy_shortcut)
         edit_menu.add_command(label=T('Paste'), accelerator="Cmd+V",
-                              command=lambda: root.focus_get() and
-                              root.focus_get().event_generate('<<Paste>>'))
+                              command=lambda: paste_into_focused(root))
         edit_menu.add_separator()
         edit_menu.add_command(label=T('Select All'), accelerator="Cmd+A",
                               command=w._on_select_all)

@@ -1,14 +1,21 @@
-# ADUC-Extended v1.2.1
+# ADUC-Extended v1.2.2
 
 ## What's new
 
-- **Editing shortcuts** in all input fields:
-  - macOS: Cmd+Backspace deletes the line (to its start), Ctrl+Backspace
-    deletes one word;
-  - Windows: Shift+Backspace deletes the line, Ctrl+Backspace deletes one
-    word; in the password field Shift+Backspace clears it.
-- **Esc closes the active modal dialog** (as Cancel); the main window is
-  never closed by Esc.
+- **Nested groups**: the group edit dialog now manages the groups the group
+  itself belongs to (Member Of) — add and remove parent groups, like the
+  ADUC snap-in.
+- **Member picker with a selection basket**: double-click adds a user to
+  the list at the bottom of the picker; repeat the search or switch OUs
+  without leaving the window and add several members from different OUs
+  at once.
+- **macOS: clipboard and shortcuts overhaul (Tk 9)**:
+  - Cmd+V / Cmd+C / Cmd+X / Cmd+Z / Cmd+A work in every input field, in
+    both English and Russian keyboard layouts;
+  - Cyrillic text is copied and pasted correctly;
+  - the intermittent double paste is fixed;
+  - Cmd+Z undoes the last typing or paste; Cmd+A selects the field;
+  - right-click opens a Cut / Copy / Paste / Select All menu.
 
 ## Downloads
 
@@ -17,8 +24,8 @@ inside the app.
 
 | Platform | Source | Binaries |
 |---|---|---|
-| Windows | `ADUC-Ext-1.2.1-windows.zip` | `ADUC-Ext-1.2.1-win-exe.zip` |
-| macOS   | `ADUC-Ext-1.2.1-macos.zip`   | `ADUC-Ext-1.2.1-mac-app.zip` |
+| Windows | `ADUC-Ext-1.2.2-windows.zip` | `ADUC-Ext-1.2.2-win-exe.zip` |
+| macOS   | `ADUC-Ext-1.2.2-macos.zip`   | `ADUC-Ext-1.2.2-mac-app.zip` |
 
 ## Requirements
 - Windows: PowerShell 5.1 + ActiveDirectory module (RSAT); the app offers to
@@ -27,6 +34,6 @@ inside the app.
 
 ## SHA-256 (source archives)
 ```
-70b86bd07c660dfabfb6840ffeb06d4bc01770738811776153baeae92433a425  ADUC-Ext-1.2.1-windows.zip
-af5dcb6de556e80d313e07b13c9876de2ce580a87fe4a4ac109d573fde6710ed  ADUC-Ext-1.2.1-macos.zip
+5b014d2f247df7d034e6ca5fcd5d4e90763bed1377c3ec4f17ebc83287a2db1e  ADUC-Ext-1.2.2-windows.zip
+0fae1f2e2b5d686a96c122f84c1a8e4e133de38f274390926806ba6808278735  ADUC-Ext-1.2.2-macos.zip
 ```

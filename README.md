@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.2.1-orange)
+![Version](https://img.shields.io/badge/version-1.2.2-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -51,6 +51,14 @@ app prompts for credentials and performs all operations under the specified acco
 - Editing shortcuts in input fields: delete the line (Cmd+Backspace on macOS,
   Shift+Backspace on Windows) or one word (Ctrl+Backspace); Esc closes the
   active dialog and never closes the main window.
+- Nested groups: the group edit dialog manages the groups the group itself
+  belongs to (Member Of), like the ADUC snap-in.
+- Member picker with a selection basket: double-click collects users from
+  any OU or search into one list — several members from different OUs are
+  added in one dialog.
+- Reliable clipboard on macOS (Tk 9): Cmd+V/C/X/Z/A work in every field,
+  in both English and Russian keyboard layouts, with a right-click
+  Cut/Copy/Paste menu and input undo (Cmd+Z).
 
 ## Repository layout
 

@@ -203,6 +203,7 @@ $Script:RuStrings = @{
     "Office:" = "Кабинет:"
     "Phone:" = "Телефон:"
     "Group membership (Member Of):" = "Группы доступа (Member Of):"
+    'Selected to add ({0}):' = 'Выбрано для добавления ({0}):'
     "Remove from the selected groups ({0})?" = "Удалить из выбранных групп ({0})?"
     "Connected to: {0}   |   User: {1}" = "Подключено к: {0}   |   Пользователь: {1}"
     "at next logon (change required)" = "при следующем входе (требуется смена)"
@@ -421,6 +422,7 @@ $Script:XamlRu = @{
     "Text=`"Phone:`"" = "Text=`"Телефон:`""
     "Content=`"Password never expires`"" = "Content=`"Срок действия пароля не ограничен`""
     "Text=`"Group membership (Member Of):`"" = "Text=`"Группы доступа (Member Of):`""
+    "Text=`"Member of (groups):`"" = "Text=`"Член групп:`""
     "Content=`"Groups`"" = "Content=`"Группы`""
     "Content=`"Create group...`"" = "Content=`"Создать группу...`""
     "Content=`"Members...`"" = "Content=`"Участники...`""
@@ -437,6 +439,9 @@ $Script:XamlRu = @{
     "Title=`"Select users`"" = "Title=`"Выбор пользователей`""
     "Title=`"Group members`"" = "Title=`"Участники группы`""
     "Text=`"Container on the left — its users on the right; the search spans the whole subtree.`"" = "Text=`"Слева контейнер — справа его пользователи; поиск идёт по всему поддереву.`""
+    "Text=`"Container on the left — its users on the right; the search spans the whole subtree. Double-click adds a user to the list below; repeat the search or switch OUs to collect users from different places.`"" = "Text=`"Слева контейнер — справа его пользователи; поиск идёт по всему поддереву. Двойной клик добавляет пользователя в список ниже; повторяйте поиск или переключайте OU, чтобы собрать пользователей из разных мест.`""
+    "Text=`"Selected to add (0):`"" = "Text=`"Выбрано для добавления (0):`""
+    "Content=`"Add`"" = "Content=`"Добавить`""
 }
 
 function L {
@@ -1759,7 +1764,7 @@ function Show-GroupCreateDialog {
 $GroupEditXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Edit group" Height="260" Width="470" ResizeMode="NoResize"
+        Title="Edit group" Height="500" Width="470" ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
     <Grid Margin="16">
         <Grid.ColumnDefinitions>
@@ -1772,6 +1777,9 @@ $GroupEditXaml = @"
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="140"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <TextBlock Grid.Row="0" Grid.Column="0" Name="GeLblName" Text="Name:" Margin="0,0,10,6"/>
@@ -1782,9 +1790,16 @@ $GroupEditXaml = @"
         <TextBox   Grid.Row="2" Grid.Column="1" Name="GeDesc" Margin="0,4" Padding="4"/>
         <TextBlock Grid.Row="3" Grid.Column="0" Text="E-mail:" VerticalAlignment="Center"/>
         <TextBox   Grid.Row="3" Grid.Column="1" Name="GeMail" Margin="0,4" Padding="4"/>
-        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Name="GeStatus" Foreground="Firebrick"
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Text="Member of (groups):"
+                   FontWeight="SemiBold" Margin="0,10,0,4"/>
+        <ListBox Grid.Row="5" Grid.ColumnSpan="2" Name="GeMemberOf" SelectionMode="Extended"/>
+        <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+            <Button Name="GeMoAdd" Content="Add..." Width="130" Height="30"/>
+            <Button Name="GeMoRemove" Content="Remove selected" Width="170" Height="30" Margin="8,0,0,0"/>
+        </StackPanel>
+        <TextBlock Grid.Row="7" Grid.ColumnSpan="2" Name="GeStatus" Foreground="Firebrick"
                    TextWrapping="Wrap" Margin="0,6,0,0"/>
-        <StackPanel Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal"
+        <StackPanel Grid.Row="8" Grid.ColumnSpan="2" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button Name="GeOk" Content="Save" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
             <Button Name="GeCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
@@ -1805,6 +1820,58 @@ function Show-GroupEditDialog {
     $st=$w.FindName("GeStatus"); $ok=$w.FindName("GeOk"); $cancel=$w.FindName("GeCancel")
     $desc.Text = [string]$ad.Description
     $mail.Text = [string]$ad.mail
+
+    # Member Of — groups this group belongs to (like the ADUC "Member Of"
+    # tab for a group); changes are applied immediately
+    $moList = $w.FindName("GeMemberOf")
+    $moAdd = $w.FindName("GeMoAdd"); $moRemove = $w.FindName("GeMoRemove")
+    $reloadMo = {
+        $moList.Items.Clear()
+        try {
+            $p = Get-ADParams
+            $adg = Get-ADGroup @p -Identity $Group.DistinguishedName -Properties memberOf
+            @($adg.memberOf) | Where-Object { $_ } | ForEach-Object {
+                $gdn = [string]$_
+                $m = [regex]::Match($gdn, '^CN=((?:\\.|[^,\\])*)')
+                $gname = if ($m.Success) { $m.Groups[1].Value -replace '\\(.)', '$1' } else { $gdn }
+                [pscustomobject]@{ Name = $gname; Dn = $gdn }
+            } | Sort-Object Name | ForEach-Object {
+                    $it = New-Object System.Windows.Controls.ListBoxItem
+                    $it.Content = $_.Name
+                    $it.Tag = $_.Dn
+                    $moList.Items.Add($it) | Out-Null
+                }
+        } catch { Show-Error ((L "Failed to retrieve groups: {0}") -f ($_.Exception.Message)) }
+    }
+    & $reloadMo
+
+    $moAdd.Add_Click({
+        $exclude = @($Group.DistinguishedName)
+        foreach ($it in $moList.Items) { $exclude += [string]$it.Tag }
+        $picked = Show-GroupPickerDialog -Owner $w -ExcludeDNs $exclude
+        $added = 0
+        foreach ($gdn in $picked) {
+            try {
+                $p = Get-ADParams
+                Add-ADGroupMember @p -Identity $gdn -Members $Group.DistinguishedName
+                $added++
+            } catch { Show-Error ((L "Failed to add to group: {0}") -f ($_.Exception.Message)) }
+        }
+        if ($added) { & $reloadMo }
+    })
+
+    $moRemove.Add_Click({
+        $sel = @($moList.SelectedItems)
+        if ($sel.Count -eq 0) { return }
+        if (-not (Confirm-Action ((L "Remove from the selected groups ({0})?") -f ($sel.Count)))) { return }
+        foreach ($it in $sel) {
+            try {
+                $p = Get-ADParams
+                Remove-ADGroupMember @p -Identity ([string]$it.Tag) -Members $Group.DistinguishedName -Confirm:$false
+            } catch { Show-Error ((L "Failed to remove from group '{0}': {1}") -f ($it.Content), ($_.Exception.Message)) }
+        }
+        & $reloadMo
+    })
 
     $script:GroupEditOk = $false
     $ok.Add_Click({
@@ -1831,7 +1898,7 @@ function Show-GroupEditDialog {
 $UserPickXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Select users" Height="520" Width="760"
+        Title="Select users" Height="660" Width="760"
         WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
     <Grid Margin="12">
         <Grid.RowDefinitions>
@@ -1839,13 +1906,16 @@ $UserPickXaml = @"
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="110"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         <DockPanel Grid.Row="0" Margin="0,0,0,6">
             <Button DockPanel.Dock="Right" Name="UpFind" Content="Find" Width="80" Margin="6,0,0,0"/>
             <TextBox Name="UpSearch" Padding="4"/>
         </DockPanel>
         <TextBlock Grid.Row="1" Name="UpHint"
-                   Text="Container on the left — its users on the right; the search spans the whole subtree."
+                   Text="Container on the left — its users on the right; the search spans the whole subtree. Double-click adds a user to the list below; repeat the search or switch OUs to collect users from different places."
                    Foreground="#666" TextWrapping="Wrap" Margin="0,0,0,6"/>
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
@@ -1857,8 +1927,14 @@ $UserPickXaml = @"
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" Background="#DDD"/>
             <ListBox Grid.Column="2" Name="UpList" SelectionMode="Extended"/>
         </Grid>
-        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-            <Button Name="UpOk" Content="Select" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
+        <TextBlock Grid.Row="3" Name="UpPickedLbl" Text="Selected to add (0):"
+                   FontWeight="SemiBold" Margin="0,10,0,4"/>
+        <ListBox Grid.Row="4" Name="UpPicked" SelectionMode="Extended"/>
+        <StackPanel Grid.Row="5" Orientation="Horizontal" Margin="0,6,0,0">
+            <Button Name="UpUnpick" Content="Remove selected" Width="170" Height="30"/>
+        </StackPanel>
+        <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Name="UpOk" Content="Add" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
             <Button Name="UpCancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
         </StackPanel>
     </Grid>
@@ -1873,6 +1949,8 @@ function Show-UserPickerDialog {
     $search=$w.FindName("UpSearch"); $find=$w.FindName("UpFind")
     $list=$w.FindName("UpList"); $ok=$w.FindName("UpOk"); $cancel=$w.FindName("UpCancel")
     $tree=$w.FindName("UpTree")
+    $picked=$w.FindName("UpPicked"); $pickedLbl=$w.FindName("UpPickedLbl")
+    $unpick=$w.FindName("UpUnpick")
 
     $exclude = @{}
     foreach ($d in $ExcludeDNs) { if ($d) { $exclude[$d.ToLower()] = $true } }
@@ -1942,9 +2020,53 @@ function Show-UserPickerDialog {
         & $load
     })
 
+    # The basket: users collected for adding (double-click; any OU/search)
+    $updatePickedLbl = {
+        $pickedLbl.Text = ((L 'Selected to add ({0}):') -f ($picked.Items.Count))
+    }
+    $pickOne = {
+        param($srcItem)
+        if (-not $srcItem) { return }
+        $dn = [string]$srcItem.Tag
+        foreach ($it in $picked.Items) {
+            if ([string]$it.Tag -ieq $dn) { return }
+        }
+        $it = New-Object System.Windows.Controls.ListBoxItem
+        $it.Content = [string]$srcItem.Content
+        $it.Tag = $dn
+        $picked.Items.Add($it) | Out-Null
+        & $updatePickedLbl
+    }
+    $list.Add_MouseDoubleClick({ & $pickOne $list.SelectedItem })
+    $picked.Add_MouseDoubleClick({
+        $it = $picked.SelectedItem
+        if ($it) { $picked.Items.Remove($it); & $updatePickedLbl }
+    })
+    $unpick.Add_Click({
+        $sel = @($picked.SelectedItems)
+        foreach ($it in $sel) { $picked.Items.Remove($it) }
+        & $updatePickedLbl
+    })
+
     $script:PickedUsers = @()
     $ok.Add_Click({
-        $script:PickedUsers = @($list.SelectedItems | ForEach-Object { [string]$_.Tag })
+        # The basket plus whatever is highlighted in the results (the old
+        # flow — highlight and press Add — still works)
+        $res = @()
+        $have = @{}
+        foreach ($it in $picked.Items) {
+            $dn = [string]$it.Tag
+            if (-not $have.ContainsKey($dn.ToLower())) {
+                $res += $dn; $have[$dn.ToLower()] = $true
+            }
+        }
+        foreach ($it in @($list.SelectedItems)) {
+            $dn = [string]$it.Tag
+            if (-not $have.ContainsKey($dn.ToLower())) {
+                $res += $dn; $have[$dn.ToLower()] = $true
+            }
+        }
+        $script:PickedUsers = $res
         $w.Close()
     })
     $cancel.Add_Click({ $script:PickedUsers = @(); $w.Close() })

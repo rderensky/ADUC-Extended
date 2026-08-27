@@ -12,7 +12,7 @@
 set -e
 
 APP_NAME="ADUC-Ext"
-APP_VERSION="1.2.1"
+APP_VERSION="1.2.2"
 SCRIPT="aduc_ext.py"
 ICON="aduc_ext.icns"   # application icon (.icns)
 
