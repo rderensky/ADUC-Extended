@@ -10,7 +10,7 @@ and macOS (Python + Tkinter).
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
 ![Windows](https://img.shields.io/badge/Windows-PowerShell%205.1-5391FE?logo=powershell&logoColor=white)
 ![macOS](https://img.shields.io/badge/macOS-Python%203.8%2B-3776AB?logo=python&logoColor=white)
-![Version](https://img.shields.io/badge/version-1.2.2-orange)
+![Version](https://img.shields.io/badge/version-1.2.9-orange)
 
 **English** · [Русская версия](README_ru.md)
 
@@ -59,6 +59,25 @@ app prompts for credentials and performs all operations under the specified acco
 - Reliable clipboard on macOS (Tk 9): Cmd+V/C/X/Z/A work in every field,
   in both English and Russian keyboard layouts, with a right-click
   Cut/Copy/Paste menu and input undo (Cmd+Z).
+- Name-conflict handling on move: when the target OU already contains an
+  object with the same full name, the app offers to enter a new name and
+  moves the object with the rename (like the ADUC snap-in).
+- Change history: every change made through the app (enable/disable,
+  password reset, edits, moves, renames, group membership, creation,
+  deletion) is journaled locally with the account that performed it;
+  the History window shows the journal with a text filter, and
+  "Object history" filters it to the selected object.
+- Domain switch with account choice: keep the active account (default)
+  or enter another one for the target domain.
+- "Password never expires" with an auto-clear date: when setting the
+  flag you may enter the date on which the app clears it automatically
+  (checked at start and hourly; the date is kept in the account's
+  `adminDescription` attribute, configurable at the top of the file).
+- Search across all saved domains: the "All saved domains" checkbox runs
+  the text search (name / login / e-mail) in every saved domain with the
+  session credentials; results are merged into the list with a "Domain"
+  column, and an action on an object from another domain offers to
+  switch to that domain with the object re-selected.
 
 ## Repository layout
 
@@ -111,6 +130,10 @@ At the top of each source file you can set:
 - **Groups added automatically on user creation** — empty by default:
   - Windows: `$Global:DefaultCreateGroups = @('group1','group2')`
   - macOS: `DEFAULT_CREATE_GROUPS = ['group1', 'group2']`
+- **Attribute for the "password never expires" auto-clear date** —
+  `adminDescription` by default:
+  - Windows: `$Global:PwdNeverExpiresUntilAttr = 'adminDescription'`
+  - macOS: `PWD_NEVER_EXPIRES_UNTIL_ATTR = "adminDescription"`
 
 ## Settings storage
 
@@ -120,6 +143,7 @@ never saved):
 | Windows | macOS |
 |---|---|
 | `%APPDATA%\ADUC-Ext\domains.json` | `~/.aduc_ext_domains.json` |
+| `%APPDATA%\ADUC-Ext\history.jsonl` (change history) | `~/.aduc_ext_history.jsonl` (change history) |
 
 ## Security notes
 

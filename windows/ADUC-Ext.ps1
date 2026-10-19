@@ -131,6 +131,7 @@ $Script:RuStrings = @{
     "Disabled" = "Отключено"
     "Active" = "Активна"
     "First name:" = "Имя:"
+    "(controller list unavailable: {0})" = "(список контроллеров недоступен: {0})"
     "Last name:" = "Фамилия:"
     "Display name:" = "Отображаемое имя:"
     "Login (sAM):" = "Логин (sAM):"
@@ -196,6 +197,51 @@ $Script:RuStrings = @{
     "Failed to add to group: {0}" = "Не удалось добавить в группу: {0}"
     "Remove the user from the selected groups ({0})?" = "Удалить пользователя из выбранных групп ({0})?"
     "Failed to remove from group '{0}': {1}" = "Не удалось удалить из группы '{0}': {1}"
+    "'{0}': the object is no longer a member of this group — the list was outdated and has been refreshed." = "«{0}»: объект уже не является членом этой группы — список был устаревшим и обновлён."
+    "Notice" = "Уведомление"
+    "`n`nThe account was also tried as {0} — not accepted. With a trust between the domains, check that its direction lets the target domain authenticate this account and, with selective authentication, that `"Allowed to authenticate`" is granted on its domain controllers. For a domain in another forest without a trust choose `"Another account`" and enter a login of that domain." = "`n`nУчётная запись также была опробована как {0} — не принята. Если между доменами настроено доверие, проверьте, что его направление позволяет целевому домену проверять подлинность этой учётной записи, а при выборочной проверке подлинности — что на его контроллерах выдано право «Разрешена проверка подлинности». Для домена другого леса без доверия выберите «Другая учётная запись» и укажите логин этого домена."
+    "`n`nBind attempts (variant — server reply):`n{0}" = "`n`nПопытки подключения (вариант — ответ сервера):`n{0}"
+    "`nThe same details are appended to {0}." = "`nЭти же сведения дописаны в {0}."
+    "All saved domains" = "Все сохранённые домены"
+    "Domain" = "Домен"
+    "scope: all saved domains" = "все сохранённые домены"
+    "; unavailable: {0}" = "; недоступны: {0}"
+    "Object from another domain" = "Объект из другого домена"
+    '"{0}" belongs to domain {1}.`r`nActions are available only in the connected domain.`r`n`r`nSwitch to domain {1} now?' = '«{0}» принадлежит домену {1}.`r`nДействия доступны только в подключённом домене.`r`n`r`nПереключиться на домен {1} сейчас?'
+    "The selection contains objects from other domains ({0}). Bulk actions apply only to the connected domain." = "В выделении есть объекты из других доменов ({0}). Массовые действия применяются только к подключённому домену."
+    "The pending 'change password at next logon' requirement will be removed; the current password stays valid (same as in ADUC)." = "Стоящее требование смены пароля при следующем входе будет снято, и прежний пароль останется действительным (как в оснастке ADUC)."
+    "The date is stored in the account ({0}); the flag is cleared by the app when the date is reached." = "Дата хранится в учётной записи ({0}); при её наступлении приложение снимает флаг."
+    "Select a date." = "Выберите дату."
+    "The date must be later than today." = "Дата должна быть позже сегодняшней."
+    "`r`n`r`nThe flag will be cleared automatically on {0}." = "`r`n`r`nФлаг будет снят автоматически {0}."
+    "Flag auto-clear date" = "Дата автоснятия флага"
+    "'Password never expires' cleared (date reached): {0}" = "Снят флаг «срок пароля не ограничен» (дата наступила): {0}"
+    "Password never expires: cleared automatically (date reached)" = "Срок действия пароля не ограничен: снято автоматически (дата наступила)"
+    'Connect to domain "{0}" as:' = 'Подключиться к домену «{0}» как:'
+    "Current account ({0})" = "Текущая учётная запись ({0})"
+    "Enter the user name and password." = "Введите имя пользователя и пароль."
+    "History..." = "История..."
+    "Object history..." = "История объекта..."
+    "Only this object: {0}" = "Только этот объект: {0}"
+    "Records: {0} of {1}. File: {2}" = "Записей: {0} из {1}. Файл: {2}"
+    "Enable account" = "Включение учётной записи"
+    "Disable account" = "Отключение учётной записи"
+    "Unlock account" = "Разблокировка учётной записи"
+    "Password never expires: on" = "Срок действия пароля не ограничен: включено"
+    "Password never expires: off" = "Срок действия пароля не ограничен: выключено"
+    "Add to group" = "Добавление в группу"
+    "Remove from group" = "Удаление из группы"
+    "Edit properties" = "Изменение свойств"
+    "Create group" = "Создание группы"
+    "By domain controller (non-replicated attributes)" = "По контроллерам домена (нереплицируемые атрибуты)"
+    "bad pwd" = "неверный пароль:"
+    "DC" = "КД"
+    "Logon" = "Вход"
+    "Bad password" = "Неверный пароль"
+    "Attempts" = "Попыток"
+    "(unavailable)" = "(недоступен)"
+    'An object named "{0}" already exists in the target container.`r`nEnter a new full name for the object being moved:' = 'В целевом контейнере уже есть объект с именем «{0}».`r`nВведите новое полное имя для перемещаемого объекта:'
+    "Not moved: an object with this name already exists in the target container." = "Не перемещено: в целевом контейнере уже есть объект с таким именем."
     "Edit user properties" = "Изменение свойств пользователя"
     "Title:" = "Должность:"
     "Department:" = "Отдел:"
@@ -219,6 +265,14 @@ $Script:RuStrings = @{
     "Display name" = "Отображаемое имя"
     "First name" = "Имя"
     "Last name" = "Фамилия"
+    "Password..." = "Пароль…"
+    "Length: {0}" = "Длина: {0}"
+    "Select at least one character set." = "Выберите хотя бы один набор символов."
+    "Password generated and copied to clipboard." = "Пароль создан и скопирован в буфер обмена."
+    "Password inserted and copied to clipboard." = "Пароль подставлен и скопирован в буфер обмена."
+    "E-mail addresses (Exchange)" = "Почтовые адреса (Exchange)"
+    "primary" = "основной"
+    "(no mailbox: the user has no Exchange addresses)" = "(почтового ящика нет: у пользователя нет адресов Exchange)"
     "Yes" = "Да"
     "No" = "Нет"
     "Title" = "Должность"
@@ -414,6 +468,17 @@ $Script:XamlRu = @{
     "Content=`"Add...`"" = "Content=`"Добавить...`""
     "Content=`"Remove from selected groups`"" = "Content=`"Удалить из выбранных групп`""
     "Content=`"Close`"" = "Content=`"Закрыть`""
+    "Title=`"Password generator`"" = "Title=`"Генератор паролей`""
+    "Content=`"Lowercase letters (a-z)`"" = "Content=`"Строчные буквы (a-z)`""
+    "Content=`"Uppercase letters (A-Z)`"" = "Content=`"Заглавные буквы (A-Z)`""
+    "Content=`"Digits (0-9)`"" = "Content=`"Цифры (0-9)`""
+    "Content=`"Special characters (!@#$%^&amp;*-_=+?)`"" = "Content=`"Спецсимволы (!@#$%^&amp;*-_=+?)`""
+    "Content=`"Exclude look-alike characters (O/0, I/l/1, S/5, Z/2, B/8)`"" = "Content=`"Исключить похожие символы (O/0, I/l/1, S/5, Z/2, B/8)`""
+    "Content=`"Generate`"" = "Content=`"Создать`""
+    "Content=`"Generate...`"" = "Content=`"Создать…`""
+    "Content=`"Copy`"" = "Content=`"Копировать`""
+    "Content=`"Use`"" = "Content=`"Использовать`""
+    "Content=`"Password...`"" = "Content=`"Пароль…`""
     "Title=`"Edit user properties`"" = "Title=`"Изменение свойств пользователя`""
     "Text=`"Title:`"" = "Text=`"Должность:`""
     "Text=`"Department:`"" = "Text=`"Отдел:`""
@@ -423,6 +488,23 @@ $Script:XamlRu = @{
     "Content=`"Password never expires`"" = "Content=`"Срок действия пароля не ограничен`""
     "Text=`"Group membership (Member Of):`"" = "Text=`"Группы доступа (Member Of):`""
     "Text=`"Member of (groups):`"" = "Text=`"Член групп:`""
+    "Title=`"Name conflict`"" = "Title=`"Совпадение имени`""
+    "Content=`"All saved domains`"" = "Content=`"Все сохранённые домены`""
+    "ToolTip=`"Search users in every saved domain (results carry a Domain column)`"" = "ToolTip=`"Искать пользователей во всех сохранённых доменах (в результатах появится столбец «Домен»)`""
+    "Title=`"Password never expires`"" = "Title=`"Срок действия пароля не ограничен`""
+    "Content=`"Clear the flag automatically on:`"" = "Content=`"Снять флаг автоматически:`""
+    "Content=`"Set`"" = "Content=`"Установить`""
+    "Title=`"Switch domain`"" = "Title=`"Смена домена`""
+    "Content=`"Another account:`"" = "Content=`"Другая учётная запись:`""
+    "Title=`"Change history`"" = "Title=`"История изменений`""
+    "Content=`"History...`"" = "Content=`"История...`""
+    "Header=`"Object history...`"" = "Header=`"История объекта...`""
+    "Content=`"Only this object`"" = "Content=`"Только этот объект`""
+    "Header=`"Time`"" = "Header=`"Время`""
+    "Header=`"Action`"" = "Header=`"Действие`""
+    "Header=`"Object`"" = "Header=`"Объект`""
+    "Header=`"Performed by`"" = "Header=`"Выполнил`""
+    "Header=`"Details`"" = "Header=`"Подробности`""
     "Content=`"Groups`"" = "Content=`"Группы`""
     "Content=`"Create group...`"" = "Content=`"Создать группу...`""
     "Content=`"Members...`"" = "Content=`"Участники...`""
@@ -469,6 +551,7 @@ $Global:ADConnection = [pscustomobject]@{
     UserName   = $null   # display name of the connected user
     BaseDN     = $null   # domain DistinguishedName (for the OU tree)
     DnsRoot    = $null   # domain DNS name
+    NetBIOSName = $null  # domain NetBIOS (pre-Windows 2000) name
 }
 
 # Check for the ActiveDirectory module (with automatic RSAT install attempt)
@@ -583,6 +666,58 @@ function Confirm-Action {
     return ($r -eq [System.Windows.MessageBoxResult]::Yes)
 }
 
+function Test-ADNotMemberError {
+    # AD 0x561 / 1377 (ERROR_MEMBER_NOT_IN_ALIAS): the object is not a member
+    # of the group any more — the list shown was already outdated (removed
+    # elsewhere, or replication had not caught up).
+    param($Ex)
+    try { if ($Ex.ErrorCode -eq 1377) { return $true } } catch { }
+    $m = "$($Ex.Message) $($Ex.ServerErrorMessage)"
+    return ($m -match '00000561|not a member of the group|не является членом')
+}
+
+function Test-ADNameConflictError {
+    # AD 0x2071 / 8305 (ERROR_DS_OBJ_STRING_NAME_EXISTS) / LDAP entryAlreadyExists:
+    # an object with the same name (CN) already exists in the target container.
+    param($Ex)
+    try { if ($Ex.ErrorCode -eq 8305) { return $true } } catch { }
+    $m = "$($Ex.Message) $($Ex.ServerErrorMessage)"
+    return ($m -match '00002071|already in use|already exists|уже существует|уже используется')
+}
+
+function Show-RemoveMemberError {
+    # Group-removal failure: a stale membership is a notice, the rest an error
+    param([string]$GroupName, $Ex)
+    if (Test-ADNotMemberError -Ex $Ex) {
+        Show-Info ((L "'{0}': the object is no longer a member of this group — the list was outdated and has been refreshed.") -f $GroupName) (L "Notice")
+    } else {
+        Show-Error ((L "Failed to remove from group '{0}': {1}") -f $GroupName, ($Ex.Message))
+    }
+}
+
+# Common parameters for all AD cmdlet calls (credential + server)
+# Fast reachability probe: without it an unreachable DC makes the AD
+# cmdlets wait for minutes with no way to cancel. ADWS port 9389.
+function Test-DCReachable {
+    param([string]$Server, [int]$TimeoutMs = 5000)
+    if ([string]::IsNullOrWhiteSpace($Server)) { return $true }  # current domain
+    try {
+        $c = New-Object System.Net.Sockets.TcpClient
+        $t = $c.BeginConnect($Server, 9389, $null, $null)
+        if (-not $t.AsyncWaitHandle.WaitOne($TimeoutMs)) { $c.Close(); return $false }
+        $c.EndConnect($t)
+        $c.Close()
+        return $true
+    } catch { return $false }
+}
+
+function Get-ADParams {
+    $p = @{ Credential = $Global:ADConnection.Credential }
+    if ($Global:ADConnection.Server) { $p['Server'] = $Global:ADConnection.Server }
+    return $p
+}
+
+
 # Common parameters for all AD cmdlet calls (credential + server)
 # Fast reachability probe: without it an unreachable DC makes the AD
 # cmdlets wait for minutes with no way to cancel. ADWS port 9389.
@@ -610,6 +745,11 @@ function Get-ADParams {
 $Global:AccessGroupsOUName = ""
 # Groups added automatically when creating a user. Empty by default.
 $Global:DefaultCreateGroups = @()
+# AD attribute that stores the date when the 'password never expires' flag must
+# be cleared automatically (set together with the flag). Must be a writable
+# string attribute of the user object; adminDescription is free on standard
+# schemas. Value format: yyyy-MM-dd.
+$Global:PwdNeverExpiresUntilAttr = 'adminDescription'
 $Global:AccessGroupsDN = $null
 $Global:AccessGroupsResolved = $false
 
@@ -642,6 +782,68 @@ function Get-ConfigDir {
 
 function Get-ConfigPath {
     return (Join-Path (Get-ConfigDir) 'domains.json')
+}
+
+# --- Change history (who did what, when) — local JSON-lines file ---
+$Script:HistoryActions = @{
+    'enable'                = 'Enable account'
+    'disable'               = 'Disable account'
+    'unlock'                = 'Unlock account'
+    'reset_password'        = 'Reset password'
+    'pwd_never_expires_on'  = 'Password never expires: on'
+    'pwd_never_expires_off' = 'Password never expires: off'
+    'pwd_never_expires_auto' = 'Password never expires: cleared automatically (date reached)'
+    'edit'                  = 'Edit properties'
+    'move'                  = 'Move'
+    'rename'                = 'Rename'
+    'create_user'           = 'Create user'
+    'create_group'          = 'Create group'
+    'delete'                = 'Delete'
+    'group_add'             = 'Add to group'
+    'group_remove'          = 'Remove from group'
+}
+
+function Get-HistoryPath {
+    return (Join-Path (Get-ConfigDir) 'history.jsonl')
+}
+
+function Get-DnLeaf {
+    # Value of the first RDN of a DN (the object's name)
+    param([string]$Dn)
+    if (-not $Dn) { return '' }
+    $m = [regex]::Match($Dn, '^[^=]+=((?:\\.|[^,\\])*)')
+    if ($m.Success) { return ($m.Groups[1].Value -replace '\\(.)', '$1') }
+    return $Dn
+}
+
+function Add-HistoryEntry {
+    # Record a successful change in the local history. Never throws.
+    param([string]$Action, [string]$Dn, [string]$Details = '')
+    try {
+        $rec = [ordered]@{
+            ts      = (Get-Date).ToString('yyyy-MM-ddTHH:mm:ss')
+            actor   = [string]$Global:ADConnection.UserName
+            domain  = [string]($(if ($Global:ADConnection.DnsRoot) { $Global:ADConnection.DnsRoot } else { $Global:ADConnection.Server }))
+            action  = $Action
+            object  = (Get-DnLeaf $Dn)
+            dn      = [string]$Dn
+            details = [string]$Details
+        }
+        $line = ($rec | ConvertTo-Json -Compress) + "`n"
+        [System.IO.File]::AppendAllText((Get-HistoryPath), $line, (New-Object System.Text.UTF8Encoding($false)))
+    } catch { }
+}
+
+function Get-HistoryRecords {
+    # All records, oldest first; unreadable lines are skipped
+    $path = Get-HistoryPath
+    if (-not (Test-Path $path)) { return @() }
+    $out = @()
+    foreach ($line in [System.IO.File]::ReadAllLines($path, [System.Text.Encoding]::UTF8)) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        try { $out += ($line | ConvertFrom-Json) } catch { }
+    }
+    return $out
 }
 
 function Get-AppLang {
@@ -893,6 +1095,7 @@ function Show-LoginWindow {
             $Global:ADConnection.UserName   = $user
             $Global:ADConnection.BaseDN     = $domainInfo.DistinguishedName
             $Global:ADConnection.DnsRoot    = $domainInfo.DNSRoot
+            $Global:ADConnection.NetBIOSName = $domainInfo.NetBIOSName
             # Reset the groups OU cache on a new connection
             $Global:AccessGroupsResolved    = $false
             $Global:AccessGroupsDN          = $null
@@ -931,24 +1134,31 @@ $MainXaml = @"
         <!-- Top search bar -->
         <Border DockPanel.Dock="Top" Background="#F3F3F3" Padding="10">
             <StackPanel>
-                <DockPanel>
-                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                <!-- Three groups (search / actions / domain) in a WrapPanel: on a
+                     narrow window the groups wrap onto the next line instead of
+                     being cut off -->
+                <WrapPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                        <TextBlock Name="LblSearchCap" Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBox Name="TxtSearch" Width="220" Padding="4" VerticalAlignment="Center"
+                                 ToolTip="Name, login (sAMAccountName), e-mail, or part of a value"/>
+                        <Button Name="BtnSearch" Content="Find" Width="70" Height="30" Margin="8,0,0,0"/>
+                        <Button Name="BtnRefresh" Content="Refresh" Width="80" Height="30" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,16,4">
+                        <Button Name="BtnCreate" Content="Create user" Width="160" Height="30"/>
+                        <Button Name="BtnHistory" Content="History..." Width="120" Height="30" Margin="8,0,0,0"/>
+                        <Button Name="BtnPwdGen" Content="Password..." Width="100" Height="30" Margin="8,0,0,0"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                         <TextBlock Name="LblDomainCap" Text="Domain:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                         <ComboBox Name="CmbDomain" Width="170" VerticalAlignment="Center" IsEditable="True"
                                   ToolTip="Select a saved domain or enter a controller/domain name"/>
                         <Button Name="BtnSwitchDomain" Content="Switch domain" Width="130" Height="30" Margin="8,0,0,0"/>
                         <ComboBox Name="CmbLang" Width="55" Height="30" Margin="10,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Name="LblSearchCap" Text="Search:" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox Name="TxtSearch" Width="220" Padding="4" VerticalAlignment="Center"
-                                 ToolTip="Name, login (sAMAccountName), e-mail, or part of a value"/>
-                        <Button Name="BtnSearch" Content="Find" Width="70" Height="30" Margin="8,0,0,0"/>
-                        <Button Name="BtnRefresh" Content="Refresh" Width="80" Height="30" Margin="8,0,0,0"/>
-                        <Button Name="BtnCreate" Content="Create user" Width="160" Height="30" Margin="12,0,0,0"/>
-                    </StackPanel>
-                </DockPanel>
-                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                </WrapPanel>
+                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0">
                     <TextBlock Name="LblShowCap" Text="Show:" VerticalAlignment="Center" Margin="0,0,6,0"/>
                     <RadioButton Name="RbUsers" Content="Users" GroupName="ObjMode" IsChecked="True"
                                  VerticalAlignment="Center" Margin="0,0,10,0"/>
@@ -958,7 +1168,9 @@ $MainXaml = @"
                                  VerticalAlignment="Center" Margin="10,0,0,0"/>
                     <CheckBox Name="ChkSubtree" Content="Nested OUs" VerticalAlignment="Center"
                               Margin="24,0,0,0" ToolTip="Show objects from nested organizational units"/>
-                </StackPanel>
+                    <CheckBox Name="ChkAllDomains" Content="All saved domains" VerticalAlignment="Center"
+                              Margin="24,0,0,0" ToolTip="Search users in every saved domain (results carry a Domain column)"/>
+                </WrapPanel>
             </StackPanel>
         </Border>
 
@@ -1019,6 +1231,8 @@ $MainXaml = @"
                         <MenuItem Name="CmMembers"     Header="Members..." Visibility="Collapsed"/>
                         <MenuItem Name="CmRename"      Header="Rename..." Visibility="Collapsed"/>
                         <MenuItem Name="CmDelete"      Header="Delete" Visibility="Collapsed"/>
+                        <Separator/>
+                        <MenuItem Name="CmHistory"     Header="Object history..."/>
                     </ContextMenu>
                 </DataGrid.ContextMenu>
             </DataGrid>
@@ -1075,8 +1289,69 @@ $Script:UserProps = @(
     'Office','TelephoneNumber','DistinguishedName','whenCreated',
     'PasswordLastSet','LastLogonDate','AccountExpirationDate',
     'PasswordNeverExpires','PasswordExpired','msDS-UserPasswordExpiryTimeComputed',
-    'badPwdCount','LastBadPasswordAttempt'
+    'badPwdCount','LastBadPasswordAttempt', $Global:PwdNeverExpiresUntilAttr,
+    'proxyAddresses'
 )
+
+# --- Exchange addresses: every address of a recipient is kept in the
+# multi-valued AD attribute proxyAddresses as 'TYPE:address'; an upper-case
+# type marks the primary (reply) address of that type ---
+$Script:ExchangePresent = @{}
+function Test-ExchangePresent {
+    # True when the forest of the given (or current) server has an Exchange
+    # organization: the 'Microsoft Exchange' services container exists in the
+    # configuration partition. Cached per server.
+    param([string]$Server)
+    $srv = if ($Server) { $Server } else { [string]$Global:ADConnection.Server }
+    $k = $srv.ToLower()
+    if ($Script:ExchangePresent.ContainsKey($k)) { return $Script:ExchangePresent[$k] }
+    $present = $false
+    try {
+        $p = Get-ADParams
+        if ($Server) { $p['Server'] = $Server }
+        $root = Get-ADRootDSE @p
+        $obj = Get-ADObject @p -Identity ("CN=Microsoft Exchange,CN=Services," + $root.configurationNamingContext) -ErrorAction Stop
+        $present = [bool]$obj
+    } catch { $present = $false }
+    $Script:ExchangePresent[$k] = $present
+    return $present
+}
+
+function Format-ProxyAddresses {
+    # Aligned lines: primary SMTP first, then secondary smtp, other types, X500 last
+    param($Values)
+    $rows = @()
+    foreach ($raw in @($Values)) {
+        $txt = ("$raw").Trim()
+        if (-not $txt) { continue }
+        $i = $txt.IndexOf(':')
+        if ($i -ge 0) { $typ = $txt.Substring(0, $i); $addr = $txt.Substring($i + 1) } else { $typ = ''; $addr = $txt }
+        $rank = if ($typ -ceq 'SMTP') { 0 } elseif ($typ.ToLower() -eq 'smtp') { 1 } elseif ($typ.ToUpper() -eq 'X500') { 3 } else { 2 }
+        $rows += [pscustomobject]@{ Typ = $typ; Addr = $addr; Rank = $rank }
+    }
+    if ($rows.Count -eq 0) { return '' }
+    $rows = @($rows | Sort-Object Rank, { $_.Typ.ToLower() }, { $_.Addr.ToLower() })
+    $w = ($rows | ForEach-Object { $_.Typ.Length } | Measure-Object -Maximum).Maximum
+    $lines = foreach ($r in $rows) {
+        $line = if ($r.Typ) { $r.Typ.PadRight($w) + '  ' + $r.Addr } else { $r.Addr }
+        if ($r.Typ -ceq 'SMTP') { $line += '  (' + (L "primary") + ')' }
+        $line
+    }
+    return ($lines -join "`r`n")
+}
+
+function Get-MailAddressesText {
+    # Row text for the properties panel: the addresses, a 'no mailbox' note when
+    # the forest has Exchange but the user has no addresses, or '' (row hidden)
+    # when there is no Exchange organization at all.
+    param($Ad, [string]$Server)
+    $vals = @()
+    try { $vals = @($Ad.proxyAddresses | ForEach-Object { [string]$_ }) } catch { $vals = @() }
+    $txt = Format-ProxyAddresses $vals
+    if ($txt) { return $txt }
+    if (Test-ExchangePresent -Server $Server) { return (L "(no mailbox: the user has no Exchange addresses)") }
+    return ''
+}
 
 function Get-UserState {
     param($u)
@@ -1089,9 +1364,14 @@ function Search-ADUsers {
     param(
         [string]$Query,
         [string]$SearchBase,
-        [string]$Scope = 'Subtree'   # Base | OneLevel | Subtree
+        [string]$Scope = 'Subtree',   # Base | OneLevel | Subtree
+        [string]$Server,              # another domain/controller (all-domains search)
+        [string]$DomainLabel
     )
     $p = Get-ADParams
+    if ($Server) { $p['Server'] = $Server }
+    $isForeign = [bool]($Server -and ($Server.ToLower() -ne ("$($Global:ADConnection.Server)").ToLower()))
+    $label = if ($DomainLabel) { $DomainLabel } elseif ($Server) { $Server } else { [string]$Global:ADConnection.DnsRoot }
     $p['Properties'] = $Script:UserProps
     # ResultSetSize left unset => the AD module returns ALL records (auto-paged)
     if ($SearchBase) { $p['SearchBase'] = $SearchBase }
@@ -1119,9 +1399,51 @@ function Search-ADUsers {
             Description       = $_.Description
             State             = Get-UserState $_
             DistinguishedName = $_.DistinguishedName
+            Domain            = $label
+            _Host             = $(if ($Server) { $Server } else { [string]$Global:ADConnection.Server })
+            _Foreign          = $isForeign
             _AD               = $_
         }
     }
+}
+
+function Test-AllDomainsOn {
+    return [bool]($ChkAllDomains -and $ChkAllDomains.IsChecked -and (Get-CurrentMode) -eq 'users')
+}
+
+function Search-OtherDomains {
+    # Same text search in every other saved domain with the session credentials.
+    # Unreachable domains are collected in $Script:OtherDomainErrors.
+    param([string]$Query)
+    $Script:OtherDomainErrors = @()
+    $out = @()
+    $cur = ("$($Global:ADConnection.Server)").ToLower()
+    $seenHosts = @{ $cur = $true }
+    # Several saved profiles may point to the SAME domain (domain name,
+    # controller names...): dedupe by the domain's base DN as well
+    $seenBases = @{ ("$($Global:ADConnection.BaseDN)").ToLower() = $true }
+    foreach ($d in @(Get-SavedDomains)) {
+        $host = ("$($d.Server)").Trim()
+        if (-not $host) { $host = ("$($d.Name)").Trim() }
+        if (-not $host -or $seenHosts.ContainsKey($host.ToLower())) { continue }
+        $seenHosts[$host.ToLower()] = $true
+        try {
+            if (-not (Test-DCReachable $host)) { throw "unreachable" }
+            $info = Get-ADDomain -Server $host -Credential $Global:ADConnection.Credential -ErrorAction Stop
+            $base = ("$($info.DistinguishedName)").ToLower()
+            if ($base -and $seenBases.ContainsKey($base)) { continue }   # same domain, another name
+            if ($base) { $seenBases[$base] = $true }
+            $out += @(Search-ADUsers -Query $Query -Scope 'Subtree' -Server $host -DomainLabel ([string]$info.DNSRoot))
+        } catch { $Script:OtherDomainErrors += $host }
+    }
+    # Final safety net: one row per object (by DN)
+    $seenDn = @{}; $uniq = @()
+    foreach ($u in $out) {
+        $k = ("$($u.DistinguishedName)").ToLower()
+        if ($seenDn.ContainsKey($k)) { continue }
+        $seenDn[$k] = $true; $uniq += $u
+    }
+    return $uniq
 }
 
 # Properties requested for a computer
@@ -1291,7 +1613,10 @@ $CreateXaml = @"
         <TextBlock Grid.Row="6" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
         <TextBox   Grid.Row="6" Grid.Column="1" Name="CDesc" Margin="0,4" Padding="3"/>
         <TextBlock Grid.Row="7" Grid.Column="0" Text="Password:" VerticalAlignment="Center"/>
-        <PasswordBox Grid.Row="7" Grid.Column="1" Name="CPass" Margin="0,4" Padding="3"/>
+        <DockPanel Grid.Row="7" Grid.Column="1" Margin="0,4">
+            <Button DockPanel.Dock="Right" Name="CGen" Content="Generate..." Width="90" Margin="6,0,0,0"/>
+            <PasswordBox Name="CPass" Padding="3"/>
+        </DockPanel>
         <TextBlock Grid.Row="8" Grid.Column="0" Text="Organizational unit (OU):" VerticalAlignment="Center"/>
         <DockPanel Grid.Row="8" Grid.Column="1" Margin="0,4">
             <Button DockPanel.Dock="Right" Name="CBrowseOu" Content="Browse…" Width="70" Margin="6,0,0,0"/>
@@ -1345,6 +1670,10 @@ function Show-CreateUserDialog {
     $glist=$w.FindName("CGroups"); $pick=$w.FindName("CPick"); $unpick=$w.FindName("CUnpick")
     $browse=$w.FindName("CBrowseOu")
     $ok=$w.FindName("COk"); $cancel=$w.FindName("CCancel")
+    $w.FindName("CGen").Add_Click({
+        $g = Show-PasswordGeneratorDialog -Owner $w -WithUse
+        if ($g) { $pass.Password = $g; $st.Foreground = '#2E7D32'; $st.Text = (L "Password inserted and copied to clipboard.") }
+    })
 
     # Toggle for the expiration date field
     $expEnable.Add_Click({ $expDate.IsEnabled = [bool]$expEnable.IsChecked })
@@ -1478,6 +1807,7 @@ function Show-CreateUserDialog {
             if ($ouVal) { $p['Path'] = $ouVal }
 
             $newUser = New-ADUser @p -PassThru
+            Add-HistoryEntry -Action 'create_user' -Dn $newUser.DistinguishedName
 
             # Add to the selected groups
             $errs = @()
@@ -1485,6 +1815,7 @@ function Show-CreateUserDialog {
                 try {
                     $pg = Get-ADParams
                     Add-ADGroupMember @pg -Identity ([string]$it.Tag) -Members $newUser.DistinguishedName
+                    Add-HistoryEntry -Action 'group_add' -Dn $newUser.DistinguishedName -Details (Get-DnLeaf ([string]$it.Tag))
                 } catch { $errs += "$($it.Content): $($_.Exception.Message)" }
             }
             if ($errs.Count -gt 0) {
@@ -1502,6 +1833,117 @@ function Show-CreateUserDialog {
 }
 
 # --- Reset password ---
+# --- Password generator ---
+$Script:PwSpecial = '!@#$%^&*-_=+?'
+$Script:PwSimilar = 'O0oIl1|S5Z2B8'   # easy to confuse in print / on screen
+$Script:PwSettings = @{ Length = 12; Lower = $true; Upper = $true; Digits = $true; Special = $false; Similar = $false }
+
+function New-GeneratedPassword {
+    # Cryptographically random password: at least one character from every
+    # enabled set, the rest drawn from their union, then shuffled.
+    param([int]$Length = 12, [bool]$Lower = $true, [bool]$Upper = $true,
+          [bool]$Digits = $true, [bool]$Special = $false, [bool]$ExcludeSimilar = $false)
+    if ($Length -lt 8) { $Length = 8 }; if ($Length -gt 20) { $Length = 20 }
+    $sets = @()
+    foreach ($pair in @(@($Lower, 'abcdefghijklmnopqrstuvwxyz'), @($Upper, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'),
+                        @($Digits, '0123456789'), @($Special, $Script:PwSpecial))) {
+        if (-not $pair[0]) { continue }
+        $chars = [string]$pair[1]
+        if ($ExcludeSimilar) { $chars = -join ($chars.ToCharArray() | Where-Object { $Script:PwSimilar.IndexOf($_) -lt 0 }) }
+        if ($chars) { $sets += $chars }
+    }
+    if ($sets.Count -eq 0) { throw (L "Select at least one character set.") }
+    $pool = -join $sets
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $buf = New-Object byte[] 4
+    $rand = { param($n) $rng.GetBytes($buf); return [int]([BitConverter]::ToUInt32($buf, 0) % [uint32]$n) }
+    $out = New-Object System.Collections.Generic.List[char]
+    foreach ($cs in $sets) { $out.Add($cs[(& $rand $cs.Length)]) }
+    while ($out.Count -lt $Length) { $out.Add($pool[(& $rand $pool.Length)]) }
+    for ($i = $out.Count - 1; $i -gt 0; $i--) {
+        $j = & $rand ($i + 1)
+        $t = $out[$i]; $out[$i] = $out[$j]; $out[$j] = $t
+    }
+    $rng.Dispose()
+    return (-join $out.ToArray())
+}
+
+$PwGenXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Password generator" Height="400" Width="460"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
+        FontFamily="Segoe UI" FontSize="13">
+    <StackPanel Margin="18">
+        <DockPanel>
+            <TextBlock Name="GLen" DockPanel.Dock="Left" Width="90" VerticalAlignment="Center"/>
+            <Slider Name="GSlider" Minimum="8" Maximum="20" Value="12" IsSnapToTickEnabled="True"
+                    TickFrequency="1" TickPlacement="BottomRight" VerticalAlignment="Center"/>
+        </DockPanel>
+        <CheckBox Name="GLower" Content="Lowercase letters (a-z)" Margin="0,8,0,0"/>
+        <CheckBox Name="GUpper" Content="Uppercase letters (A-Z)" Margin="0,4,0,0"/>
+        <CheckBox Name="GDigits" Content="Digits (0-9)" Margin="0,4,0,0"/>
+        <CheckBox Name="GSpecial" Content="Special characters (!@#$%^&amp;*-_=+?)" Margin="0,4,0,0"/>
+        <CheckBox Name="GSimilar" Content="Exclude look-alike characters (O/0, I/l/1, S/5, Z/2, B/8)" Margin="0,4,0,0"/>
+        <TextBox Name="GPwd" FontFamily="Consolas" FontSize="16" Padding="4" Margin="0,12,0,4" IsReadOnly="True"/>
+        <TextBlock Name="GStatus" Foreground="#2E7D32" TextWrapping="Wrap" MinHeight="20"/>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="GGen" Content="Generate" Width="100" Height="30" Margin="0,0,8,0"/>
+            <Button Name="GCopy" Content="Copy" Width="100" Height="30" Margin="0,0,8,0"/>
+            <Button Name="GUse" Content="Use" Width="110" Height="30" Margin="0,0,8,0" IsDefault="True"/>
+            <Button Name="GClose" Content="Close" Width="90" Height="30" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
+"@
+
+function Show-PasswordGeneratorDialog {
+    # Returns the password when 'Use' was pressed (also copied to the clipboard),
+    # otherwise $null. Without -WithUse the 'Use' button is hidden (standalone tool).
+    param($Owner, [switch]$WithUse)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $PwGenXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $len=$w.FindName("GLen"); $sl=$w.FindName("GSlider"); $pwd=$w.FindName("GPwd"); $st=$w.FindName("GStatus")
+    $cLower=$w.FindName("GLower"); $cUpper=$w.FindName("GUpper"); $cDigits=$w.FindName("GDigits")
+    $cSpecial=$w.FindName("GSpecial"); $cSimilar=$w.FindName("GSimilar")
+    $bGen=$w.FindName("GGen"); $bCopy=$w.FindName("GCopy"); $bUse=$w.FindName("GUse"); $bClose=$w.FindName("GClose")
+    $cfg = $Script:PwSettings
+    $sl.Value = $cfg.Length
+    $cLower.IsChecked = $cfg.Lower; $cUpper.IsChecked = $cfg.Upper; $cDigits.IsChecked = $cfg.Digits
+    $cSpecial.IsChecked = $cfg.Special; $cSimilar.IsChecked = $cfg.Similar
+    if (-not $WithUse) { $bUse.Visibility = 'Collapsed'; $bGen.IsDefault = $true }
+    $script:PwGenResult = $null
+    $gen = {
+        $Script:PwSettings.Length = [int][math]::Round($sl.Value)
+        $Script:PwSettings.Lower = [bool]$cLower.IsChecked; $Script:PwSettings.Upper = [bool]$cUpper.IsChecked
+        $Script:PwSettings.Digits = [bool]$cDigits.IsChecked; $Script:PwSettings.Special = [bool]$cSpecial.IsChecked
+        $Script:PwSettings.Similar = [bool]$cSimilar.IsChecked
+        $len.Text = ((L "Length: {0}") -f $Script:PwSettings.Length)
+        $st.Text = ''; $st.Foreground = '#2E7D32'
+        try {
+            $pwd.Text = New-GeneratedPassword -Length $Script:PwSettings.Length -Lower $Script:PwSettings.Lower -Upper $Script:PwSettings.Upper `
+                -Digits $Script:PwSettings.Digits -Special $Script:PwSettings.Special -ExcludeSimilar $Script:PwSettings.Similar
+        } catch { $pwd.Text = ''; $st.Foreground = '#B00020'; $st.Text = $_.Exception.Message }
+    }
+    $sl.Add_ValueChanged({ & $gen })
+    foreach ($cb in @($cLower, $cUpper, $cDigits, $cSpecial, $cSimilar)) { $cb.Add_Click({ & $gen }) }
+    $bGen.Add_Click({ & $gen })
+    $bCopy.Add_Click({
+        if ($pwd.Text) { Set-ClipboardText $pwd.Text; $st.Foreground = '#2E7D32'; $st.Text = (L "Password generated and copied to clipboard.") }
+    })
+    $bUse.Add_Click({
+        if (-not $pwd.Text) { return }
+        Set-ClipboardText $pwd.Text
+        $script:PwGenResult = $pwd.Text
+        $w.Close()
+    })
+    $bClose.Add_Click({ $w.Close() })
+    & $gen
+    $w.ShowDialog() | Out-Null
+    return $script:PwGenResult
+}
+
 $PwdXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -1511,7 +1953,10 @@ $PwdXaml = @"
     <StackPanel Margin="18">
         <TextBlock Name="PLbl" Text="" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,12"/>
         <TextBlock Text="New password:"/>
-        <PasswordBox Name="PNew" Margin="0,4,0,8" Padding="3"/>
+        <DockPanel Margin="0,4,0,8">
+            <Button DockPanel.Dock="Right" Name="PGen" Content="Generate..." Width="90" Margin="6,0,0,0"/>
+            <PasswordBox Name="PNew" Padding="3"/>
+        </DockPanel>
         <TextBlock Text="Confirm:"/>
         <PasswordBox Name="PConfirm" Margin="0,4,0,8" Padding="3"/>
         <CheckBox Name="PChange" Content="Change password at next logon" IsChecked="True"/>
@@ -1534,10 +1979,14 @@ function Show-ResetPasswordDialog {
     $new=$w.FindName("PNew"); $conf=$w.FindName("PConfirm")
     $chg=$w.FindName("PChange"); $unlock=$w.FindName("PUnlock")
     $st=$w.FindName("PStatus"); $ok=$w.FindName("POk"); $cancel=$w.FindName("PCancel")
+    $w.FindName("PGen").Add_Click({
+        $g = Show-PasswordGeneratorDialog -Owner $w -WithUse
+        if ($g) { $new.Password = $g; $conf.Password = $g; $st.Foreground = '#2E7D32'; $st.Text = (L "Password inserted and copied to clipboard.") }
+    })
 
     $script:PwdOk = $false
     $ok.Add_Click({
-        $st.Text = ""
+        $st.Text = ""; $st.Foreground = '#B00020'
         if ([string]::IsNullOrWhiteSpace($new.Password)) { $st.Text=(L "Enter a new password."); return }
         if ($new.Password -ne $conf.Password) { $st.Text=(L "Passwords do not match."); return }
         try {
@@ -1553,6 +2002,7 @@ function Show-ResetPasswordDialog {
                 $pc = Get-ADParams
                 Set-ADUser @pc -Identity $User.DistinguishedName -ChangePasswordAtLogon $true
             }
+            Add-HistoryEntry -Action 'reset_password' -Dn $User.DistinguishedName
             $script:PwdOk = $true
             $w.Close()
         }
@@ -1587,6 +2037,420 @@ $MoveXaml = @"
     </StackPanel>
 </Window>
 "@
+
+# --- Change history: who changed what and when (local journal) ---
+$HistoryXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Change history" Height="560" Width="960"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+            <TextBlock DockPanel.Dock="Left" Text="Filter:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <CheckBox DockPanel.Dock="Right" Name="HsOnly" Content="Only this object" VerticalAlignment="Center" Margin="12,0,0,0"/>
+            <TextBox Name="HsFilter" Padding="4"/>
+        </DockPanel>
+        <DataGrid Grid.Row="1" Name="HsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                  SelectionMode="Extended" HeadersVisibility="Column"
+                  GridLinesVisibility="Horizontal" CanUserResizeRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Time" Binding="{Binding Ts}" Width="150"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="210"/>
+                <DataGridTextColumn Header="Object" Binding="{Binding Object}" Width="1.2*"/>
+                <DataGridTextColumn Header="Performed by" Binding="{Binding Actor}" Width="160"/>
+                <DataGridTextColumn Header="Details" Binding="{Binding Details}" Width="1.5*"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <TextBlock Grid.Row="2" Name="HsStatus" Foreground="#555555" TextWrapping="Wrap" Margin="0,8,0,0"/>
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="HsRefresh" Content="Refresh" Width="110" Height="32" Margin="0,0,10,0"/>
+            <Button Name="HsClose" Content="Close" Width="100" Height="32" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-HistoryDialog {
+    # $Obj (optional): the selected list row — enables the "only this object" filter
+    param($Owner, $Obj)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $HistoryXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $filter=$w.FindName("HsFilter"); $only=$w.FindName("HsOnly"); $grid=$w.FindName("HsGrid")
+    $st=$w.FindName("HsStatus"); $refresh=$w.FindName("HsRefresh"); $close=$w.FindName("HsClose")
+    $objDn = ''; $objName = ''
+    if ($Obj) {
+        $objDn = ([string]$Obj.DistinguishedName).ToLower()
+        $objName = ([string]$Obj.Name).ToLower()
+        $only.Content = ((L "Only this object: {0}") -f ([string]$Obj.Name))
+        $only.IsChecked = $true
+    } else {
+        $only.Visibility = 'Collapsed'
+    }
+    $script:HsRecords = @()
+    $render = {
+        $q = $filter.Text.Trim().ToLower()
+        $rows = @()
+        foreach ($r in $script:HsRecords) {
+            if ($Obj -and $only.IsChecked) {
+                $rdn = ([string]$r.dn).ToLower(); $rname = ([string]$r.object).ToLower()
+                if (-not (($objDn -and $rdn -eq $objDn) -or ($objName -and $rname -eq $objName))) { continue }
+            }
+            $label = $Script:HistoryActions[[string]$r.action]
+            if (-not $label) { $label = [string]$r.action }
+            $ts = [string]$r.ts
+            try { $ts = Format-AdDate ([DateTime]::ParseExact($ts, 'yyyy-MM-ddTHH:mm:ss', $null)) -WithTime } catch { }
+            $row = [pscustomobject]@{
+                Ts = $ts; Action = (L $label); Object = [string]$r.object
+                Actor = [string]$r.actor; Details = [string]$r.details
+            }
+            if ($q) {
+                $hay = ("$($row.Ts) $($row.Action) $($row.Object) $($row.Actor) $($row.Details) $($r.dn)").ToLower()
+                if (-not $hay.Contains($q)) { continue }
+            }
+            $rows += $row
+        }
+        $grid.ItemsSource = $rows
+        $st.Text = ((L "Records: {0} of {1}. File: {2}") -f ($rows.Count), ($script:HsRecords.Count), (Get-HistoryPath))
+    }
+    $load = {
+        $all = @(Get-HistoryRecords)
+        [array]::Reverse($all)   # newest first
+        $script:HsRecords = $all
+        & $render
+    }
+    & $load
+    $filter.Add_TextChanged({ & $render })
+    $only.Add_Click({ & $render })
+    $refresh.Add_Click({ & $load })
+    $close.Add_Click({ $w.Close() })
+    $w.Add_Loaded({ $filter.Focus() })
+    $w.ShowDialog() | Out-Null
+}
+
+function Get-LoginVariantsForDomain {
+    # Same account name written for another domain: for 'CORP\ivanov',
+    # 'ivanov@corp.local' or 'ivanov' and target host 'dc1.other.local'
+    # returns 'ivanov@dc1.other.local','DC1\ivanov','ivanov@other.local','OTHER\ivanov'
+    # (a host is either a DC or the domain itself, so both are tried).
+    param([string]$Login, [string]$TargetHost)
+    $out = @()
+    $login = ("$Login").Trim()
+    if (-not $login -or $login.ToLower().StartsWith('cn=')) { return $out }
+    $name = if ($login.Contains('\')) { $login.Split('\', 2)[1] } else { $login.Split('@', 2)[0] }
+    if (-not $name) { return $out }
+    $parts = @(("$TargetHost").Trim().ToLower().Split('.') | Where-Object { $_ })
+    if ($parts.Count -lt 2) { return $out }
+    $doms = @(($parts -join '.'), (($parts | Select-Object -Skip 1) -join '.')) | Select-Object -Unique
+    foreach ($dom in $doms) {
+        if ($dom -and $dom.Contains('.')) {
+            $out += "$name@$dom"
+            $out += ($dom.Split('.')[0].ToUpper() + '\' + $name)
+        }
+    }
+    return @($out | Where-Object { $_.ToLower() -ne $login.ToLower() } | Select-Object -Unique)
+}
+
+function Get-SwitchLogPath { return (Join-Path (Get-ConfigDir) 'switch.log') }
+function Add-SwitchLog {
+    # Domain-switch diagnostics (no passwords) for analysing a failed switch
+    param([string[]]$Lines)
+    try {
+        $p = Get-SwitchLogPath
+        $dir = Split-Path $p -Parent
+        if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
+        $stamp = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
+        foreach ($l in $Lines) { Add-Content -Path $p -Value "$stamp $l" -Encoding UTF8 }
+    } catch { }
+}
+
+function Get-LoginVariantsForHome {
+    # The session account qualified with its HOME domain: for a bare 'ivanov'
+    # logged on to corp.local returns 'CORP\ivanov','ivanov@corp.local'. A DC of a
+    # *trusting* domain resolves such names through the trust, whereas a bare
+    # name is looked up in the target domain itself.
+    param([string]$Login, [string]$DnsRoot, [string]$NetBIOSName)
+    $out = @()
+    $login = ("$Login").Trim()
+    if (-not $login -or $login.ToLower().StartsWith('cn=')) { return $out }
+    $name = if ($login.Contains('\')) { $login.Split('\', 2)[1] } else { $login.Split('@', 2)[0] }
+    $dom = ("$DnsRoot").Trim().ToLower()
+    if (-not $name -or -not $dom) { return $out }
+    $nb = ("$NetBIOSName").Trim()
+    if (-not $nb) { $nb = $dom.Split('.')[0] }
+    $out += ($nb.ToUpper() + '\' + $name)
+    $out += "$name@$dom"
+    return @($out | Where-Object { $_.ToLower() -ne $login.ToLower() } | Select-Object -Unique)
+}
+
+# --- Domain switch: keep the active account or enter another one ---
+$SwitchCredXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Switch domain" Height="300" Width="460" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="110"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Name="ScLbl" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <RadioButton Grid.Row="1" Grid.ColumnSpan="2" Name="ScCurrent" IsChecked="True" GroupName="sc"/>
+        <RadioButton Grid.Row="2" Grid.ColumnSpan="2" Name="ScOther" Content="Another account:" GroupName="sc" Margin="0,6,0,2"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="User:" VerticalAlignment="Center" Margin="24,0,8,0"/>
+        <TextBox   Grid.Row="3" Grid.Column="1" Name="ScUser" Padding="4" Margin="0,3" IsEnabled="False"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Password:" VerticalAlignment="Center" Margin="24,0,8,0"/>
+        <PasswordBox Grid.Row="4" Grid.Column="1" Name="ScPass" Padding="4" Margin="0,3" IsEnabled="False"/>
+        <TextBlock Grid.Row="5" Grid.ColumnSpan="2" Name="ScStatus" Foreground="#B00020" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        <StackPanel Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="ScOk" Content="Connect" Width="130" Height="30" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="ScCancel" Content="Cancel" Width="90" Height="30" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-SwitchCredentialsDialog {
+    # Returns $null (cancelled), @{ Mode='current' } or @{ Mode='other'; Credential=[PSCredential] }
+    param($Owner, [string]$Target, [string]$CurrentUser)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $SwitchCredXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $w.FindName("ScLbl").Text = ((L 'Connect to domain "{0}" as:') -f $Target)
+    $rCur=$w.FindName("ScCurrent"); $rOther=$w.FindName("ScOther")
+    $user=$w.FindName("ScUser"); $pass=$w.FindName("ScPass"); $st=$w.FindName("ScStatus")
+    $ok=$w.FindName("ScOk"); $cancel=$w.FindName("ScCancel")
+    $rCur.Content = ((L "Current account ({0})") -f $CurrentUser)
+    $toggle = {
+        $on = [bool]$rOther.IsChecked
+        $user.IsEnabled = $on; $pass.IsEnabled = $on
+        if ($on) { $user.Focus() } else { $ok.Focus() }
+    }
+    $rCur.Add_Checked({ & $toggle }); $rOther.Add_Checked({ & $toggle })
+    # "Current account" is preselected: focus Connect so a single Enter switches
+    $w.Add_Loaded({ if (-not $rOther.IsChecked) { $ok.Focus() } })
+    $user.Add_KeyDown({ if ($_.Key -eq 'Return') { $pass.Focus(); $_.Handled = $true } })
+    $script:SwitchCredResult = $null
+    $ok.Add_Click({
+        $st.Text = ""
+        if (-not $rOther.IsChecked) { $script:SwitchCredResult = @{ Mode = 'current' }; $w.Close(); return }
+        $u = $user.Text.Trim()
+        if ([string]::IsNullOrWhiteSpace($u) -or [string]::IsNullOrEmpty($pass.Password)) {
+            $st.Text = (L "Enter the user name and password."); return
+        }
+        $cred = New-Object System.Management.Automation.PSCredential($u, (ConvertTo-SecureString $pass.Password -AsPlainText -Force))
+        $script:SwitchCredResult = @{ Mode = 'other'; Credential = $cred }
+        $w.Close()
+    })
+    $cancel.Add_Click({ $script:SwitchCredResult = $null; $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:SwitchCredResult
+}
+
+# --- 'Password never expires' with an auto-clear date ---
+function Get-PwdNeverExpiresUntil {
+    # Stored auto-clear date of a user (yyyy-MM-dd in the configured attribute), or $null
+    param($Ad)
+    try {
+        $raw = [string]$Ad.($Global:PwdNeverExpiresUntilAttr)
+        if ([string]::IsNullOrWhiteSpace($raw)) { return $null }
+        return [DateTime]::ParseExact($raw.Substring(0, 10), 'yyyy-MM-dd', [System.Globalization.CultureInfo]::InvariantCulture)
+    } catch { return $null }
+}
+
+function Clear-ExpiredNeverExpires {
+    # Clear the flag on every user whose stored auto-clear date has passed.
+    # Returns the sAMAccountNames processed.
+    $done = @()
+    try {
+        $p = Get-ADParams
+        $attr = $Global:PwdNeverExpiresUntilAttr
+        $flt = "(&(objectClass=user)(objectCategory=person)($attr=*)(userAccountControl:1.2.840.113556.1.4.803:=65536))"
+        $users = @(Get-ADUser @p -LDAPFilter $flt -Properties $attr, SamAccountName -ErrorAction Stop)
+    } catch { return $done }
+    $today = (Get-Date).Date
+    foreach ($u in $users) {
+        try {
+            $until = Get-PwdNeverExpiresUntil $u
+            if (-not $until -or $until.Date -gt $today) { continue }
+            $p = Get-ADParams
+            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $false -Clear $attr -ErrorAction Stop
+            Add-HistoryEntry -Action 'pwd_never_expires_auto' -Dn $u.DistinguishedName -Details $until.ToString('yyyy-MM-dd')
+            $done += [string]$u.SamAccountName
+        } catch { }
+    }
+    return $done
+}
+
+$Script:NeverExpiresTimer = $null
+function Start-NeverExpiresSweep {
+    # At start and then once an hour
+    $run = {
+        $names = @(Clear-ExpiredNeverExpires)
+        if ($names.Count -gt 0) {
+            $txt = ($names | Select-Object -First 10) -join ', '
+            if ($names.Count -gt 10) { $txt += ', ...' }
+            try { $LblConn.Text = $LblConn.Text + '   |   ' + ((L "'Password never expires' cleared (date reached): {0}") -f $txt) } catch { }
+            try { Invoke-Search } catch { }
+        }
+    }
+    & $run
+    if (-not $Script:NeverExpiresTimer) {
+        $Script:NeverExpiresTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $Script:NeverExpiresTimer.Interval = [TimeSpan]::FromHours(1)
+        $Script:NeverExpiresTimer.Add_Tick($run)
+        $Script:NeverExpiresTimer.Start()
+    }
+}
+
+$NeverExpiresUntilXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Password never expires" Height="300" Width="520" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="NeLbl" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8"/>
+        <TextBlock Grid.Row="1" Name="NeNote" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal">
+            <CheckBox Name="NeUntil" Content="Clear the flag automatically on:" VerticalAlignment="Center"/>
+            <DatePicker Name="NeDate" Width="150" Margin="8,0,0,0" IsEnabled="False"/>
+        </StackPanel>
+        <TextBlock Grid.Row="3" Name="NeHint" Foreground="#555555" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        <TextBlock Grid.Row="4" Name="NeStatus" Foreground="#B00020" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Name="NeOk" Content="Set" Width="120" Height="30" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="NeCancel" Content="Cancel" Width="90" Height="30" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-NeverExpiresUntilDialog {
+    # Returns $null (cancelled) or @{ Until = [DateTime] or $null }
+    param($Owner, [string]$Login, [bool]$MustChange)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $NeverExpiresUntilXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $w.FindName("NeLbl").Text = ((L "Set the 'password never expires' flag for '{0}'?") -f $Login)
+    $note = $w.FindName("NeNote")
+    $note.Text = if ($MustChange) { (L "The pending 'change password at next logon' requirement will be removed; the current password stays valid (same as in ADUC).") } else { '' }
+    if (-not $MustChange) { $note.Visibility = 'Collapsed' }
+    $w.FindName("NeHint").Text = ((L "The date is stored in the account ({0}); the flag is cleared by the app when the date is reached.") -f $Global:PwdNeverExpiresUntilAttr)
+    $chk=$w.FindName("NeUntil"); $dp=$w.FindName("NeDate"); $st=$w.FindName("NeStatus")
+    $ok=$w.FindName("NeOk"); $cancel=$w.FindName("NeCancel")
+    $chk.Add_Click({
+        $dp.IsEnabled = [bool]$chk.IsChecked
+        if ($chk.IsChecked -and -not $dp.SelectedDate) { $dp.SelectedDate = (Get-Date).Date.AddDays(90) }
+    })
+    $script:NeResult = $null
+    $ok.Add_Click({
+        $st.Text = ""
+        $until = $null
+        if ($chk.IsChecked) {
+            if (-not $dp.SelectedDate) { $st.Text = (L "Select a date."); return }
+            $until = ([DateTime]$dp.SelectedDate).Date
+            if ($until -le (Get-Date).Date) { $st.Text = (L "The date must be later than today."); return }
+        }
+        $script:NeResult = @{ Until = $until }
+        $w.Close()
+    })
+    $cancel.Add_Click({ $script:NeResult = $null; $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:NeResult
+}
+
+$NamePromptXaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Name conflict" Height="230" Width="480" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" FontFamily="Segoe UI" FontSize="13">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="0" Name="NpMsg" TextWrapping="Wrap" Margin="0,0,0,10"/>
+        <TextBox Grid.Row="1" Name="NpName" Padding="4"/>
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Name="NpOk" Content="OK" Width="110" Height="30" Margin="0,0,10,0" IsDefault="True"/>
+            <Button Name="NpCancel" Content="Cancel" Width="90" Height="30" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
+"@
+
+function Show-NamePromptDialog {
+    # Ask for a (new) name; returns $null when cancelled
+    param($Owner, [string]$Message, [string]$Default)
+    $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $NamePromptXaml))
+    $w = [Windows.Markup.XamlReader]::Load($reader)
+    if ($Owner) { $w.Owner = $Owner }
+    $w.FindName("NpMsg").Text = $Message
+    $name = $w.FindName("NpName"); $ok = $w.FindName("NpOk"); $cancel = $w.FindName("NpCancel")
+    $name.Text = $Default
+    $w.Add_Loaded({ $name.SelectAll(); $name.Focus() })
+    $script:NamePromptValue = $null
+    $ok.Add_Click({
+        $v = $name.Text.Trim()
+        if ([string]::IsNullOrWhiteSpace($v)) { return }
+        $script:NamePromptValue = $v
+        $w.Close()
+    })
+    $cancel.Add_Click({ $script:NamePromptValue = $null; $w.Close() })
+    $w.ShowDialog() | Out-Null
+    return $script:NamePromptValue
+}
+
+function Move-ADObjectWithRename {
+    # Move one object; when the target container already holds an object with
+    # the same full name, ask for a new name (like ADUC), rename, then move.
+    param($Owner, $Obj, [string]$Dest)
+    $dn = $Obj.DistinguishedName
+    $curName = [string]$Obj.Name
+    while ($true) {
+        try {
+            $p = Get-ADParams
+            Move-ADObject @p -Identity $dn -TargetPath $Dest
+            Add-HistoryEntry -Action 'move' -Dn $dn -Details $Dest
+            return
+        } catch {
+            if (-not (Test-ADNameConflictError -Ex $_.Exception)) { throw }
+            $new = Show-NamePromptDialog -Owner $Owner -Default $curName -Message ((L 'An object named "{0}" already exists in the target container.`r`nEnter a new full name for the object being moved:') -f $curName)
+            if (-not $new -or $new -eq $curName) {
+                throw (New-Object System.Exception ((L "Not moved: an object with this name already exists in the target container.")))
+            }
+            $p = Get-ADParams
+            $renamed = Rename-ADObject @p -Identity $dn -NewName $new -PassThru
+            Add-HistoryEntry -Action 'rename' -Dn $dn -Details $new
+            $dn = [string]$renamed.DistinguishedName
+            $curName = $new
+        }
+    }
+}
 
 function Show-MoveDialog {
     param($Owner, $User, $Users)
@@ -1633,8 +2497,7 @@ function Show-MoveDialog {
         if ([string]::IsNullOrWhiteSpace($dest)) { $st.Text=(L "Specify a target container."); return }
         if ($items.Count -eq 1) {
             try {
-                $p = Get-ADParams
-                Move-ADObject @p -Identity $items[0].DistinguishedName -TargetPath $dest
+                Move-ADObjectWithRename -Owner $w -Obj $items[0] -Dest $dest
                 $script:MoveOk = $true
                 $w.Close()
             }
@@ -1644,8 +2507,7 @@ function Show-MoveDialog {
         $errors = @()
         foreach ($o in $items) {
             try {
-                $p = Get-ADParams
-                Move-ADObject @p -Identity $o.DistinguishedName -TargetPath $dest
+                Move-ADObjectWithRename -Owner $w -Obj $o -Dest $dest
             } catch { $errors += "$($o.Name): $($_.Exception.Message)" }
         }
         $script:MoveOk = ($errors.Count -lt $items.Count)
@@ -1749,7 +2611,8 @@ function Show-GroupCreateDialog {
             $p['GroupCategory'] = if ($cat.SelectedIndex -eq 1) { 'Distribution' } else { 'Security' }
             if ($ou.Text.Trim()) { $p['Path'] = $ou.Text.Trim() }
             if ($desc.Text.Trim()) { $p['Description'] = $desc.Text.Trim() }
-            New-ADGroup @p
+            $newGrp = New-ADGroup @p -PassThru
+            Add-HistoryEntry -Action 'create_group' -Dn $newGrp.DistinguishedName
             $script:GroupCreateOk = $true
             $w.Close()
         }
@@ -1854,6 +2717,7 @@ function Show-GroupEditDialog {
             try {
                 $p = Get-ADParams
                 Add-ADGroupMember @p -Identity $gdn -Members $Group.DistinguishedName
+                Add-HistoryEntry -Action 'group_add' -Dn $Group.DistinguishedName -Details (Get-DnLeaf $gdn)
                 $added++
             } catch { Show-Error ((L "Failed to add to group: {0}") -f ($_.Exception.Message)) }
         }
@@ -1868,7 +2732,8 @@ function Show-GroupEditDialog {
             try {
                 $p = Get-ADParams
                 Remove-ADGroupMember @p -Identity ([string]$it.Tag) -Members $Group.DistinguishedName -Confirm:$false
-            } catch { Show-Error ((L "Failed to remove from group '{0}': {1}") -f ($it.Content), ($_.Exception.Message)) }
+                Add-HistoryEntry -Action 'group_remove' -Dn $Group.DistinguishedName -Details (Get-DnLeaf ([string]$it.Tag))
+            } catch { Show-RemoveMemberError -GroupName ([string]$it.Content) -Ex $_.Exception }
         }
         & $reloadMo
     })
@@ -1884,6 +2749,7 @@ function Show-GroupEditDialog {
             $m = $mail.Text.Trim()
             if ($m) { Set-ADGroup @p -Identity $Group.DistinguishedName -Replace @{mail=$m} }
             else    { try { Set-ADGroup @p -Identity $Group.DistinguishedName -Clear mail } catch { } }
+            Add-HistoryEntry -Action 'edit' -Dn $Group.DistinguishedName -Details 'description, mail'
             $script:GroupEditOk = $true
             $w.Close()
         }
@@ -2135,6 +3001,7 @@ function Show-GroupMembersDialog {
             try {
                 $p = Get-ADParams
                 Add-ADGroupMember @p -Identity $Group.DistinguishedName -Members $udn
+                Add-HistoryEntry -Action 'group_add' -Dn $udn -Details (Get-DnLeaf $Group.DistinguishedName)
                 $added++
             } catch { $errors += "${udn}: $($_.Exception.Message)" }
         }
@@ -2154,8 +3021,13 @@ function Show-GroupMembersDialog {
             try {
                 $p = Get-ADParams
                 Remove-ADGroupMember @p -Identity $Group.DistinguishedName -Members ([string]$it.Tag) -Confirm:$false
+                Add-HistoryEntry -Action 'group_remove' -Dn ([string]$it.Tag) -Details (Get-DnLeaf $Group.DistinguishedName)
                 $removed++
-            } catch { $errors += "$($it.Content): $($_.Exception.Message)" }
+            } catch {
+                if (Test-ADNotMemberError -Ex $_.Exception) {
+                    $errors += ((L "'{0}': the object is no longer a member of this group — the list was outdated and has been refreshed.") -f ($it.Content))
+                } else { $errors += "$($it.Content): $($_.Exception.Message)" }
+            }
         }
         if ($errors.Count -gt 0) {
             $txt = ($errors | Select-Object -First 10) -join "`r`n"
@@ -2215,6 +3087,7 @@ function Show-RenameDialog {
         try {
             $p = Get-ADParams
             Rename-ADObject @p -Identity $Obj.DistinguishedName -NewName $new
+            Add-HistoryEntry -Action 'rename' -Dn $Obj.DistinguishedName -Details $new
             $script:RenameOk = $true
             $w.Close()
         }
@@ -2283,6 +3156,7 @@ function Show-ComputerEditDialog {
             } else {
                 Set-ADComputer @p -Identity $Comp.DistinguishedName -Clear description
             }
+            Add-HistoryEntry -Action 'edit' -Dn $Comp.DistinguishedName -Details 'description'
             $script:CompEditOk = $true
             $w.Close()
         }
@@ -2530,6 +3404,7 @@ function Show-GroupsDialog {
             try {
                 $p = Get-ADParams
                 Add-ADGroupMember @p -Identity $gdn -Members $User.DistinguishedName
+                Add-HistoryEntry -Action 'group_add' -Dn $User.DistinguishedName -Details (Get-DnLeaf $gdn)
                 $added++
             } catch { Show-Error ((L "Failed to add to group: {0}") -f ($_.Exception.Message)) }
         }
@@ -2544,7 +3419,8 @@ function Show-GroupsDialog {
             try {
                 $p = Get-ADParams
                 Remove-ADGroupMember @p -Identity ([string]$it.Tag) -Members $User.DistinguishedName -Confirm:$false
-            } catch { Show-Error ((L "Failed to remove from group '{0}': {1}") -f ($it.Content), ($_.Exception.Message)) }
+                Add-HistoryEntry -Action 'group_remove' -Dn $User.DistinguishedName -Details (Get-DnLeaf ([string]$it.Tag))
+            } catch { Show-RemoveMemberError -GroupName ([string]$it.Content) -Ex $_.Exception }
         }
         & $reload
     })
@@ -2557,7 +3433,7 @@ function Show-GroupsDialog {
 $EditXaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Edit user properties" Height="660" Width="480"
+        Title="Edit user properties" Height="760" Width="480"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         FontFamily="Segoe UI" FontSize="13">
     <Grid Margin="18">
@@ -2568,42 +3444,51 @@ $EditXaml = @"
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="140"/><RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TextBlock Grid.Row="0" Grid.Column="0" Text="Display name:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="0" Grid.Column="1" Name="EDisplay" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="E-mail:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="1" Grid.Column="1" Name="EMail" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Title:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="2" Grid.Column="1" Name="ETitle" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="3" Grid.Column="0" Text="Department:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="3" Grid.Column="1" Name="EDept" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="4" Grid.Column="0" Text="Company:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="4" Grid.Column="1" Name="ECompany" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="5" Grid.Column="0" Text="Office:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="5" Grid.Column="1" Name="EOffice" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="6" Grid.Column="0" Text="Phone:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="6" Grid.Column="1" Name="EPhone" Margin="0,4" Padding="3"/>
-        <TextBlock Grid.Row="7" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
-        <TextBox   Grid.Row="7" Grid.Column="1" Name="EDesc" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="First name:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="0" Grid.Column="1" Name="EGiven" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Last name:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="1" Grid.Column="1" Name="ESurname" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Display name:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="2" Grid.Column="1" Name="EDisplay" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="3" Grid.Column="0" Text="E-mail:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="3" Grid.Column="1" Name="EMail" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="4" Grid.Column="0" Text="Title:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="4" Grid.Column="1" Name="ETitle" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Department:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="5" Grid.Column="1" Name="EDept" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="6" Grid.Column="0" Text="Company:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="6" Grid.Column="1" Name="ECompany" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="7" Grid.Column="0" Text="Office:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="7" Grid.Column="1" Name="EOffice" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="8" Grid.Column="0" Text="Phone:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="8" Grid.Column="1" Name="EPhone" Margin="0,4" Padding="3"/>
+        <TextBlock Grid.Row="9" Grid.Column="0" Text="Description:" VerticalAlignment="Center"/>
+        <TextBox   Grid.Row="9" Grid.Column="1" Name="EDesc" Margin="0,4" Padding="3"/>
 
-        <CheckBox Grid.Row="8" Grid.ColumnSpan="2" Name="EPwdNoExpire"
+        <CheckBox Grid.Row="10" Grid.ColumnSpan="2" Name="EPwdNoExpire"
                   Content="Password never expires" Margin="0,8,0,0"/>
+        <StackPanel Grid.Row="11" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="24,4,0,0">
+            <CheckBox Name="EPneUntil" Content="Clear the flag automatically on:" VerticalAlignment="Center"/>
+            <DatePicker Name="EPneDate" Width="150" Margin="8,0,0,0" IsEnabled="False"/>
+        </StackPanel>
 
-        <TextBlock Grid.Row="9" Grid.ColumnSpan="2" Text="Group membership (Member Of):"
+        <TextBlock Grid.Row="12" Grid.ColumnSpan="2" Text="Group membership (Member Of):"
                    FontWeight="SemiBold" Margin="0,10,0,4"/>
-        <ListBox Grid.Row="10" Grid.ColumnSpan="2" Name="EGroups" SelectionMode="Extended"/>
-        <StackPanel Grid.Row="11" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
+        <ListBox Grid.Row="13" Grid.ColumnSpan="2" Name="EGroups" SelectionMode="Extended"/>
+        <StackPanel Grid.Row="14" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,6,0,0">
             <Button Name="EGAdd" Content="Add..." Width="130" Height="30"/>
             <Button Name="EGRemove" Content="Remove selected" Width="170" Height="30" Margin="8,0,0,0"/>
         </StackPanel>
 
-        <TextBlock Grid.Row="12" Grid.ColumnSpan="2" Name="EStatus" Foreground="#B00020"
+        <TextBlock Grid.Row="15" Grid.ColumnSpan="2" Name="EStatus" Foreground="#B00020"
                    TextWrapping="Wrap" Margin="0,10,0,0"/>
 
-        <StackPanel Grid.Row="13" Grid.ColumnSpan="2" Orientation="Horizontal"
+        <StackPanel Grid.Row="16" Grid.ColumnSpan="2" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,10,0,0">
             <Button Name="EOk" Content="Save" Width="110" Height="32" Margin="0,0,10,0" IsDefault="True"/>
             <Button Name="ECancel" Content="Cancel" Width="90" Height="32" IsCancel="True"/>
@@ -2618,6 +3503,7 @@ function Show-EditDialog {
     $reader = New-Object System.Xml.XmlNodeReader ([xml](Localize-Xaml $EditXaml))
     $w = [Windows.Markup.XamlReader]::Load($reader)
     $w.Owner = $Owner
+    $given=$w.FindName("EGiven"); $surname=$w.FindName("ESurname")
     $disp=$w.FindName("EDisplay"); $mail=$w.FindName("EMail"); $title=$w.FindName("ETitle")
     $dept=$w.FindName("EDept"); $company=$w.FindName("ECompany"); $office=$w.FindName("EOffice")
     $phone=$w.FindName("EPhone"); $desc=$w.FindName("EDesc")
@@ -2625,7 +3511,21 @@ function Show-EditDialog {
     $st=$w.FindName("EStatus"); $ok=$w.FindName("EOk"); $cancel=$w.FindName("ECancel")
     $pwdNoExp = $w.FindName("EPwdNoExpire")
     $pwdNoExp.IsChecked = [bool]$ad.PasswordNeverExpires
+    # Optional auto-clear date for the flag (stored in $Global:PwdNeverExpiresUntilAttr)
+    $pneUntil = $w.FindName("EPneUntil"); $pneDate = $w.FindName("EPneDate")
+    $script:EditInitialUntil = Get-PwdNeverExpiresUntil $ad
+    if ($script:EditInitialUntil) { $pneUntil.IsChecked = $true; $pneDate.SelectedDate = $script:EditInitialUntil }
+    $togglePne = {
+        $on = [bool]$pwdNoExp.IsChecked
+        $pneUntil.IsEnabled = $on
+        $pneDate.IsEnabled = ($on -and [bool]$pneUntil.IsChecked)
+        if ($pneDate.IsEnabled -and -not $pneDate.SelectedDate) { $pneDate.SelectedDate = (Get-Date).Date.AddDays(90) }
+    }
+    & $togglePne
+    $pwdNoExp.Add_Click({ & $togglePne }); $pneUntil.Add_Click({ & $togglePne })
 
+    $given.Text   = [string]$ad.GivenName
+    $surname.Text = [string]$ad.Surname
     $disp.Text    = [string]$ad.DisplayName
     $mail.Text    = [string]$ad.Mail
     $title.Text   = [string]$ad.Title
@@ -2668,6 +3568,7 @@ function Show-EditDialog {
             try {
                 $p = Get-ADParams
                 Add-ADGroupMember @p -Identity $gdn -Members $User.DistinguishedName
+                Add-HistoryEntry -Action 'group_add' -Dn $User.DistinguishedName -Details (Get-DnLeaf $gdn)
                 $added++
             } catch { Show-Error ((L "Failed to add to group: {0}") -f ($_.Exception.Message)) }
         }
@@ -2682,7 +3583,8 @@ function Show-EditDialog {
             try {
                 $p = Get-ADParams
                 Remove-ADGroupMember @p -Identity ([string]$it.Tag) -Members $User.DistinguishedName -Confirm:$false
-            } catch { Show-Error ((L "Failed to remove from group '{0}': {1}") -f ($it.Content), ($_.Exception.Message)) }
+                Add-HistoryEntry -Action 'group_remove' -Dn $User.DistinguishedName -Details (Get-DnLeaf ([string]$it.Tag))
+            } catch { Show-RemoveMemberError -GroupName ([string]$it.Content) -Ex $_.Exception }
         }
         & $reloadGroups
     })
@@ -2693,6 +3595,8 @@ function Show-EditDialog {
         try {
             $p = Get-ADParams
             $p['Identity'] = $User.DistinguishedName
+            $p['GivenName']       = $given.Text.Trim()
+            $p['Surname']         = $surname.Text.Trim()
             $p['DisplayName']     = $disp.Text
             $p['EmailAddress']    = $mail.Text
             $p['Title']           = $title.Text
@@ -2707,7 +3611,22 @@ function Show-EditDialog {
             if ([bool]$pwdNoExp.IsChecked -and -not $User._AD.PasswordLastSet) {
                 $p['ChangePasswordAtLogon'] = $false
             }
+            # Auto-clear date: store with the flag, clear when unset or the flag is off
+            $attr = $Global:PwdNeverExpiresUntilAttr
+            $until = $null
+            if ([bool]$pwdNoExp.IsChecked -and [bool]$pneUntil.IsChecked) {
+                if (-not $pneDate.SelectedDate) { $st.Text = (L "Select a date."); return }
+                $until = ([DateTime]$pneDate.SelectedDate).Date
+                if ($until -le (Get-Date).Date) { $st.Text = (L "The date must be later than today."); return }
+                $p['Replace'] = @{ $attr = $until.ToString('yyyy-MM-dd') }
+            } elseif ($script:EditInitialUntil) {
+                $p['Clear'] = $attr
+            }
             Set-ADUser @p
+            if ([bool]$pwdNoExp.IsChecked -ne [bool]$ad.PasswordNeverExpires) {
+                Add-HistoryEntry -Action $(if ($pwdNoExp.IsChecked) { 'pwd_never_expires_on' } else { 'pwd_never_expires_off' }) -Dn $User.DistinguishedName -Details $(if ($until) { $until.ToString('yyyy-MM-dd') } else { '' })
+            }
+            Add-HistoryEntry -Action 'edit' -Dn $User.DistinguishedName -Details ((@($p.Keys | Where-Object { $_ -notin @('Identity','Credential','Server') }) | Sort-Object) -join ', ')
             $script:EditOk = $true
             $w.Close()
         }
@@ -2795,6 +3714,10 @@ $TxtSearch = $MainWin.FindName("TxtSearch")
 $BtnSearch = $MainWin.FindName("BtnSearch")
 $BtnRefresh= $MainWin.FindName("BtnRefresh")
 $BtnCreate = $MainWin.FindName("BtnCreate")
+$BtnHistory = $MainWin.FindName("BtnHistory")
+$BtnHistory.Add_Click({ Show-HistoryDialog -Owner $MainWin })
+$BtnPwdGen = $MainWin.FindName("BtnPwdGen")
+$BtnPwdGen.Add_Click({ Show-PasswordGeneratorDialog -Owner $MainWin | Out-Null })
 $GridUsers = $MainWin.FindName("GridUsers")
 $PanelProps= $MainWin.FindName("PanelProps")
 $LblConn   = $MainWin.FindName("LblConn")
@@ -2802,6 +3725,9 @@ $CmbDomain      = $MainWin.FindName("CmbDomain")
 $BtnSwitchDomain= $MainWin.FindName("BtnSwitchDomain")
 $TreeOU         = $MainWin.FindName("TreeOU")
 $ChkSubtree     = $MainWin.FindName("ChkSubtree")
+$ChkAllDomains  = $MainWin.FindName("ChkAllDomains")
+$Script:OtherDomainErrors = @()
+$Script:PendingSelectDn = $null
 
 $BtnEnable  = $MainWin.FindName("BtnEnable")
 $BtnDisable = $MainWin.FindName("BtnDisable")
@@ -2833,6 +3759,9 @@ $Script:RuMonths = @('янв','фев','мар','апр','май','июн','ию
 
 function Format-AdDate {
     param([datetime]$Dt, [switch]$WithTime)
+    # AD can hand back UTC-kind timestamps (GMT+0); show them in the local
+    # time zone of the machine running the app.
+    if ($Dt.Kind -eq [System.DateTimeKind]::Utc) { $Dt = $Dt.ToLocalTime() }
     if ($Script:Lang -eq 'ru') {
         $mon = $Script:RuMonths[$Dt.Month - 1]
         $s = '{0:D2} {1} {2:D4}' -f $Dt.Day, $mon, $Dt.Year
@@ -2861,6 +3790,189 @@ function Get-PwdExpiryText {
 }
 
 # --- Render properties of the selected user ---
+
+function Get-DcHostList {
+    # DNS names of all domain controllers (cached per server connection once
+    # known). Three sources are tried, because a restricted account may be
+    # denied one of them: Get-ADDomainController, the computer objects in
+    # OU=Domain Controllers, and the server objects of the forest Sites
+    # container that belong to this domain. Failures are not cached — the
+    # next call tries again; the last error is kept in $Script:DcHostListError.
+    # -Server: controllers of ANOTHER domain (an object found by the all-domains
+    # search), queried with the session credentials through the trust.
+    param([string]$Server)
+    $srv = if ($Server) { $Server } else { [string]$Global:ADConnection.Server }
+    if ($Script:DcHostList -and $Script:DcHostList.Count -gt 0 -and $Script:DcHostListSrv -eq $srv) {
+        return $Script:DcHostList
+    }
+    $Script:DcHostListError = ''
+    $errors = @()
+    $dcs = @()
+    $p = Get-ADParams
+    $baseDn = [string]$Global:ADConnection.BaseDN
+    if ($Server) {
+        $p['Server'] = $Server
+        try { $baseDn = [string](Get-ADDomain @p).DistinguishedName } catch { $errors += "domain: $($_.Exception.Message)" }
+    }
+    try {
+        $dcs = @(Get-ADDomainController @p -Filter * | ForEach-Object { [string]$_.HostName } | Where-Object { $_ })
+    } catch { $errors += "dc: $($_.Exception.Message)" }
+    if ($dcs.Count -eq 0) {
+        try {
+            $dcs = @(Get-ADComputer @p -SearchBase ("OU=Domain Controllers," + $baseDn) -Filter * -Properties DNSHostName |
+                     ForEach-Object { if ($_.DNSHostName) { [string]$_.DNSHostName } else { [string]$_.Name } } | Where-Object { $_ })
+        } catch { $errors += "ou: $($_.Exception.Message)" }
+    }
+    if ($dcs.Count -eq 0) {
+        try {
+            $root = Get-ADRootDSE @p
+            $baseLow = $baseDn.ToLower() -replace ', ', ','
+            $dcs = @(Get-ADObject @p -SearchBase ("CN=Sites," + $root.configurationNamingContext) -LDAPFilter '(&(objectClass=server)(dNSHostName=*))' -Properties dNSHostName, serverReference |
+                     Where-Object {
+                         $ref = ([string]$_.serverReference).ToLower() -replace ', ', ','
+                         $k = $ref.IndexOf('dc=')
+                         (-not $ref) -or ($k -ge 0 -and $ref.Substring($k) -eq $baseLow)
+                     } | ForEach-Object { [string]$_.dNSHostName } | Where-Object { $_ })
+        } catch { $errors += "sites: $($_.Exception.Message)" }
+    }
+    $dcs = @($dcs | Sort-Object -Unique)
+    if ($errors.Count -gt 0) {
+        $Script:DcHostListError = ($errors -join '; ')
+        Add-SwitchLog @("dc list ($srv): $($dcs.Count) found; $($Script:DcHostListError)")
+    }
+    $Script:DcHostListSrv = $srv
+    if ($dcs.Count -gt 0) { $Script:DcHostList = $dcs } else { $Script:DcHostList = $null }
+    return $dcs
+}
+
+# --- Per-DC non-replicated attributes (lastLogon / badPasswordTime /
+# badPwdCount are kept per controller and never replicated), fetched in a
+# background runspace so the UI stays responsive ---
+$Script:DcPropsJob = $null
+$Script:DcPropsTimer = $null
+$Script:DcPropsWantDn = $null
+
+function Add-DcPropsRows {
+    # Render the per-DC values as an aligned monospaced table
+    param($Rows)
+    $table = @(,@((L "DC"), (L "Logon"), (L "Bad password"), (L "Attempts")))
+    foreach ($r in $Rows) {
+        $dcShort = ([string]$r.Dc -split '\.')[0]
+        if ($r.Error) { $table += ,@($dcShort, (L "(unavailable)"), '', ''); continue }
+        $ll = if ($r.LastLogon -and [int64]$r.LastLogon -gt 0) { Format-AdDate ([DateTime]::FromFileTime([int64]$r.LastLogon)) -WithTime } else { (L "never") }
+        $bp = if ($r.BadPwdTime -and [int64]$r.BadPwdTime -gt 0) { Format-AdDate ([DateTime]::FromFileTime([int64]$r.BadPwdTime)) -WithTime } else { (L "never") }
+        $cnt = if ($null -ne $r.BadPwdCount -and "$($r.BadPwdCount)" -ne '') { "$($r.BadPwdCount)" } else { '' }
+        $table += ,@($dcShort, $ll, $bp, $cnt)
+    }
+    if ($table.Count -le 1) { return }
+    $widths = @(0, 0, 0, 0)
+    foreach ($row in $table) {
+        for ($i = 0; $i -lt 4; $i++) {
+            if ($row[$i].Length -gt $widths[$i]) { $widths[$i] = $row[$i].Length }
+        }
+    }
+    $lines = foreach ($row in $table) {
+        ((0..3 | ForEach-Object { ([string]$row[$_]).PadRight($widths[$_]) }) -join '  ').TrimEnd()
+    }
+    $k = (L "By domain controller (non-replicated attributes)")
+    $val = $lines -join "`r`n"
+    $Script:PropRows += "${k}: $val"
+    $sp = New-Object System.Windows.Controls.StackPanel
+    $sp.Margin = '0,0,0,6'
+    $lblTb = New-Object System.Windows.Controls.TextBlock
+    $lblTb.Text = "${k}:"
+    $lblTb.FontWeight = 'SemiBold'
+    $lblTb.Foreground = '#555555'
+    $vTb = New-Object System.Windows.Controls.TextBox
+    $vTb.Text = $val; $vTb.IsReadOnly = $true
+    $vTb.FontFamily = 'Consolas'
+    $vTb.BorderThickness = '0'; $vTb.Background = 'Transparent'; $vTb.Padding = '0'
+    $vTb.HorizontalScrollBarVisibility = 'Auto'
+    $sp.Children.Add($lblTb) | Out-Null
+    $sp.Children.Add($vTb) | Out-Null
+    $PanelProps.Children.Add($sp) | Out-Null
+}
+
+function Start-DcPropsQuery {
+    param([string]$Dn, [string]$Server)
+    $Script:DcPropsWantDn = $Dn
+    $Script:DcPropsWantServer = $Server
+    if ($Script:DcPropsJob) { return }   # busy: the timer re-fires for the latest DN
+    $dcs = @(Get-DcHostList -Server $Server)
+    if ($dcs.Count -lt 2) {
+        if ($Script:DcHostListError) {
+            $k = (L "By domain controller (non-replicated attributes)")
+            $val = ((L "(controller list unavailable: {0})") -f $Script:DcHostListError)
+            $Script:PropRows += "${k}: $val"
+            $sp = New-Object System.Windows.Controls.StackPanel
+            $sp.Margin = '0,0,0,6'
+            $lblTb = New-Object System.Windows.Controls.TextBlock
+            $lblTb.Text = "${k}:"; $lblTb.FontWeight = 'SemiBold'; $lblTb.Foreground = '#555555'
+            $vTb = New-Object System.Windows.Controls.TextBlock
+            $vTb.Text = $val; $vTb.TextWrapping = 'Wrap'
+            $sp.Children.Add($lblTb) | Out-Null
+            $sp.Children.Add($vTb) | Out-Null
+            $PanelProps.Children.Add($sp) | Out-Null
+        }
+        return
+    }
+    $cred = $Global:ADConnection.Credential
+    if (-not $cred) { return }
+    # Against the controllers of another domain a bare login would be looked up
+    # there; qualify it with the home domain so the trust is used.
+    $bindUser = [string]$cred.UserName
+    if ($Server -and $bindUser -notmatch '[\\@]') {
+        $v = @(Get-LoginVariantsForHome -Login $bindUser -DnsRoot $Global:ADConnection.DnsRoot -NetBIOSName $Global:ADConnection.NetBIOSName)
+        if ($v.Count -gt 0) { $bindUser = $v[0] }
+    }
+    $ps = [powershell]::Create()
+    $null = $ps.AddScript({
+        param($Dcs, $Dn, $User, $Pass)
+        $out = @()
+        $adsDn = $Dn -replace '/', '\/'
+        foreach ($dc in $Dcs) {
+            $r = [pscustomobject]@{ Dc = $dc; LastLogon = $null; BadPwdTime = $null; BadPwdCount = $null; Error = $null }
+            try {
+                $root = New-Object System.DirectoryServices.DirectoryEntry("LDAP://$dc/$adsDn", $User, $Pass)
+                $s = New-Object System.DirectoryServices.DirectorySearcher($root, '(objectClass=*)', @('lastLogon','badPasswordTime','badPwdCount'), 'Base')
+                $s.ClientTimeout = [TimeSpan]::FromSeconds(7)
+                $res = $s.FindOne()
+                if ($res) {
+                    if ($res.Properties['lastlogon'].Count)       { $r.LastLogon   = [int64]$res.Properties['lastlogon'][0] }
+                    if ($res.Properties['badpasswordtime'].Count) { $r.BadPwdTime  = [int64]$res.Properties['badpasswordtime'][0] }
+                    if ($res.Properties['badpwdcount'].Count)     { $r.BadPwdCount = [int]$res.Properties['badpwdcount'][0] }
+                } else { $r.Error = 'not found' }
+            } catch { $r.Error = $_.Exception.Message }
+            $out += $r
+        }
+        return $out
+    }).AddArgument($dcs).AddArgument($Dn).AddArgument($bindUser).AddArgument($cred.GetNetworkCredential().Password)
+    $Script:DcPropsJob = @{ PS = $ps; Handle = $ps.BeginInvoke(); Dn = $Dn }
+    if (-not $Script:DcPropsTimer) {
+        $Script:DcPropsTimer = New-Object System.Windows.Threading.DispatcherTimer
+        $Script:DcPropsTimer.Interval = [TimeSpan]::FromMilliseconds(400)
+        $Script:DcPropsTimer.Add_Tick({
+            $job = $Script:DcPropsJob
+            if (-not $job) { $Script:DcPropsTimer.Stop(); return }
+            if (-not $job.Handle.IsCompleted) { return }
+            $rows = @()
+            try { $rows = @($job.PS.EndInvoke($job.Handle)) } catch { $rows = @() }
+            try { $job.PS.Dispose() } catch { }
+            $Script:DcPropsJob = $null
+            if ([string]$job.Dn -eq [string]$Script:DcPropsWantDn) {
+                $Script:DcPropsTimer.Stop()
+                $sel = $GridUsers.SelectedItem
+                if ($sel -and [string]$sel.DistinguishedName -eq [string]$job.Dn -and $rows.Count) {
+                    Add-DcPropsRows -Rows $rows
+                }
+            } else {
+                Start-DcPropsQuery -Dn ([string]$Script:DcPropsWantDn) -Server ([string]$Script:DcPropsWantServer)
+            }
+        })
+    }
+    $Script:DcPropsTimer.Stop(); $Script:DcPropsTimer.Start()
+}
+
 function Update-PropsPanel {
     param($User)
     $PanelProps.Children.Clear()
@@ -2911,6 +4023,7 @@ function Update-PropsPanel {
         (L "First name")      = $ad.GivenName
         (L "Last name")       = $ad.Surname
         "E-mail"           = $ad.Mail
+        (L "E-mail addresses (Exchange)") = (Get-MailAddressesText $ad $(if ($User._Foreign) { [string]$User._Host } else { '' }))
         (L "State")           = (Get-UserState $ad)
         (L "Locked")          = if ($ad.LockedOut) { (L "Yes") } else { (L "No") }
         (L "Description")      = $ad.Description
@@ -2921,6 +4034,7 @@ function Update-PropsPanel {
         (L "Phone")          = $ad.TelephoneNumber
         (L "Password last set")     = $ad.PasswordLastSet
         (L "Password never expires") = if ($ad.PasswordNeverExpires) { (L "Yes") } else { (L "No") }
+        (L "Flag auto-clear date") = $(if ($d = Get-PwdNeverExpiresUntil $ad) { Format-AdDate $d } else { '' })
         (L "Password change required") = (Get-PwdExpiryText $ad)
         (L "Bad password attempts") = $ad.badPwdCount
         (L "Last bad password")     = $ad.LastBadPasswordAttempt
@@ -2951,6 +4065,7 @@ function Update-PropsPanel {
         $v.Text = $val; $v.TextWrapping = 'Wrap'
         $v.IsReadOnly = $true; $v.BorderThickness = '0'; $v.Background = 'Transparent'
         $v.Padding = '0'
+        if ($k -eq (L "E-mail addresses (Exchange)") -and $val.Contains("`n")) { $v.FontFamily = 'Consolas'; $v.TextWrapping = 'NoWrap'; $v.HorizontalScrollBarVisibility = 'Auto' }
         # Context menu: copy this value / copy all
         $cm = New-Object System.Windows.Controls.ContextMenu
         $miVal = New-Object System.Windows.Controls.MenuItem
@@ -2967,6 +4082,12 @@ function Update-PropsPanel {
         $sp.Children.Add($lbl) | Out-Null
         $sp.Children.Add($v)   | Out-Null
         $PanelProps.Children.Add($sp) | Out-Null
+    }
+    if (-not $User._IsGroup -and -not $User._IsComputer) {
+        # For an object of another domain (all-domains search) the controllers
+        # of THAT domain are asked, with the session credentials.
+        $srv = if ($User._Foreign) { [string]$User._Host } else { '' }
+        Start-DcPropsQuery -Dn ([string]$ad.DistinguishedName) -Server $srv
     }
 }
 
@@ -3047,11 +4168,21 @@ function Invoke-Search {
             $results = @(Search-ADGroupsList -Query $text -SearchBase $base -Scope $scope)
         } else {
             $results = @(Search-ADUsers -Query $text -SearchBase $base -Scope $scope)
+            if ((Test-AllDomainsOn) -and -not [string]::IsNullOrWhiteSpace($text)) {
+                $own = @{}
+                foreach ($r in $results) { $own[("$($r.DistinguishedName)").ToLower()] = $true }
+                $others = @(Search-OtherDomains -Query $text | Where-Object { -not $own.ContainsKey(("$($_.DistinguishedName)").ToLower()) })
+                $results = @($results + $others | Sort-Object Name, Domain)
+            }
         }
         $GridUsers.ItemsSource = $results
 
         $scopeTxt = if ($sel -and $sel.Header) { [string]$sel.Header } else { $Global:ADConnection.DnsRoot }
         if ($subtree) { $scopeTxt = ((L "{0} (+nested)") -f ($scopeTxt)) }
+        if ((Test-AllDomainsOn) -and -not [string]::IsNullOrWhiteSpace($text)) {
+            $scopeTxt = (L "scope: all saved domains")
+            if ($Script:OtherDomainErrors.Count -gt 0) { $scopeTxt += ((L "; unavailable: {0}") -f ($Script:OtherDomainErrors -join ', ')) }
+        }
         $LblConn.Text = ((L "Connected to: {0}   |   ") -f ($Global:ADConnection.Server)) +
                         ((L "User: {0}   |   ") -f ($Global:ADConnection.UserName)) +
                         ((L "Scope: {0}   |   Found: {1}") -f ($scopeTxt), ($results.Count))
@@ -3061,22 +4192,49 @@ function Invoke-Search {
 }
 
 # --- Get the selected user ---
+function Offer-SwitchToObjectDomain {
+    # An object from another domain was chosen for an action: offer to switch to
+    # that domain (same search text, the object re-selected after the switch)
+    param($U)
+    $label = if ($U.Name) { $U.Name } else { $U.SamAccountName }
+    $dom = if ($U.Domain) { $U.Domain } else { $U._Host }
+    if (Confirm-Action ((L '"{0}" belongs to domain {1}.`r`nActions are available only in the connected domain.`r`n`r`nSwitch to domain {1} now?') -f $label, $dom) (L "Object from another domain")) {
+        $Script:PendingSelectDn = [string]$U.DistinguishedName
+        $CmbDomain.Text = [string]$U._Host
+        $BtnSwitchDomain.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent)))
+    }
+}
+
 function Get-SelectedUser {
+    param([switch]$AllowForeign)
     if ($GridUsers.SelectedItems.Count -gt 1) {
         Show-Info (L "This action applies to a single object.`r`nSelect exactly one item in the list.") (L "Multiple objects selected")
         return $null
     }
     $u = $GridUsers.SelectedItem
     if (-not $u) { Show-Info (L "Select a user in the list first.") (L "No user selected"); return $null }
+    if ($u._Foreign -and -not $AllowForeign) { Offer-SwitchToObjectDomain $u; return $null }
     return $u
 }
 
 function Get-SelectedUsers {
     # All selected objects (multi-select aware)
+    param([switch]$AllowForeign)
     $items = @($GridUsers.SelectedItems)
     if (-not $items -or $items.Count -eq 0) {
         Show-Info (L "Select one or more objects in the list.") (L "No object selected")
         return @()
+    }
+    if (-not $AllowForeign) {
+        $foreign = @($items | Where-Object { $_._Foreign })
+        if ($foreign.Count -gt 0) {
+            if ($items.Count -eq 1) { Offer-SwitchToObjectDomain $foreign[0] }
+            else {
+                $doms = ($foreign | ForEach-Object { [string]$_.Domain } | Sort-Object -Unique) -join ', '
+                Show-Info ((L "The selection contains objects from other domains ({0}). Bulk actions apply only to the connected domain.") -f $doms) (L "Object from another domain")
+            }
+            return @()
+        }
     }
     return $items
 }
@@ -3132,6 +4290,7 @@ function Set-GridColumns {
         $GridUsers.Columns.Add((& $mk 'E-mail' 'Mail' 1.6)) | Out-Null
         $GridUsers.Columns.Add((& $mk (L 'Description') 'Description' 1.6)) | Out-Null
         $GridUsers.Columns.Add((& $mk (L 'State') 'State' 1.0)) | Out-Null
+        if (Test-AllDomainsOn) { $GridUsers.Columns.Add((& $mk (L 'Domain') 'Domain' 1.1)) | Out-Null }
     }
 }
 
@@ -3150,6 +4309,7 @@ function Switch-Mode {
     $PanelProps.Children.Clear()
     $Script:PropRows = @()
     Set-GridColumns -Computers:$computers -Groups:$groups
+    if ($ChkAllDomains) { $ChkAllDomains.Visibility = $(if ($mode -eq 'users') { 'Visible' } else { 'Collapsed' }) }
     $GrpProps.Header = switch ($mode) {
         'computers' { (L "Computer properties") }
         'groups'    { (L "Group properties") }
@@ -3207,24 +4367,79 @@ $BtnSwitchDomain.Add_Click({
         return
     }
 
+    # Which account: the active session (default) or another one
+    $choice = Show-SwitchCredentialsDialog -Owner $MainWin -Target $target -CurrentUser $Global:ADConnection.UserName
+    if (-not $choice) { return }
+    $cred = $Global:ADConnection.Credential
+    $userLabel = [string]$Global:ADConnection.UserName
+    if ($choice.Mode -eq 'other') { $cred = $choice.Credential; $userLabel = $cred.UserName }
+
     $MainWin.Cursor = [System.Windows.Input.Cursors]::Wait
+    $info = $null
+    $triedVariants = @()
+    $bindResults = @()
+    Add-SwitchLog @("switch $($Global:ADConnection.Server) -> $target account mode=$($choice.Mode)")
     try {
-        # Switch domain using the active session credentials
-        $info = Get-ADDomain -Server $target -Credential $Global:ADConnection.Credential -ErrorAction Stop
+        try {
+            $info = Get-ADDomain -Server $target -Credential $cred -ErrorAction Stop
+            Add-SwitchLog @("  $($cred.UserName): OK")
+        } catch {
+            $firstErr = $_
+            $bindResults += "$($cred.UserName) — $($firstErr.Exception.Message)"
+            Add-SwitchLog @("  $($cred.UserName): $($firstErr.Exception.Message)")
+            # Session account rejected by the target DC. Retry the same password with
+            # 1) the account qualified with its HOME domain (HOME\user, user@home) — a
+            #    bare name is looked up by the target DC in ITS domain, the qualified
+            #    form is forwarded through the trust; 2) the account re-qualified with
+            #    the TARGET domain, in case a same-named account exists there (no trust).
+            $isAuth = ($firstErr.Exception.Message -match 'credential|logon|authentic|password|denied|учетн|пароль|провер|отказ')
+            if ($choice.Mode -eq 'current' -and $isAuth) {
+                $pwd = $cred.Password
+                $variants = @(Get-LoginVariantsForHome -Login $cred.UserName -DnsRoot $Global:ADConnection.DnsRoot -NetBIOSName $Global:ADConnection.NetBIOSName)
+                $variants += @(Get-LoginVariantsForDomain -Login $cred.UserName -TargetHost $target)
+                $variants = @($variants | Where-Object { $_ -and $_.ToLower() -ne ("$($cred.UserName)").ToLower() } | Select-Object -Unique)
+                foreach ($v in $variants) {
+                    $triedVariants += $v
+                    try {
+                        $c2 = New-Object System.Management.Automation.PSCredential($v, $pwd)
+                        $info = Get-ADDomain -Server $target -Credential $c2 -ErrorAction Stop
+                        $cred = $c2; $userLabel = $v
+                        Add-SwitchLog @("  ${v}: OK")
+                        break
+                    } catch {
+                        $bindResults += "$v — $($_.Exception.Message)"
+                        Add-SwitchLog @("  ${v}: $($_.Exception.Message)")
+                    }
+                }
+            }
+            if (-not $info) { throw $firstErr }
+        }
     }
     catch {
         $MainWin.Cursor = [System.Windows.Input.Cursors]::Arrow
-        Show-Error (((L "Access error: failed to connect to domain `"{0}`" ") -f ($target)) +
-                    ((L "with the current account ({0}).`n`n") -f ($Global:ADConnection.UserName)) +
-                    ((L "Insufficient rights or the domain is unavailable:`n{0}") -f ($_.Exception.Message)))
+        $msg = (((L "Access error: failed to connect to domain `"{0}`" ") -f ($target)) +
+                ((L "with the current account ({0}).`n`n") -f ($userLabel)) +
+                ((L "Insufficient rights or the domain is unavailable:`n{0}") -f ($_.Exception.Message)))
+        if ($bindResults.Count -gt 1) {
+            $msg += ((L "`n`nBind attempts (variant — server reply):`n{0}") -f (($bindResults | ForEach-Object { "  $_" }) -join "`n"))
+        }
+        if ($triedVariants.Count -gt 0) {
+            $msg += ((L "`n`nThe account was also tried as {0} — not accepted. With a trust between the domains, check that its direction lets the target domain authenticate this account and, with selective authentication, that `"Allowed to authenticate`" is granted on its domain controllers. For a domain in another forest without a trust choose `"Another account`" and enter a login of that domain.") -f ($triedVariants -join ', '))
+        }
+        $msg += ((L "`nThe same details are appended to {0}.") -f (Get-SwitchLogPath))
+        Show-Error $msg
         return
     }
     finally { $MainWin.Cursor = [System.Windows.Input.Cursors]::Arrow }
 
-    # Update the active connection (session credentials are kept)
-    $Global:ADConnection.Server  = $target
-    $Global:ADConnection.BaseDN  = $info.DistinguishedName
-    $Global:ADConnection.DnsRoot = $info.DNSRoot
+    # Update the active connection (the chosen account becomes the session account)
+    $Global:ADConnection.Server     = $target
+    $Global:ADConnection.BaseDN     = $info.DistinguishedName
+    $Global:ADConnection.DnsRoot    = $info.DNSRoot
+    $Global:ADConnection.NetBIOSName = $info.NetBIOSName
+    $Global:ADConnection.Credential = $cred
+    $Global:ADConnection.UserName   = $userLabel
+    $Script:DcHostList = $null
     $Global:AccessGroupsResolved = $false
     $Global:AccessGroupsDN       = $null
 
@@ -3233,9 +4448,19 @@ $BtnSwitchDomain.Add_Click({
     $LblConn.Text = ((L "Connected to: {0}   |   ") -f ($Global:ADConnection.Server)) +
                     ((L "User: {0}") -f ($Global:ADConnection.UserName))
     Update-DomainCombo
-    $TxtSearch.Text = ""
+    $pending = $Script:PendingSelectDn
+    $Script:PendingSelectDn = $null
+    if (-not $pending) { $TxtSearch.Text = "" }
     $PanelProps.Children.Clear()
     Load-OUTree
+    if ($pending) {
+        Invoke-Search
+        foreach ($row in @($GridUsers.ItemsSource)) {
+            if (([string]$row.DistinguishedName).ToLower() -eq $pending.ToLower()) {
+                $GridUsers.SelectedItem = $row; $GridUsers.ScrollIntoView($row); break
+            }
+        }
+    }
     Show-Info ((L "Connected to domain `"{0}`" as {1}.") -f ($Global:ADConnection.Server), ($Global:ADConnection.UserName))
 })
 
@@ -3244,6 +4469,7 @@ $BtnSearch.Add_Click({ Invoke-Search })
 $TxtSearch.Add_KeyDown({ if ($_.Key -eq 'Return') { Invoke-Search } })
 $BtnRefresh.Add_Click({ Invoke-Search })
 $ChkSubtree.Add_Click({ Invoke-Search })
+$ChkAllDomains.Add_Click({ Set-GridColumns; Invoke-Search })
 $TreeOU.Add_SelectedItemChanged({ Invoke-Search })
 
 $GridUsers.Add_SelectionChanged({
@@ -3315,13 +4541,14 @@ $BtnEnable.Add_Click({
         try {
             $p = Get-ADParams
             Enable-ADAccount @p -Identity $items[0].DistinguishedName
+            Add-HistoryEntry -Action 'enable' -Dn $items[0].DistinguishedName
             Show-Info (L "Account enabled.")
             Invoke-Search
         } catch { Show-Error ((L "Failed to enable: {0}") -f ($_.Exception.Message)) }
         return
     }
     if (-not (Confirm-Action ((L "Enable {0} accounts?") -f ($items.Count)))) { return }
-    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Enable-ADAccount @p -Identity $o.DistinguishedName } (L "Enabled")
+    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Enable-ADAccount @p -Identity $o.DistinguishedName; Add-HistoryEntry -Action 'enable' -Dn $o.DistinguishedName } (L "Enabled")
 })
 
 $BtnDisable.Add_Click({
@@ -3332,13 +4559,14 @@ $BtnDisable.Add_Click({
         try {
             $p = Get-ADParams
             Disable-ADAccount @p -Identity $u.DistinguishedName
+            Add-HistoryEntry -Action 'disable' -Dn $u.DistinguishedName
             Show-Info (L "Account disabled.")
             Invoke-Search
         } catch { Show-Error ((L "Failed to disable: {0}") -f ($_.Exception.Message)) }
         return
     }
     if (-not (Confirm-Action ((L "Disable {0} accounts?") -f ($items.Count)))) { return }
-    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Disable-ADAccount @p -Identity $o.DistinguishedName } (L "Disabled")
+    Invoke-BulkAccountAction $items { param($o) $p = Get-ADParams; Disable-ADAccount @p -Identity $o.DistinguishedName; Add-HistoryEntry -Action 'disable' -Dn $o.DistinguishedName } (L "Disabled")
 })
 
 $BtnUnlock.Add_Click({
@@ -3346,6 +4574,7 @@ $BtnUnlock.Add_Click({
     try {
         $p = Get-ADParams
         Unlock-ADAccount @p -Identity $u.DistinguishedName
+        Add-HistoryEntry -Action 'unlock' -Dn $u.DistinguishedName
         Show-Info (L "Account unlocked.")
         Invoke-Search
     } catch { Show-Error ((L "Failed to unlock: {0}") -f ($_.Exception.Message)) }
@@ -3366,27 +4595,37 @@ $BtnPwdNoExpire.Add_Click({
     $new = -not $cur
     # PasswordLastSet = $null means 'must change password at next logon'
     $mustChange = ($new -and -not $u._AD.PasswordLastSet)
-    $msg = if ($new) {
-        $m = ((L "Set the 'password never expires' flag for '{0}'?") -f ($u.SamAccountName))
-        if ($mustChange) {
-            $m += (L "`r`n`r`nThe pending 'change password at next logon' requirement will be removed; the current password stays valid (same as in ADUC).")
-        }
-        $m
+    $until = $null
+    if ($new) {
+        $choice = Show-NeverExpiresUntilDialog -Owner $MainWin -Login $u.SamAccountName -MustChange:$mustChange
+        if (-not $choice) { return }
+        $until = $choice.Until
     } else {
-        ((L "Clear the 'password never expires' flag for '{0}'?`r`n`r`nThe password will expire per the domain policy.") -f ($u.SamAccountName))
+        $msg = ((L "Clear the 'password never expires' flag for '{0}'?`r`n`r`nThe password will expire per the domain policy.") -f ($u.SamAccountName))
+        if (-not (Confirm-Action $msg)) { return }
     }
-    if (-not (Confirm-Action $msg)) { return }
     try {
         $p = Get-ADParams
-        if ($mustChange) {
+        $attr = $Global:PwdNeverExpiresUntilAttr
+        if ($new) {
+            $extra = @{}
             # Like ADUC: enabling the flag also cancels the pending change
             # requirement, so the current password stays valid.
-            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $true -ChangePasswordAtLogon $false
-            Show-Info (L "Flag set: the password never expires.`r`n`r`nThe 'change password at next logon' requirement was removed; the current password stays valid.")
+            if ($mustChange) { $extra['ChangePasswordAtLogon'] = $false }
+            if ($until) { $extra['Replace'] = @{ $attr = $until.ToString('yyyy-MM-dd') } }
+            elseif (Get-PwdNeverExpiresUntil $u._AD) { $extra['Clear'] = $attr }
+            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $true @extra
+            Add-HistoryEntry -Action 'pwd_never_expires_on' -Dn $u.DistinguishedName -Details $(if ($until) { $until.ToString('yyyy-MM-dd') } else { '' })
+            $txt = (L "Flag set: the password never expires.")
+            if ($mustChange) { $txt += (L "`r`n`r`nThe 'change password at next logon' requirement was removed; the current password stays valid.") }
+            if ($until) { $txt += ((L "`r`n`r`nThe flag will be cleared automatically on {0}.") -f (Format-AdDate $until)) }
+            Show-Info $txt
         } else {
-            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $new
-            if ($new) { Show-Info (L "Flag set: the password never expires.") }
-            else      { Show-Info (L "Flag cleared: the password expires per the domain policy.") }
+            $extra = @{}
+            if (Get-PwdNeverExpiresUntil $u._AD) { $extra['Clear'] = $attr }
+            Set-ADUser @p -Identity $u.DistinguishedName -PasswordNeverExpires $false @extra
+            Add-HistoryEntry -Action 'pwd_never_expires_off' -Dn $u.DistinguishedName
+            Show-Info (L "Flag cleared: the password expires per the domain policy.")
         }
         Invoke-Search
     } catch { Show-Error ((L "Failed to change the flag: {0}") -f ($_.Exception.Message)) }
@@ -3409,6 +4648,7 @@ $BtnGroups.Add_Click({
             try {
                 $p = Get-ADParams
                 Add-ADGroupMember @p -Identity $gdn -Members $u.DistinguishedName
+                Add-HistoryEntry -Action 'group_add' -Dn $u.DistinguishedName -Details (Get-DnLeaf $gdn)
                 $added++
             } catch {
                 $gcn = ($gdn -split ',')[0] -replace '^CN=',''
@@ -3517,6 +4757,7 @@ $BtnDelete.Add_Click({
             try {
                 $p = Get-ADParams
                 Remove-ADObject @p -Identity $g.DistinguishedName -Confirm:$false
+                Add-HistoryEntry -Action 'delete' -Dn $g.DistinguishedName
             } catch { $errors += "$($g.Name): $($_.Exception.Message)" }
         }
         $PanelProps.Children.Clear(); $Script:PropRows = @()
@@ -3534,6 +4775,7 @@ $BtnDelete.Add_Click({
     try {
         $p = Get-ADParams
         Remove-ADObject @p -Identity $u.DistinguishedName -Confirm:$false
+        Add-HistoryEntry -Action 'delete' -Dn $u.DistinguishedName
         Show-Info (L "Object deleted.")
         $PanelProps.Children.Clear()
         $Script:PropRows = @()
@@ -3571,6 +4813,8 @@ function Apply-MainLanguage {
     $BtnSearch.Content = (L 'Find')
     $BtnRefresh.Content = (L 'Refresh')
     $BtnCreate.Content = (L 'Create user')
+    if ($BtnHistory) { $BtnHistory.Content = (L 'History...') }
+    if ($BtnPwdGen) { $BtnPwdGen.Content = (L 'Password...') }
     $BtnSwitchDomain.Content = (L 'Switch domain')
     $BtnEnable.Content = (L 'Enable')
     $BtnDisable.Content = (L 'Disable')
@@ -3589,6 +4833,7 @@ function Apply-MainLanguage {
     if ($BtnCreateGroup) { $BtnCreateGroup.Content = (L 'Create group...') }
     if ($BtnMembers) { $BtnMembers.Content = (L 'Members...') }
     $ChkSubtree.Content = (L 'Nested OUs')
+    if ($ChkAllDomains) { $ChkAllDomains.Content = (L 'All saved domains') }
     $ChkSubtree.ToolTip = (L 'Show objects from nested organizational units')
     if ($GrpActions) { $GrpActions.Header = (L 'Actions') }
     $computers = [bool]$RbComputers.IsChecked
@@ -3608,6 +4853,7 @@ function Apply-MainLanguage {
         @('CmGroups',     'Groups...'),
         @('CmMove',       'Move (OU)...'),
         @('CmEdit',       'Edit...'),
+        @('CmHistory',    'Object history...'),
         @('CmMembers',    'Members...'),
         @('CmRename',     'Rename...'),
         @('CmDelete',     'Delete'))) {
@@ -3681,6 +4927,7 @@ $mi = Get-CmItem 'CmCopyName'; if ($mi) { $mi.Add_Click( { $u=$GridUsers.Selecte
 $mi = Get-CmItem 'CmCopyMail'; if ($mi) { $mi.Add_Click( { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.Mail) } }) }
 $mi = Get-CmItem 'CmCopyUpn'; if ($mi) { $mi.Add_Click(  { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u._AD.UserPrincipalName) } }) }
 $mi = Get-CmItem 'CmCopyDn'; if ($mi) { $mi.Add_Click(   { $u=$GridUsers.SelectedItem; if($u){ Set-ClipboardText ([string]$u.DistinguishedName) } }) }
+$mi = Get-CmItem 'CmHistory'; if ($mi) { $mi.Add_Click( { $sel = $GridUsers.SelectedItem; if ($sel) { Show-HistoryDialog -Owner $MainWin -Obj $sel } else { Show-HistoryDialog -Owner $MainWin } }) }
 $mi = Get-CmItem 'CmCopyAll'; if ($mi) { $mi.Add_Click(  { if ($Script:PropRows) { Set-ClipboardText ($Script:PropRows -join "`r`n") } }) }
 $mi = Get-CmItem 'CmEnable'; if ($mi) { $mi.Add_Click(   { $BtnEnable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmDisable'; if ($mi) { $mi.Add_Click(  { $BtnDisable.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
@@ -3694,7 +4941,7 @@ $mi = Get-CmItem 'CmMembers'; if ($mi) { $mi.Add_Click( { $BtnMembers.RaiseEvent
 $mi = Get-CmItem 'CmRename'; if ($mi) { $mi.Add_Click(   { $BtnRename.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 $mi = Get-CmItem 'CmDelete'; if ($mi) { $mi.Add_Click(   { $BtnDelete.RaiseEvent((New-Object System.Windows.RoutedEventArgs([System.Windows.Controls.Button]::ClickEvent))) }) }
 # Initial load: OU tree (selecting the root triggers the search)
-$MainWin.Add_ContentRendered({ Load-OUTree })
+$MainWin.Add_ContentRendered({ Load-OUTree; Start-NeverExpiresSweep })
 
 # Show the main window
 $MainWin.ShowDialog() | Out-Null

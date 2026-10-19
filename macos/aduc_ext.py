@@ -25,6 +25,7 @@ Run:
 """
 
 import os
+import re
 import sys
 import ssl
 import socket
@@ -89,6 +90,19 @@ RU_STRINGS = {
     "Fill in server, user, and password.": "Заполните сервер, пользователя и пароль.",
     "Connecting...": "Подключение...",
     "Failed to connect: {a0}": "Не удалось подключиться: {a0}",
+    "(controller list unavailable: {a0})": "(список контроллеров недоступен: {a0})",
+    "wrong user name or password (the account was not found in the domain of the server)": "неверное имя пользователя или пароль (учётная запись не найдена в домене сервера)",
+    "user not found": "пользователь не найден",
+    "logon not permitted at this time": "вход в это время запрещён",
+    "logon not permitted from this workstation": "вход с этой рабочей станции запрещён",
+    "password expired": "срок действия пароля истёк",
+    "account disabled": "учётная запись отключена",
+    "account expired": "срок действия учётной записи истёк",
+    "password must be changed at next logon": "требуется смена пароля при следующем входе",
+    "account locked out": "учётная запись заблокирована",
+    "the server requires LDAP signing / channel binding — enable LDAPS (SSL) in the domain profile": "сервер требует подписывание LDAP / привязку канала — включите LDAPS (SSL) в профиле домена",
+    "\n\nBind attempts (variant — server reply):\n{a0}": "\n\nПопытки подключения (вариант — ответ сервера):\n{a0}",
+    "\nThe same details are appended to {a0}.": "\nЭти же сведения дописаны в {a0}.",
     "Error: {a0}": "Ошибка: {a0}",
     "Search:": "Поиск:",
     "Find": "Найти",
@@ -139,6 +153,23 @@ RU_STRINGS = {
     "Display name": "Отображаемое имя",
     "First name": "Имя",
     "Last name": "Фамилия",
+    "Password generator": "Генератор паролей",
+    "Password...": "Пароль…",
+    "Generate...": "Создать…",
+    "Length: {a0}": "Длина: {a0}",
+    "Lowercase letters (a-z)": "Строчные буквы (a-z)",
+    "Uppercase letters (A-Z)": "Заглавные буквы (A-Z)",
+    "Digits (0-9)": "Цифры (0-9)",
+    "Special characters ({a0})": "Спецсимволы ({a0})",
+    "Exclude look-alike characters (O/0, I/l/1, S/5, Z/2, B/8)": "Исключить похожие символы (O/0, I/l/1, S/5, Z/2, B/8)",
+    "Generate": "Создать",
+    "Use": "Использовать",
+    "Select at least one character set.": "Выберите хотя бы один набор символов.",
+    "Password generated and copied to clipboard.": "Пароль создан и скопирован в буфер обмена.",
+    "Password inserted and copied to clipboard.": "Пароль подставлен и скопирован в буфер обмена.",
+    "E-mail addresses (Exchange)": "Почтовые адреса (Exchange)",
+    "primary": "основной",
+    "(no mailbox: the user has no Exchange addresses)": "(почтового ящика нет: у пользователя нет адресов Exchange)",
     "Yes": "Да",
     "No": "Нет",
     "Title": "Должность",
@@ -250,6 +281,66 @@ RU_STRINGS = {
     "Edit properties": "Изменение свойств",
     "Group membership (Member Of)": "Группы доступа (Member Of)",
     "Member of (groups)": "Член групп",
+    '\n\nThe account was also tried as {a0} — not accepted. With a trust between the domains, check that its direction lets the target domain authenticate this account and, with selective authentication, that "Allowed to authenticate" is granted on its domain controllers. For a domain in another forest without a trust choose "Another account" and enter a login of that domain.':
+        '\n\nУчётная запись также была опробована как {a0} — не принята. Если между доменами настроено доверие, проверьте, что его направление позволяет целевому домену проверять подлинность этой учётной записи, а при выборочной проверке подлинности — что на его контроллерах выдано право «Разрешена проверка подлинности». Для домена другого леса без доверия выберите «Другая учётная запись» и укажите логин этого домена.',
+    "Search in all saved domains": "Искать во всех сохранённых доменах",
+    "Domain": "Домен",
+    "all saved domains": "все сохранённые домены",
+    "; unavailable: {a0}": "; недоступны: {a0}",
+    "Object from another domain": "Объект из другого домена",
+    '"{a0}" belongs to domain {a1}.\nActions are available only in the connected domain.\n\nSwitch to domain {a1} now?':
+        '«{a0}» принадлежит домену {a1}.\nДействия доступны только в подключённом домене.\n\nПереключиться на домен {a1} сейчас?',
+    "The selection contains objects from other domains ({a0}). Bulk actions apply only to the connected domain.":
+        "В выделении есть объекты из других доменов ({a0}). Массовые действия применяются только к подключённому домену.",
+    "Clear the flag automatically on:": "Снять флаг автоматически:",
+    "The date is stored in the account ({a0}); the flag is cleared by the app when the date is reached.":
+        "Дата хранится в учётной записи ({a0}); при её наступлении приложение снимает флаг.",
+    "Set": "Установить",
+    "Invalid date. Format: {a0}": "Неверная дата. Формат: {a0}",
+    "The date must be later than today.": "Дата должна быть позже сегодняшней.",
+    "\n\nThe flag will be cleared automatically on {a0}.": "\n\nФлаг будет снят автоматически {a0}.",
+    "Flag auto-clear date": "Дата автоснятия флага",
+    "Set the 'password never expires' flag for '{a0}'?": "Установить флаг «срок действия пароля не ограничен» у '{a0}'?",
+    "If a password change at next logon is pending, the requirement will be removed and the current password stays valid (same as in ADUC).":
+        "Если у пользователя стоит требование смены пароля при следующем входе, оно будет снято, и прежний пароль останется действительным (как в оснастке ADUC).",
+    'Connect to domain "{a0}" as:': 'Подключиться к домену «{a0}» как:',
+    "Current account ({a0})": "Текущая учётная запись ({a0})",
+    "Another account:": "Другая учётная запись:",
+    "Enter the user name and password.": "Введите имя пользователя и пароль.",
+    "Connected: {a0} ({a1})   |   User: {a2}   |   Base: {a3}":
+        "Подключено: {a0} ({a1})   |   Пользователь: {a2}   |   База: {a3}",
+    "Change history": "История изменений",
+    "History...": "История...",
+    "Object history...": "История объекта...",
+    "Only this object: {a0}": "Только этот объект: {a0}",
+    "Time": "Время",
+    "Action": "Действие",
+    "Object": "Объект",
+    "Performed by": "Выполнил",
+    "Details": "Подробности",
+    "Records: {a0} of {a1}. File: {a2}": "Записей: {a0} из {a1}. Файл: {a2}",
+    "Enable account": "Включение учётной записи",
+    "Disable account": "Отключение учётной записи",
+    "Unlock account": "Разблокировка учётной записи",
+    "Password never expires: on": "Срок действия пароля не ограничен: включено",
+    "Password never expires: off": "Срок действия пароля не ограничен: выключено",
+    "Add to group": "Добавление в группу",
+    "Remove from group": "Удаление из группы",
+    "By domain controller (non-replicated attributes)":
+        "По контроллерам домена (нереплицируемые атрибуты)",
+    "logon": "вход:", "bad pwd": "неверный пароль:",
+    "(unavailable)": "(недоступен)",
+    "DC": "КД", "Logon": "Вход", "Bad password": "Неверный пароль",
+    "Attempts": "Попыток",
+    "Notice": "Уведомление",
+    "OK": "ОК",
+    "'{a0}': the object is no longer a member of this group — the list was outdated and has been refreshed.":
+        "«{a0}»: объект уже не является членом этой группы — список был устаревшим и обновлён.",
+    "Name conflict": "Совпадение имени",
+    'An object named "{a0}" already exists in the target container.\nEnter a new full name for the object being moved:':
+        'В целевом контейнере уже есть объект с именем «{a0}».\nВведите новое полное имя для перемещаемого объекта:',
+    "Not moved: an object with this name already exists in the target container.":
+        "Не перемещено: в целевом контейнере уже есть объект с таким именем.",
     "Changes saved.": "Изменения сохранены.",
     "Select organizational unit (OU)": "Выбор подразделения (OU)",
     "January": "Январь",
@@ -433,6 +524,12 @@ from ldap3.core.exceptions import LDAPException
 
 
 # --- User attributes requested from AD ---
+# AD attribute that stores the date when the 'password never expires' flag
+# must be cleared automatically (set together with the flag). Must be a
+# writable string attribute of the user object; adminDescription is free
+# on standard schemas. Value format: YYYY-MM-DD.
+PWD_NEVER_EXPIRES_UNTIL_ATTR = "adminDescription"
+
 USER_ATTRS = [
     'displayName', 'sAMAccountName', 'userPrincipalName', 'givenName', 'sn',
     'mail', 'userAccountControl', 'msDS-User-Account-Control-Computed',
@@ -440,7 +537,48 @@ USER_ATTRS = [
     'physicalDeliveryOfficeName', 'telephoneNumber', 'distinguishedName',
     'whenCreated', 'pwdLastSet', 'lastLogonTimestamp', 'accountExpires',
     'msDS-UserPasswordExpiryTimeComputed', 'badPwdCount', 'badPasswordTime',
+    PWD_NEVER_EXPIRES_UNTIL_ATTR, 'proxyAddresses',
 ]
+
+
+def format_proxy_addresses(values):
+    """Exchange keeps every address of a recipient in the multi-valued AD
+    attribute proxyAddresses as 'TYPE:address'; an upper-case type marks
+    the primary (reply) address of that type. Returns aligned lines:
+    primary SMTP first, then secondary smtp, then other types, X500 last."""
+    rows = []
+    for raw in values or []:
+        txt = str(raw or '').strip()
+        if not txt:
+            continue
+        if ':' in txt:
+            typ, addr = txt.split(':', 1)
+        else:
+            typ, addr = '', txt
+        rows.append((typ, addr))
+    if not rows:
+        return ''
+
+    def key(r):
+        typ, addr = r
+        if typ == 'SMTP':
+            rank = 0
+        elif typ.lower() == 'smtp':
+            rank = 1
+        elif typ.upper() == 'X500':
+            rank = 3
+        else:
+            rank = 2
+        return (rank, typ.lower(), addr.lower())
+    rows.sort(key=key)
+    w = max(len(t) for t, _ in rows)
+    out = []
+    for typ, addr in rows:
+        line = f"{typ.ljust(w)}  {addr}" if typ else addr
+        if typ == 'SMTP':
+            line += f"  ({T('primary')})"
+        out.append(line)
+    return '\n'.join(out)
 
 # --- Computer attributes requested from AD ---
 COMPUTER_ATTRS = [
@@ -536,6 +674,259 @@ class ConfigStore:
 # ============================================================================
 #  AD access layer
 # ============================================================================
+# ============================================================================
+#  Change history (who did what, when) — local JSON-lines file
+# ============================================================================
+HISTORY_PATH = os.path.join(os.path.expanduser('~'), '.aduc_ext_history.jsonl')
+
+# action code -> English label (translated with T() when displayed)
+HISTORY_ACTIONS = {
+    'enable': 'Enable account',
+    'disable': 'Disable account',
+    'unlock': 'Unlock account',
+    'reset_password': 'Reset password',
+    'pwd_never_expires_on': 'Password never expires: on',
+    'pwd_never_expires_off': 'Password never expires: off',
+    'pwd_never_expires_auto': 'Password never expires: cleared automatically (date reached)',
+    'edit': 'Edit properties',
+    'move': 'Move',
+    'rename': 'Rename',
+    'create_user': 'Create user',
+    'create_group': 'Create group',
+    'delete': 'Delete',
+    'group_add': 'Add to group',
+    'group_remove': 'Remove from group',
+}
+
+
+def dn_leaf(dn):
+    """Value of the first RDN of a DN (the object's name)."""
+    dn = dn or ''
+    if not dn:
+        return ''
+    # split on the first unescaped comma
+    out, i = [], 0
+    while i < len(dn):
+        ch = dn[i]
+        if ch == '\\' and i + 1 < len(dn):
+            out.append(dn[i + 1])
+            i += 2
+            continue
+        if ch == ',':
+            break
+        out.append(ch)
+        i += 1
+    rdn = ''.join(out)
+    return rdn.split('=', 1)[1] if '=' in rdn else rdn
+
+
+def history_add(actor, action, dn, details='', domain=''):
+    """Append one record to the local change history. Never raises."""
+    rec = {
+        'ts': datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S'),
+        'actor': actor or '',
+        'domain': domain or '',
+        'action': action,
+        'object': dn_leaf(dn),
+        'dn': dn or '',
+        'details': details or '',
+    }
+    try:
+        with open(HISTORY_PATH, 'a', encoding='utf-8') as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + '\n')
+    except Exception:
+        pass
+
+
+def history_load():
+    """All history records (oldest first); unreadable lines are skipped."""
+    out = []
+    try:
+        with open(HISTORY_PATH, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    rec = json.loads(line)
+                    if isinstance(rec, dict):
+                        out.append(rec)
+                except Exception:
+                    continue
+    except FileNotFoundError:
+        pass
+    except Exception:
+        pass
+    return out
+
+
+def login_variants_for_domain(login, host):
+    """Same account name written for another domain: for 'CORP\\ivanov',
+    'ivanov@corp.local' or 'ivanov' and target host 'dc1.other.local'
+    returns ['ivanov@other.local', 'OTHER\\ivanov'] (a bare DC host name
+    without dots yields nothing useful and is skipped)."""
+    login = (login or '').strip()
+    if not login or login.lower().startswith('cn='):
+        return []
+    name = login.split('\\', 1)[1] if '\\' in login else login.split('@', 1)[0]
+    if not name:
+        return []
+    h = (host or '').strip().lower()
+    parts = [p for p in h.split('.') if p]
+    out = []
+    if len(parts) >= 2:
+        # a host may be a DC (dc1.corp.local) or the domain itself (corp.local):
+        # try both the full name and the name without the first label
+        for dom in dict.fromkeys(['.'.join(parts), '.'.join(parts[1:])]):
+            if dom and dom.count('.') >= 1:
+                out.append(f"{name}@{dom}")
+                out.append(f"{dom.split('.')[0].upper()}\\{name}")
+    seen, uniq = {login.lower()}, []
+    for c in out:
+        if c.lower() not in seen:
+            seen.add(c.lower())
+            uniq.append(c)
+    return uniq
+
+
+def login_variants_for_home(login, dns_domain, netbios=None):
+    """The session account qualified with its HOME domain: for a bare
+    'ivanov' bound to corp.local returns ['CORP\\ivanov', 'ivanov@corp.local'].
+    A DC of a *trusting* domain resolves such names through the trust,
+    whereas a bare name would be looked up in the target domain itself."""
+    login = (login or '').strip()
+    if not login or login.lower().startswith('cn='):
+        return []
+    name = login.split('\\', 1)[1] if '\\' in login else login.split('@', 1)[0]
+    dom = (dns_domain or '').strip().lower()
+    if not name or not dom:
+        return []
+    nb = (netbios or dom.split('.')[0]).strip().upper()
+    out = [f"{nb}\\{name}", f"{name}@{dom}"]
+    seen, uniq = {login.lower()}, []
+    for c in out:
+        if c.lower() not in seen:
+            seen.add(c.lower())
+            uniq.append(c)
+    return uniq
+
+
+PW_LOWER = 'abcdefghijklmnopqrstuvwxyz'
+PW_UPPER = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+PW_DIGITS = '0123456789'
+PW_SPECIAL = '!@#$%^&*-_=+?'
+# Characters that are easy to confuse with each other in print / on screen
+PW_SIMILAR = 'O0oIl1|S5Z2B8'
+PW_MIN, PW_MAX, PW_DEFAULT_LEN = 8, 20, 12
+PW_SETTINGS = {'length': PW_DEFAULT_LEN, 'lower': True, 'upper': True,
+               'digits': True, 'special': False, 'similar': False}
+
+
+def generate_password(length=PW_DEFAULT_LEN, lower=True, upper=True,
+                      digits=True, special=False, exclude_similar=False):
+    """Cryptographically random password: at least one character from
+    every enabled set, the rest drawn from their union, then shuffled.
+    Raises ValueError when no set is enabled."""
+    import secrets
+    length = max(PW_MIN, min(PW_MAX, int(length)))
+    sets = []
+    for on, chars in ((lower, PW_LOWER), (upper, PW_UPPER),
+                      (digits, PW_DIGITS), (special, PW_SPECIAL)):
+        if not on:
+            continue
+        if exclude_similar:
+            chars = ''.join(c for c in chars if c not in PW_SIMILAR)
+        if chars:
+            sets.append(chars)
+    if not sets:
+        raise ValueError(T('Select at least one character set.'))
+    pool = ''.join(sets)
+    out = [secrets.choice(cs) for cs in sets]
+    out += [secrets.choice(pool) for _ in range(length - len(out))]
+    # Fisher–Yates with a CSPRNG so the mandatory characters are not
+    # always at the start
+    for i in range(len(out) - 1, 0, -1):
+        j = secrets.randbelow(i + 1)
+        out[i], out[j] = out[j], out[i]
+    return ''.join(out)
+
+
+class LdapError(RuntimeError):
+    """LDAP operation failure with the server result code kept for
+    programmatic handling (e.g. 68 = entryAlreadyExists)."""
+
+    def __init__(self, code, description, message):
+        text = f"LDAP: {description}"
+        if message:
+            text += f" — {message}"
+        super().__init__(text)
+        self.code = code
+        self.description = description
+        self.server_message = message or ''
+
+
+AD_BIND_DATA_HINTS = {
+    '52e': 'wrong user name or password (the account was not found in the domain of the server)',
+    '525': 'user not found',
+    '530': 'logon not permitted at this time',
+    '531': 'logon not permitted from this workstation',
+    '532': 'password expired',
+    '533': 'account disabled',
+    '701': 'account expired',
+    '773': 'password must be changed at next logon',
+    '775': 'account locked out',
+    '8232': 'the server requires LDAP signing / channel binding — enable LDAPS (SSL) in the domain profile',
+}
+
+
+def ad_bind_data_code(message):
+    """AD puts the real reason of a failed bind into the diagnostic
+    message as '..., data 52e, v4563'; returns that code or ''."""
+    m = re.search(r'\bdata\s+([0-9a-fA-F]+)', message or '')
+    return m.group(1).lower() if m else ''
+
+
+def ad_bind_hint(message):
+    code = ad_bind_data_code(message)
+    hint = AD_BIND_DATA_HINTS.get(code)
+    if code and hint:
+        return f"data {code}: {T(hint)}"
+    if 'strongerAuthRequired' in (message or '') or '80090346' in (message or ''):
+        return T(AD_BIND_DATA_HINTS['8232'])
+    return f"data {code}" if code else ''
+
+
+SWITCH_LOG = os.path.join(os.path.expanduser('~'), 'aduc_ext_switch.log')
+
+
+def switch_log(lines):
+    """Appends domain-switch diagnostics (no passwords) to a plain text
+    file next to the debug log, so that a failed switch can be analysed
+    without a debug build."""
+    try:
+        with open(SWITCH_LOG, 'a', encoding='utf-8') as f:
+            stamp = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            for ln in lines:
+                f.write(f"{stamp} {ln}\n")
+    except Exception:
+        pass
+
+
+def is_not_member_error(ex):
+    """AD error 0x561 (ERROR_MEMBER_NOT_IN_ALIAS): the object is not a
+    member of the group any more — the membership list shown was already
+    outdated (removed elsewhere, or replication had not caught up)."""
+    return '00000561' in str(ex)
+
+
+def is_name_conflict_error(ex):
+    """LDAP 68 entryAlreadyExists / AD 0x2071: an object with the same
+    name (CN) already exists in the target container."""
+    return (getattr(ex, 'code', None) == 68
+            or '00002071' in str(ex)
+            or 'entryAlreadyExists' in str(ex))
+
+
 class ADClient:
     """ldap3 wrapper for AD user operations."""
 
@@ -551,6 +942,9 @@ class ADClient:
         self._verify = False
         self._access_ou = None
         self._access_ou_done = False
+        self._netbios = None
+        self.last_switch_tried = []
+        self.last_dc_error = ''
 
     def connect(self, host, username, password, use_ssl=True,
                 port=None, verify_cert=True):
@@ -590,9 +984,12 @@ class ADClient:
         # RESTARTABLE: if the DC or a firewall drops an idle connection
         # ("Broken pipe" after inactivity), ldap3 transparently reconnects,
         # re-binds with the same credentials and retries the operation.
+        # The bind is done by hand (not auto_bind) so that on failure the
+        # server's diagnostic message survives: AD reports the real reason
+        # only there ("... AcceptSecurityContext error, data 52e ...").
         self.conn = Connection(
             self.server, user=username, password=password,
-            authentication='SIMPLE', auto_bind=True, raise_exceptions=False,
+            authentication='SIMPLE', auto_bind=False, raise_exceptions=False,
             client_strategy=RESTARTABLE)
         # Keep retries short so the UI never hangs on a genuinely dead server
         try:
@@ -600,6 +997,18 @@ class ADClient:
             self.conn.strategy.restartable_sleep_time = 1
         except Exception:
             pass
+        self.conn.open(read_server_info=False)
+        if not self.conn.bind(read_server_info=True):
+            res = dict(self.conn.result or {})
+            try:
+                self.conn.unbind()
+            except Exception:
+                pass
+            desc = res.get('description') or self.conn.last_error or 'bind failed'
+            srv_msg = (res.get('message') or '').strip()
+            hint = ad_bind_hint(srv_msg)
+            text = srv_msg + (f"  [{hint}]" if hint else '')
+            raise LdapError(res.get('result', 49), desc, text)
 
         # Determine the domain base DN from RootDSE
         self.base_dn = self.server.info.other.get(
@@ -618,23 +1027,118 @@ class ADClient:
         # Reset the groups OU cache on a new connection
         self._access_ou = None
         self._access_ou_done = False
+        self._dcs = None
+        self._netbios = None
+        self._exchange = None
         # UPN suffix from base_dn (dc=corp,dc=local -> corp.local)
         parts = [x.split('=')[1] for x in self.base_dn.split(',')
                  if x.lower().startswith('dc=')]
         self.upn_suffix = '.'.join(parts) if parts else host
         return True
 
-    def switch_server(self, host, use_ssl=None, verify_cert=None):
-        """Reconnect to another domain/controller using the credentials
-        of the current session. Raises on failure (no access/rights)."""
-        if not self.username:
+    def exchange_present(self):
+        """True when the forest has an Exchange organization (the
+        'Microsoft Exchange' services container exists in the
+        configuration partition); cached per connection."""
+        cached = getattr(self, '_exchange', None)
+        if cached is not None:
+            return cached
+        self._exchange = False
+        try:
+            cfg = self.server.info.other.get('configurationNamingContext',
+                                             [None])[0]
+            if cfg:
+                ok = self.conn.search(
+                    'CN=Microsoft Exchange,CN=Services,' + cfg,
+                    '(objectClass=*)', search_scope='BASE',
+                    attributes=['cn'])
+                self._exchange = bool(ok and self.conn.entries)
+        except Exception:
+            self._exchange = False
+        return self._exchange
+
+    def get_netbios_name(self):
+        """NetBIOS (pre-Windows 2000) name of the connected domain, read
+        from its crossRef in the Partitions container; None if unknown."""
+        if self._netbios is not None:
+            return self._netbios or None
+        self._netbios = ''
+        try:
+            cfg = self.server.info.other.get('configurationNamingContext',
+                                             [None])[0]
+            if cfg and self.base_dn:
+                ok = self.conn.search(
+                    'CN=Partitions,' + cfg,
+                    f"(&(objectClass=crossRef)(nCName={_escape_filter(self.base_dn)}))",
+                    search_scope=LEVEL, attributes=['nETBIOSName'])
+                if ok and self.conn.entries:
+                    v = self.conn.entries[0]['nETBIOSName'].value
+                    if v:
+                        self._netbios = str(v)
+        except Exception:
+            pass
+        return self._netbios or None
+
+    def switch_server(self, host, use_ssl=None, verify_cert=None,
+                      username=None, password=None):
+        """Reconnect to another domain/controller. By default the
+        credentials of the current session are reused; pass username and
+        password to connect with another account. Raises on failure (no
+        access/rights); the current session stays intact in that case."""
+        if username is None and not self.username:
             raise RuntimeError(T('No active session to switch domains.'))
         if use_ssl is None:
             use_ssl = self._use_ssl
         if verify_cert is None:
             verify_cert = self._verify
-        return self.connect(host, self.username, self._password,
-                            use_ssl=use_ssl, verify_cert=verify_cert)
+        user = username if username is not None else self.username
+        pwd = password if username is not None else self._password
+        # Keep the current connection until the new one has been bound
+        old = (self.conn, self.server, self.base_dn, self.upn_suffix,
+               self.host, self.username, self._password)
+        # Candidate logins when the session account is reused:
+        #  1. the account exactly as typed at login;
+        #  2. the same account qualified with its HOME domain
+        #     (HOMENETBIOS\user, user@home.domain) — a bare 'user' that the
+        #     home DC accepted is looked up by the target DC in ITS domain,
+        #     so with a trust between the domains the qualified form is
+        #     what makes the target DC forward the logon to the home domain;
+        #  3. the account re-qualified with the TARGET domain, in case a
+        #     same-named account exists there (another forest, no trust).
+        candidates = [user]
+        if username is None:
+            candidates += login_variants_for_home(
+                user, self.upn_suffix, self.get_netbios_name())
+            candidates += login_variants_for_domain(user, host)
+        seen, uniq = set(), []
+        for c in candidates:
+            if c.lower() not in seen:
+                seen.add(c.lower())
+                uniq.append(c)
+        candidates = uniq
+        self.last_switch_tried = list(candidates)
+        self.last_switch_results = []
+        switch_log([f"switch {self.host} -> {host} (ssl={use_ssl}) "
+                    f"account mode={'other' if username is not None else 'current'}"])
+        last_err = None
+        for cand in candidates:
+            try:
+                self.connect(host, cand, pwd,
+                             use_ssl=use_ssl, verify_cert=verify_cert)
+                self.last_switch_results.append((cand, 'OK'))
+                switch_log([f"  {cand}: OK"])
+                return True
+            except Exception as ex:
+                last_err = ex
+                (self.conn, self.server, self.base_dn, self.upn_suffix,
+                 self.host, self.username, self._password) = old
+                srv = getattr(ex, 'server_message', '') or str(ex)
+                short = ad_bind_hint(srv) or srv.splitlines()[0][:160]
+                self.last_switch_results.append((cand, short))
+                switch_log([f"  {cand}: {getattr(ex, 'description', '')} {srv}"])
+                if 'invalidcredentials' not in str(ex).lower().replace(' ', ''):
+                    break  # unreachable / other error: no point retrying
+        raise last_err
 
     def is_ssl(self):
         return bool(self.server and self.server.ssl)
@@ -684,6 +1188,70 @@ class ADClient:
         result.sort(key=lambda x: (x.get('name') or '').lower())
         return result
 
+    def _connect_other_domain(self, host, use_ssl=None, verify_cert=None):
+        """Temporary connection to another domain with the session
+        credentials. A bare login accepted by the home DC would be looked
+        up by the other DC in ITS domain, so the home-qualified forms
+        (HOME\\user, user@home.domain) are tried after it — the trust
+        then routes the logon to the home domain."""
+        use_ssl = self._use_ssl if use_ssl is None else use_ssl
+        verify_cert = self._verify if verify_cert is None else verify_cert
+        cands = [self.username] + login_variants_for_home(
+            self.username, self.upn_suffix, self.get_netbios_name())
+        last = None
+        for cand in cands:
+            tmp = ADClient()
+            try:
+                tmp.connect(host, cand, self._password,
+                            use_ssl=use_ssl, verify_cert=verify_cert)
+                return tmp
+            except Exception as ex:
+                last = ex
+                if 'invalidcredentials' not in str(ex).lower().replace(' ', ''):
+                    break
+        raise last
+
+    def search_users_in_domain(self, host, query, use_ssl=None,
+                               verify_cert=None):
+        """Search users in ANOTHER domain with the session credentials via
+        a temporary connection. Returns the list of user dicts (each
+        tagged with 'domain' and '_host'); raises on connection failure."""
+        tmp = self._connect_other_domain(host, use_ssl, verify_cert)
+        try:
+            users = tmp.search_users(query=query, base=None, scope=SUBTREE)
+            exch = tmp.exchange_present() if users else False
+        finally:
+            try:
+                tmp.conn.unbind()
+            except Exception:
+                pass
+        for u in users:
+            u['domain'] = tmp.upn_suffix or host
+            u['_host'] = host
+            u['_foreign'] = True
+            u['_base_dn'] = (tmp.base_dn or '').lower()
+            u['_use_ssl'] = tmp._use_ssl
+            u['_verify'] = tmp._verify
+            u['_exchange'] = exch
+        return users
+
+    def get_dc_user_times_in_domain(self, host, dn, use_ssl=None,
+                                    verify_cert=None):
+        """Per-DC logon attributes of an object of ANOTHER domain (found by
+        the all-domains search): connect to that domain with the session
+        credentials, list its controllers and ask each of them. Returns []
+        when the domain has fewer than two controllers."""
+        tmp = self._connect_other_domain(host, use_ssl, verify_cert)
+        try:
+            if len(tmp.list_domain_controllers()) < 2:
+                return []
+            return tmp.get_dc_user_times(dn)
+        finally:
+            try:
+                tmp.conn.unbind()
+            except Exception:
+                pass
+
     def get_user(self, dn):
         self.conn.search(dn, "(objectClass=user)", search_scope='BASE',
                          attributes=USER_ATTRS)
@@ -712,6 +1280,10 @@ class ADClient:
 
         enabled = not (uac & UAC_DISABLED)
         locked = bool(computed & UF_LOCKOUT)
+        try:
+            proxy = [str(x) for x in (e['proxyAddresses'].values or [])]
+        except Exception:
+            proxy = []
         if locked:
             state = T('Locked')
         elif not enabled:
@@ -745,7 +1317,9 @@ class ADClient:
             'badPwdCount': v('badPwdCount'),
             'badPwdTime': v('badPasswordTime'),
             'dontExpire': bool(uac & UAC_DONT_EXPIRE_PASSWORD),
+            'dontExpireUntil': parse_iso_date(v(PWD_NEVER_EXPIRES_UNTIL_ATTR)),
             'uac': uac,
+            'proxyAddresses': proxy,
         }
 
     # ---- OU and group listing ----
@@ -853,33 +1427,47 @@ class ADClient:
     def _check(self):
         r = self.conn.result
         if r['result'] != 0:
-            raise RuntimeError(f"LDAP: {r.get('description')} — "
-                               f"{r.get('message') or ''}".strip())
+            raise LdapError(r['result'], r.get('description'),
+                            (r.get('message') or '').strip())
+
+    def _log(self, action, dn, details=''):
+        """Record a successful change in the local history."""
+        history_add(self.username, action, dn, details,
+                    domain=self.upn_suffix or self.host or '')
 
     def enable_account(self, dn):
         user = self.get_user(dn)
         new_uac = (user['uac'] & ~UAC_DISABLED) or UAC_NORMAL_ACCOUNT
         self.conn.modify(dn, {'userAccountControl': [(MODIFY_REPLACE, [new_uac])]})
         self._check()
+        self._log('enable', dn)
 
     def disable_account(self, dn):
         user = self.get_user(dn)
         new_uac = user['uac'] | UAC_DISABLED
         self.conn.modify(dn, {'userAccountControl': [(MODIFY_REPLACE, [new_uac])]})
         self._check()
+        self._log('disable', dn)
 
     def unlock_account(self, dn):
         # lockoutTime = 0 unlocks the account
         self.conn.modify(dn, {'lockoutTime': [(MODIFY_REPLACE, [0])]})
         self._check()
+        self._log('unlock', dn)
 
-    def set_password_never_expires(self, dn, enable):
+    def set_password_never_expires(self, dn, enable, until=None):
         """Set or clear the 'password never expires' flag (UAC bit 0x10000).
 
         Like the ADUC snap-in: enabling the flag also cancels a pending
         'must change password at next logon' requirement (pwdLastSet 0 -> -1),
         so the current password stays valid. Returns True if that
-        requirement was cancelled as part of the change."""
+        requirement was cancelled as part of the change.
+
+        until (date, optional): when enabling, the date on which the flag
+        is to be cleared automatically; it is stored in the user's
+        PWD_NEVER_EXPIRES_UNTIL_ATTR attribute and enforced by
+        clear_expired_never_expires(). Clearing the flag also clears the
+        stored date."""
         user = self.get_user(dn)
         if enable:
             new_uac = user['uac'] | UAC_DONT_EXPIRE_PASSWORD
@@ -904,7 +1492,58 @@ class ADClient:
                 self.conn.modify(dn, {'pwdLastSet': [(MODIFY_REPLACE, [-1])]})
                 self._check()
                 cleared_must_change = True
+        # Auto-clear date: store with the flag, remove with it
+        try:
+            if enable and until:
+                self.conn.modify(dn, {PWD_NEVER_EXPIRES_UNTIL_ATTR:
+                                      [(MODIFY_REPLACE, [until.isoformat()])]})
+                self._check()
+            elif user.get('dontExpireUntil') or not enable:
+                if user.get('dontExpireUntil') is not None:
+                    self.conn.modify(dn, {PWD_NEVER_EXPIRES_UNTIL_ATTR:
+                                          [(MODIFY_REPLACE, [])]})
+                    self._check()
+        except Exception:
+            pass  # the flag itself is already applied; the date is auxiliary
+        self._log('pwd_never_expires_on' if enable else 'pwd_never_expires_off',
+                  dn, until.isoformat() if (enable and until) else '')
         return cleared_must_change
+
+    def clear_expired_never_expires(self):
+        """Clear the 'password never expires' flag on every user whose
+        stored auto-clear date has passed. Returns a list of
+        (sAMAccountName, dn) that were processed."""
+        today = datetime.date.today()
+        flt = (f"(&(objectClass=user)(objectCategory=person)"
+               f"({PWD_NEVER_EXPIRES_UNTIL_ATTR}=*)"
+               f"(userAccountControl:1.2.840.113556.1.4.803:={UAC_DONT_EXPIRE_PASSWORD}))")
+        try:
+            entries = self._paged_search(
+                self.base_dn, flt,
+                ['sAMAccountName', 'userAccountControl',
+                 PWD_NEVER_EXPIRES_UNTIL_ATTR])
+        except Exception:
+            return []
+        done = []
+        for e in entries:
+            try:
+                until = parse_iso_date(e[PWD_NEVER_EXPIRES_UNTIL_ATTR].value)
+                if until is None or until > today:
+                    continue
+                dn = str(e.entry_dn)
+                uac = int(e['userAccountControl'].value or 0)
+                self.conn.modify(dn, {'userAccountControl':
+                                      [(MODIFY_REPLACE,
+                                        [uac & ~UAC_DONT_EXPIRE_PASSWORD])]})
+                self._check()
+                self.conn.modify(dn, {PWD_NEVER_EXPIRES_UNTIL_ATTR:
+                                      [(MODIFY_REPLACE, [])]})
+                self._check()
+                self._log('pwd_never_expires_auto', dn, until.isoformat())
+                done.append((str(e['sAMAccountName'].value or ''), dn))
+            except Exception:
+                continue
+        return done
 
     def reset_password(self, dn, new_password, unlock=True,
                        change_at_logon=True):
@@ -921,11 +1560,21 @@ class ADClient:
         if change_at_logon:
             self.conn.modify(dn, {'pwdLastSet': [(MODIFY_REPLACE, [0])]})
             self._check()
+        self._log('reset_password', dn)
 
-    def move_user(self, dn, target_ou):
-        rdn = dn.split(',', 1)[0]
+    def move_user(self, dn, target_ou, new_name=None):
+        """Move an object to another container; new_name (optional) gives
+        it a new full name (CN) at the same time — used when the target
+        container already holds an object with the current name."""
+        if new_name:
+            rdn = "CN=" + _escape_dn(new_name.strip())
+        else:
+            rdn = dn.split(',', 1)[0]
         self.conn.modify_dn(dn, rdn, new_superior=target_ou)
         self._check()
+        self._log('move', dn, target_ou)
+        if new_name:
+            self._log('rename', dn, new_name.strip())
 
     # ---- Computer operations ----
     def search_computers(self, query=None, base=None, scope=SUBTREE):
@@ -1106,6 +1755,7 @@ class ADClient:
             attrs['description'] = description
         self.conn.add(dn, attributes=attrs)
         self._check()
+        self._log('create_group', dn)
         return dn
 
     def add_group_members(self, group_dn, user_dns):
@@ -1118,6 +1768,7 @@ class ADClient:
                                  {'member': [(MODIFY_ADD, [udn])]})
                 self._check()
                 added += 1
+                self._log('group_add', udn, dn_leaf(group_dn))
             except Exception as ex:
                 msg = str(ex)
                 if 'entryalreadyexists' in msg.lower().replace(' ', ''):
@@ -1136,15 +1787,161 @@ class ADClient:
                                  {'member': [(MODIFY_DELETE, [udn])]})
                 self._check()
                 removed += 1
+                self._log('group_remove', udn, dn_leaf(group_dn))
             except Exception as ex:
-                errors.append(f"{udn}: {ex}")
+                if is_not_member_error(ex):
+                    errors.append(T("'{a0}': the object is no longer a member of this group — the list was outdated and has been refreshed.").format(a0=(udn)))
+                else:
+                    errors.append(f"{udn}: {ex}")
         return removed, errors
+
+    def list_domain_controllers(self):
+        """DNS names of all domain controllers (cached per connection once
+        the list is known). Three sources are tried in turn, because a
+        restricted account may be denied one of them: computer objects
+        with the DC / RODC userAccountControl bits, the contents of
+        OU=Domain Controllers, and the server objects of the forest Sites
+        container that belong to this domain. Failures are not cached —
+        the next call tries again; the last error is kept in
+        self.last_dc_error for the UI."""
+        if getattr(self, '_dcs', None):
+            return self._dcs
+        self.last_dc_error = ''
+        errors = []
+        dcs = []
+
+        def host_of(e):
+            for attr in ('dNSHostName', 'name'):
+                try:
+                    v = e[attr].value
+                except Exception:
+                    v = None
+                if v:
+                    return str(v)
+            return ''
+
+        # 1. computer objects with SERVER_TRUST_ACCOUNT (8192) or
+        #    PARTIAL_SECRETS_ACCOUNT (67108864, read-only DC)
+        try:
+            for e in self._paged_search(
+                    self.base_dn,
+                    '(&(objectClass=computer)(|'
+                    '(userAccountControl:1.2.840.113556.1.4.803:=8192)'
+                    '(userAccountControl:1.2.840.113556.1.4.803:=67108864)))',
+                    ['dNSHostName', 'name']):
+                h = host_of(e)
+                if h:
+                    dcs.append(h)
+        except Exception as ex:
+            errors.append(f"uac: {ex}")
+        # 2. OU=Domain Controllers
+        if not dcs:
+            try:
+                for e in self._paged_search(
+                        'OU=Domain Controllers,' + self.base_dn,
+                        '(objectClass=computer)', ['dNSHostName', 'name']):
+                    h = host_of(e)
+                    if h:
+                        dcs.append(h)
+            except Exception as ex:
+                errors.append(f"ou: {ex}")
+        # 3. server objects in the Sites container of the forest, limited
+        #    to those whose serverReference lies in this domain
+        if not dcs:
+            try:
+                cfg = self.server.info.other.get('configurationNamingContext',
+                                                 [None])[0]
+                if cfg:
+                    base_low = self.base_dn.lower().replace(', ', ',')
+                    for e in self._paged_search(
+                            'CN=Sites,' + cfg,
+                            '(&(objectClass=server)(dNSHostName=*))',
+                            ['dNSHostName', 'serverReference']):
+                        try:
+                            ref = str(e['serverReference'].value or '').lower()
+                        except Exception:
+                            ref = ''
+                        if ref:
+                            # domain part of the reference (from the first
+                            # dc= component) must be exactly this domain,
+                            # not a child domain of it
+                            k = ref.replace(', ', ',').find('dc=')
+                            if k < 0 or ref.replace(', ', ',')[k:] != base_low:
+                                continue
+                        h = host_of(e)
+                        if h:
+                            dcs.append(h)
+            except Exception as ex:
+                errors.append(f"sites: {ex}")
+        uniq = sorted({d.lower(): d for d in dcs}.values(), key=str.lower)
+        if errors:
+            self.last_dc_error = '; '.join(errors)
+            switch_log([f"dc list ({self.host}): {len(uniq)} found; "
+                        + self.last_dc_error])
+        if uniq:
+            self._dcs = uniq
+        return uniq
+
+    def get_dc_user_times(self, dn):
+        """Non-replicated logon attributes of one object from EVERY domain
+        controller: lastLogon, badPasswordTime and badPwdCount are kept
+        per-DC and are never replicated, so each controller has its own
+        values. Returns [{'dc', 'lastLogon', 'badPwdTime', 'badPwdCount',
+        'error'}]."""
+        out = []
+        for host in self.list_domain_controllers():
+            row = {'dc': host.split('.')[0], 'error': None,
+                   'lastLogon': None, 'badPwdTime': None,
+                   'badPwdCount': None}
+            try:
+                port = 636 if self._use_ssl else 389
+                probe = socket.create_connection((host, port), timeout=3)
+                probe.close()
+                tls = None
+                if self._use_ssl:
+                    validate = (ssl.CERT_REQUIRED if self._verify
+                                else ssl.CERT_NONE)
+                    tls = Tls(validate=validate,
+                              version=ssl.PROTOCOL_TLS_CLIENT
+                              if hasattr(ssl, 'PROTOCOL_TLS_CLIENT')
+                              else ssl.PROTOCOL_TLS)
+                srv = Server(host, port=port, use_ssl=self._use_ssl,
+                             tls=tls, connect_timeout=5)
+                conn = Connection(srv, user=self.username,
+                                  password=self._password,
+                                  authentication='SIMPLE', auto_bind=True,
+                                  raise_exceptions=False,
+                                  receive_timeout=10)
+                try:
+                    conn.search(dn, '(objectClass=*)', search_scope='BASE',
+                                attributes=['lastLogon', 'badPasswordTime',
+                                            'badPwdCount'])
+                    if conn.entries:
+                        e = conn.entries[0]
+                        def v(a):
+                            try:
+                                return e[a].value
+                            except Exception:
+                                return None
+                        row['lastLogon'] = v('lastLogon')
+                        row['badPwdTime'] = v('badPasswordTime')
+                        row['badPwdCount'] = v('badPwdCount')
+                finally:
+                    try:
+                        conn.unbind()
+                    except Exception:
+                        pass
+            except Exception as ex:
+                row['error'] = str(ex)
+            out.append(row)
+        return out
 
     def rename_object(self, dn, new_name):
         """Rename an object (change its CN/RDN) within the same container."""
         new_rdn = "CN=" + _escape_dn((new_name or '').strip())
         self.conn.modify_dn(dn, new_rdn)
         self._check()
+        self._log('rename', dn, (new_name or '').strip())
         # Return the resulting DN
         parent = dn.split(',', 1)[1] if ',' in dn else ''
         return f"{new_rdn},{parent}" if parent else new_rdn
@@ -1153,6 +1950,7 @@ class ADClient:
         """Delete an object from the directory."""
         self.conn.delete(dn)
         self._check()
+        self._log('delete', dn)
 
     def add_to_group(self, user_dn, group_name):
         gdn = self.find_group_dn(group_name)
@@ -1160,10 +1958,12 @@ class ADClient:
             raise RuntimeError(T("Group '{a0}' not found.").format(a0=(group_name)))
         self.conn.modify(gdn, {'member': [(MODIFY_ADD, [user_dn])]})
         self._check()
+        self._log('group_add', user_dn, dn_leaf(gdn))
 
     def remove_from_group(self, user_dn, group_dn):
         self.conn.modify(group_dn, {'member': [(MODIFY_DELETE, [user_dn])]})
         self._check()
+        self._log('group_remove', user_dn, dn_leaf(group_dn))
 
     def update_attributes(self, dn, attrs):
         """attrs: dict ldap_name -> value (empty string = delete)."""
@@ -1177,6 +1977,7 @@ class ADClient:
         if changes:
             self.conn.modify(dn, changes)
             self._check()
+            self._log('edit', dn, ', '.join(sorted(changes.keys())))
 
     def user_exists(self, sam):
         """Check whether a user with this login (sAMAccountName) already exists."""
@@ -1220,6 +2021,7 @@ class ADClient:
 
         self.conn.add(dn, attributes=attrs)
         self._check()
+        self._log('create_user', dn)
 
         # Set the password (LDAPS required)
         if password:
@@ -1315,12 +2117,36 @@ def parse_date(txt):
     return datetime.date(year, month, day)
 
 
+def parse_iso_date(val):
+    """YYYY-MM-DD (as stored in the AD attribute) -> date, or None."""
+    try:
+        txt = str(val or '').strip()
+        return datetime.date.fromisoformat(txt[:10]) if txt else None
+    except Exception:
+        return None
+
+
+def to_local_time(dt):
+    """AD/LDAP returns timezone-aware datetimes in UTC (GMT+0); convert to
+    the local time zone of the machine running the app for display.
+    Naive datetimes are left untouched."""
+    try:
+        if isinstance(dt, datetime.datetime) and dt.tzinfo is not None:
+            return dt.astimezone()
+    except Exception:
+        pass
+    return dt
+
+
 def filetime_to_str(val):
-    """Convert AD time (100ns since 1601 or generalizedTime) to a string."""
+    """Convert AD time (100ns since 1601 or generalizedTime) to a string
+    in the LOCAL time zone."""
     if val is None or val == '':
         return ''
     if isinstance(val, datetime.datetime):
-        return fmt_date(val)
+        if val.year <= 1601:
+            return T('never / not set')
+        return fmt_date(to_local_time(val))
     try:
         num = int(val)
     except (ValueError, TypeError):
@@ -1640,6 +2466,182 @@ def set_clipboard(root, text):
         return False
 
 
+class SwitchCredentialsDialog(tk.Toplevel):
+    """Domain switch: keep the active account (default) or enter another
+    one. Result in .result: None (cancelled), ('current', None, None) or
+    ('other', username, password)."""
+
+    def __init__(self, master, host, current_user):
+        super().__init__(master)
+        self.result = None
+        self.title(T('Switch domain'))
+        self.resizable(False, False)
+        modal_grab(self)
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        ttk.Label(frm, text=T('Connect to domain "{a0}" as:').format(a0=(host)),
+                  font=('', 12, 'bold'), wraplength=420).grid(
+            row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+        self.v_mode = tk.StringVar(value='current')
+        ttk.Radiobutton(frm, text=T('Current account ({a0})').format(a0=(current_user)),
+                        variable=self.v_mode, value='current',
+                        command=self._toggle).grid(
+            row=1, column=0, columnspan=2, sticky='w')
+        ttk.Radiobutton(frm, text=T('Another account:'),
+                        variable=self.v_mode, value='other',
+                        command=self._toggle).grid(
+            row=2, column=0, columnspan=2, sticky='w', pady=(6, 2))
+        ttk.Label(frm, text=T('User:')).grid(row=3, column=0, sticky='w',
+                                              padx=(24, 8), pady=3)
+        self.e_user = ttk.Entry(frm, width=34)
+        self.e_user.grid(row=3, column=1, sticky='ew', pady=3)
+        ttk.Label(frm, text=T('Password:')).grid(row=4, column=0, sticky='w',
+                                                  padx=(24, 8), pady=3)
+        self.e_pass = ttk.Entry(frm, width=34, show='*')
+        self.e_pass.grid(row=4, column=1, sticky='ew', pady=3)
+        self.lbl = ttk.Label(frm, text='', foreground='#B00020', wraplength=400)
+        self.lbl.grid(row=5, column=0, columnspan=2, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=6, column=0, columnspan=2, sticky='e', pady=(12, 0))
+        self.btn_ok = ttk.Button(btns, text=T('Connect'), command=self._ok,
+                                 default='active')
+        self.btn_ok.grid(row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1)
+        # Enter anywhere in the dialog = Connect (the password field has its
+        # own binding), Escape = Cancel; with "current account" the Connect
+        # button gets the focus so a single Enter switches the domain.
+        self.bind('<Return>', self._on_return)
+        self.bind('<KP_Enter>', self._on_return)
+        self.bind('<Escape>', lambda e: self.destroy())
+        self._toggle()
+        self.after(50, self._initial_focus)
+
+    def _initial_focus(self):
+        try:
+            self.lift()
+            self.focus_force()
+            if self.v_mode.get() == 'current':
+                self.btn_ok.focus_set()
+            else:
+                self.e_user.focus_set()
+        except Exception:
+            pass
+
+    def _on_return(self, event=None):
+        w = self.focus_get()
+        if w is self.e_user:
+            self.e_pass.focus_set()
+            return 'break'
+        self._ok()
+        return 'break'
+
+    def _toggle(self):
+        state = 'normal' if self.v_mode.get() == 'other' else 'disabled'
+        self.e_user.config(state=state)
+        self.e_pass.config(state=state)
+        if state == 'normal':
+            self.e_user.focus_set()
+        else:
+            try:
+                self.btn_ok.focus_set()
+            except Exception:
+                pass
+
+    def _ok(self):
+        if self.v_mode.get() == 'current':
+            self.result = ('current', None, None)
+            self.destroy()
+            return
+        user = self.e_user.get().strip()
+        pwd = self.e_pass.get()
+        if not user or not pwd:
+            self.lbl.config(text=T('Enter the user name and password.'))
+            return
+        self.result = ('other', user, pwd)
+        self.destroy()
+
+
+class NeverExpiresUntilDialog(tk.Toplevel):
+    """Ask for the optional auto-clear date when setting the 'password
+    never expires' flag. .result: None = cancelled, ('ok', date|None)."""
+
+    def __init__(self, master, login):
+        super().__init__(master)
+        self.result = None
+        self.title(T('Password never expires'))
+        self.resizable(False, False)
+        modal_grab(self)
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        ttk.Label(frm, text=T("Set the 'password never expires' flag for '{a0}'?").format(a0=(login)),
+                  font=('', 12, 'bold'), wraplength=440).grid(
+            row=0, column=0, columnspan=3, sticky='w', pady=(0, 8))
+        ttk.Label(frm, text=T("If a password change at next logon is pending, the requirement will be removed and the current password stays valid (same as in ADUC)."),
+                  wraplength=440).grid(row=1, column=0, columnspan=3, sticky='w',
+                                       pady=(0, 10))
+        self.v_until = tk.BooleanVar(value=False)
+        ttk.Checkbutton(frm, text=T('Clear the flag automatically on:'),
+                        variable=self.v_until,
+                        command=self._toggle).grid(row=2, column=0, sticky='w')
+        self.e_date = ttk.Entry(frm, width=14)
+        self.e_date.grid(row=2, column=1, padx=(6, 0))
+        self.e_date.insert(0, date_hint())
+        self.e_date.config(state='disabled')
+        self.btn_cal = ttk.Button(frm, text="📅", width=3,
+                                  command=self._open_calendar, state='disabled')
+        self.btn_cal.grid(row=2, column=2, padx=(4, 0))
+        ttk.Label(frm, text=T('The date is stored in the account ({a0}); the flag is cleared by the app when the date is reached.').format(a0=(PWD_NEVER_EXPIRES_UNTIL_ATTR)),
+                  foreground='#555', wraplength=440).grid(
+            row=3, column=0, columnspan=3, sticky='w', pady=(6, 0))
+        self.lbl = ttk.Label(frm, text='', foreground='#B00020', wraplength=440)
+        self.lbl.grid(row=4, column=0, columnspan=3, sticky='w', pady=(6, 0))
+        btns = ttk.Frame(frm)
+        btns.grid(row=5, column=0, columnspan=3, sticky='e', pady=(12, 0))
+        ttk.Button(btns, text=T('Set'), command=self._ok).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1)
+
+    def _toggle(self):
+        on = self.v_until.get()
+        self.e_date.config(state='normal' if on else 'disabled')
+        self.btn_cal.config(state='normal' if on else 'disabled')
+        if on:
+            if self.e_date.get().strip() == date_hint():
+                self.e_date.delete(0, 'end')
+                self.e_date.insert(0, fmt_date(
+                    datetime.date.today() + datetime.timedelta(days=90),
+                    with_time=False))
+            self.e_date.focus_set()
+
+    def _open_calendar(self):
+        try:
+            init = parse_date(self.e_date.get())
+        except ValueError:
+            init = datetime.date.today()
+        CalendarPopup(self, initial=init, on_pick=self._set_date)
+
+    def _set_date(self, d):
+        self.e_date.config(state='normal')
+        self.e_date.delete(0, 'end')
+        self.e_date.insert(0, fmt_date(d, with_time=False))
+
+    def _ok(self):
+        until = None
+        if self.v_until.get():
+            try:
+                until = parse_date(self.e_date.get())
+            except ValueError:
+                self.lbl.config(text=T('Invalid date. Format: {a0}').format(a0=(date_hint())))
+                return
+            if until <= datetime.date.today():
+                self.lbl.config(text=T('The date must be later than today.'))
+                return
+        self.result = ('ok', until)
+        self.destroy()
+
+
 class LoginDialog(tk.Toplevel):
     """Credentials dialog with saved-domain selection."""
 
@@ -1847,6 +2849,8 @@ class MainWindow(ttk.Frame):
         self.client = client
         self.config = config
         self.users = []
+        self._other_domain_errors = []
+        self._pending_select_dn = None
         self.grid(sticky='nsew')
         master.columnconfigure(0, weight=1)
         master.rowconfigure(0, weight=1)
@@ -1866,45 +2870,87 @@ class MainWindow(ttk.Frame):
     def _post_login(self):
         self._load_ou_tree()
         self.do_search()
+        self.after(2000, self._sweep_never_expires)
+
+    def _sweep_never_expires(self):
+        """Clear 'password never expires' where the stored auto-clear date
+        has passed — at start and then once an hour."""
+        try:
+            done = self.client.clear_expired_never_expires()
+            if done:
+                names = ', '.join(n for n, _ in done[:10])
+                if len(done) > 10:
+                    names += ', ...'
+                self._update_status(T("'Password never expires' cleared (date reached): {a0}").format(a0=(names)))
+                self.do_search()
+        except Exception:
+            pass
+        try:
+            self.after(3600 * 1000, self._sweep_never_expires)
+        except Exception:
+            pass
 
     # --- Search bar ---
     def _build_toolbar(self):
         bar = ttk.Frame(self, padding=8)
         bar.grid(row=0, column=0, sticky='ew')
-        bar.columnconfigure(5, weight=1)  # spacer between search and domain
-        ttk.Label(bar, text=T('Search:')).grid(row=0, column=0, padx=(0, 6))
-        self.e_search = ttk.Entry(bar, width=34)
-        self.e_search.grid(row=0, column=1)
-        self.e_search.bind('<Return>', lambda e: self.do_search())
-        ttk.Button(bar, text=T('Find'), command=self.do_search).grid(
-            row=0, column=2, padx=6)
-        ttk.Button(bar, text=T('Refresh'), command=self.do_search).grid(
-            row=0, column=3)
-        self.btn_create = ttk.Button(bar, text=T('Create user'),
-                                     command=self.on_create)
-        self.btn_create.grid(row=0, column=4, padx=(20, 0))
+        bar.columnconfigure(0, weight=1)
+        # Row 0 is a responsive strip of three groups (search / actions /
+        # domain) that re-flows onto 1-3 lines depending on the window
+        # width — see _layout_toolbar().
+        top = ttk.Frame(bar)
+        top.grid(row=0, column=0, sticky='ew')
+        self._tb_top = top
 
-        # Domain switcher (right)
-        ttk.Label(bar, text=T('Domain:')).grid(row=0, column=6, padx=(0, 6))
-        self.cmb_dom = ttk.Combobox(bar, width=24)  # editable: a new one can be typed
-        self.cmb_dom.grid(row=0, column=7)
+        # Group 1: search (the entry stretches with the window)
+        sf = ttk.Frame(top)
+        sf.columnconfigure(1, weight=1)
+        ttk.Label(sf, text=T('Search:')).grid(row=0, column=0, padx=(0, 6))
+        self.e_search = ttk.Entry(sf, width=22)
+        self.e_search.grid(row=0, column=1, sticky='ew')
+        self.e_search.bind('<Return>', lambda e: self.do_search())
+        ttk.Button(sf, text=T('Find'), command=self.do_search).grid(
+            row=0, column=2, padx=6)
+        ttk.Button(sf, text=T('Refresh'), command=self.do_search).grid(
+            row=0, column=3)
+
+        # Group 2: actions
+        af = ttk.Frame(top)
+        self.btn_create = ttk.Button(af, text=T('Create user'),
+                                     command=self.on_create)
+        self.btn_create.grid(row=0, column=0)
+        ttk.Button(af, text=T('History...'),
+                   command=lambda: self.on_history(all_objects=True)).grid(
+            row=0, column=1, padx=(8, 0))
+        ttk.Button(af, text=T('Password...'),
+                   command=lambda: PasswordGeneratorDialog(self.master)).grid(
+            row=0, column=2, padx=(8, 0))
+
+        # Group 3: domain switcher + interface language
+        df = ttk.Frame(top)
+        ttk.Label(df, text=T('Domain:')).grid(row=0, column=0, padx=(0, 6))
+        self.cmb_dom = ttk.Combobox(df, width=20)  # editable: a new one can be typed
+        self.cmb_dom.grid(row=0, column=1)
         self.cmb_dom.bind('<Return>', lambda e: self.on_switch_domain())
-        ttk.Button(bar, text=T('Switch domain'),
-                   command=self.on_switch_domain).grid(row=0, column=8, padx=(6, 0))
+        ttk.Button(df, text=T('Switch domain'),
+                   command=self.on_switch_domain).grid(row=0, column=2, padx=(6, 0))
         self._domain_profiles = []
         self._reload_domains()
-
-        # Interface language switcher
-        self.cmb_lang = ttk.Combobox(bar, width=4, state='readonly',
+        self.cmb_lang = ttk.Combobox(df, width=4, state='readonly',
                                      values=('EN', 'RU'))
         self.cmb_lang.set('RU' if LANG == 'ru' else 'EN')
-        self.cmb_lang.grid(row=0, column=9, padx=(10, 0))
+        self.cmb_lang.grid(row=0, column=3, padx=(10, 0))
         self.cmb_lang.bind('<<ComboboxSelected>>', self._switch_lang)
+
+        self._tb_groups = (sf, af, df)
+        self._tb_layout = None
+        bar.bind('<Configure>', self._on_toolbar_configure)
+        self.after(50, self._layout_toolbar)
 
         # Object type: users / computers
         self.mode_var = tk.StringVar(value='users')
         mode_row = ttk.Frame(bar)
-        mode_row.grid(row=1, column=0, columnspan=5, sticky='w', pady=(6, 0))
+        mode_row.grid(row=1, column=0, sticky='w', pady=(6, 0))
         ttk.Label(mode_row, text=T('Show:')).grid(row=0, column=0, padx=(0, 6))
         ttk.Radiobutton(mode_row, text=T('Users'), value='users',
                         variable=self.mode_var,
@@ -1918,14 +2964,90 @@ class MainWindow(ttk.Frame):
                         command=self.on_mode_change).grid(row=0, column=3,
                                                           padx=(8, 0))
 
-        # Nested OUs
+        # Options: nested OUs (left) and all saved domains (right); the
+        # second one wraps under the first on narrow windows.
+        opts = ttk.Frame(bar)
+        opts.grid(row=2, column=0, sticky='ew', pady=(6, 0))
+        opts.columnconfigure(0, weight=1)
         self.include_subtree = tk.BooleanVar(value=False)
         self.chk_subtree = ttk.Checkbutton(
-            bar, text=T('Show from nested OUs'),
+            opts, text=T('Show from nested OUs'),
             variable=self.include_subtree,
             command=self.do_search)
-        self.chk_subtree.grid(row=2, column=0, columnspan=5,
-                              sticky='w', pady=(6, 0))
+        self.chk_subtree.grid(row=0, column=0, sticky='w')
+        # Search in every saved domain (users only; results carry a
+        # "Domain" column, objects from other domains are read-only here)
+        self.all_domains = tk.BooleanVar(value=False)
+        self.chk_all_domains = ttk.Checkbutton(
+            opts, text=T('Search in all saved domains'),
+            variable=self.all_domains, command=self._on_all_domains)
+        self.chk_all_domains.grid(row=0, column=1, sticky='e', padx=(24, 0))
+        self._tb_opts = opts
+
+    def _on_toolbar_configure(self, event=None):
+        # Debounce: many Configure events arrive while the window resizes
+        if getattr(self, '_tb_after', None):
+            try:
+                self.after_cancel(self._tb_after)
+            except Exception:
+                pass
+        self._tb_after = self.after(60, self._layout_toolbar)
+
+    def _layout_toolbar(self):
+        """Re-flow the toolbar groups to the available width:
+        1 line  — search | actions | domain
+        2 lines — search (full width) / actions ... domain
+        3 lines — search / actions / domain, each on its own line."""
+        self._tb_after = None
+        try:
+            top = self._tb_top
+            sf, af, df = self._tb_groups
+            width = top.winfo_width()
+            if width <= 1:
+                return
+            gap = 16
+            w_s, w_a, w_d = (f.winfo_reqwidth() for f in (sf, af, df))
+            if w_s + w_a + w_d + 2 * gap <= width:
+                layout = 'one'
+            elif w_a + w_d + gap <= width:
+                layout = 'two'
+            else:
+                layout = 'three'
+            if layout == self._tb_layout:
+                return
+            self._tb_layout = layout
+            for f in (sf, af, df):
+                f.grid_forget()
+            for c in range(3):
+                top.columnconfigure(c, weight=0)
+            if layout == 'one':
+                top.columnconfigure(0, weight=1)
+                sf.grid(row=0, column=0, sticky='ew')
+                af.grid(row=0, column=1, padx=(gap, 0))
+                df.grid(row=0, column=2, padx=(gap, 0), sticky='e')
+            elif layout == 'two':
+                top.columnconfigure(0, weight=1)
+                sf.grid(row=0, column=0, columnspan=2, sticky='ew')
+                af.grid(row=1, column=0, sticky='w', pady=(6, 0))
+                df.grid(row=1, column=1, sticky='e', pady=(6, 0))
+            else:
+                top.columnconfigure(0, weight=1)
+                sf.grid(row=0, column=0, sticky='ew')
+                af.grid(row=1, column=0, sticky='w', pady=(6, 0))
+                df.grid(row=2, column=0, sticky='w', pady=(6, 0))
+            # options row: put the all-domains box under the first one
+            # when both do not fit side by side
+            opts = self._tb_opts
+            need = (self.chk_subtree.winfo_reqwidth()
+                    + self.chk_all_domains.winfo_reqwidth() + 24)
+            if need <= width:
+                self.chk_all_domains.grid_configure(row=0, column=1, sticky='e',
+                                                    padx=(24, 0), pady=0)
+            else:
+                self.chk_all_domains.grid_configure(row=1, column=0, sticky='w',
+                                                    padx=0, pady=(4, 0))
+        except Exception:
+            pass
 
     def _reload_domains(self):
         profiles = self.config.load() if self.config else []
@@ -1955,16 +3077,36 @@ class MainWindow(ttk.Frame):
         use_ssl = prof.get('use_ssl', self.client._use_ssl) if prof else self.client._use_ssl
         verify = prof.get('verify', self.client._verify) if prof else self.client._verify
 
+        # Which account: the active session (default) or another one
+        dlg = SwitchCredentialsDialog(self.master, host, self.client.username)
+        self.wait_window(dlg)
+        if not dlg.result:
+            return
+        mode, new_user, new_pwd = dlg.result
+        attempted_user = new_user if mode == 'other' else self.client.username
+
         self.master.config(cursor='watch')
         self.update_idletasks()
         try:
-            # Switch domain using the active session credentials
-            self.client.switch_server(host, use_ssl=use_ssl, verify_cert=verify)
+            if mode == 'other':
+                self.client.switch_server(host, use_ssl=use_ssl,
+                                          verify_cert=verify,
+                                          username=new_user, password=new_pwd)
+            else:
+                self.client.switch_server(host, use_ssl=use_ssl,
+                                          verify_cert=verify)
         except Exception as ex:
             self.master.config(cursor='')
-            messagebox.showerror(
-                T('Access error'),
-                T('Failed to connect to domain "{a0}" with the current account ({a1}).\n\nInsufficient rights or the domain is unavailable:\n{a2}').format(a0=(host), a1=(self.client.username), a2=(ex)))
+            msg = T('Failed to connect to domain "{a0}" with the current account ({a1}).\n\nInsufficient rights or the domain is unavailable:\n{a2}').format(a0=(host), a1=(attempted_user), a2=(ex))
+            results = getattr(self.client, 'last_switch_results', [])
+            if len(results) > 1:
+                msg += T('\n\nBind attempts (variant — server reply):\n{a0}').format(
+                    a0='\n'.join(f"  {c} — {r}" for c, r in results))
+            if mode == 'current' and 'invalidcredentials' in str(ex).lower().replace(' ', ''):
+                msg += T('\n\nThe account was also tried as {a0} — not accepted. With a trust between the domains, check that its direction lets the target domain authenticate this account and, with selective authentication, that "Allowed to authenticate" is granted on its domain controllers. For a domain in another forest without a trust choose "Another account" and enter a login of that domain.').format(
+                    a0=(', '.join(self.client.last_switch_tried[1:]) or '—'))
+            msg += T('\nThe same details are appended to {a0}.').format(a0=SWITCH_LOG)
+            messagebox.showerror(T('Access error'), msg)
             return
         finally:
             self.master.config(cursor='')
@@ -1976,10 +3118,22 @@ class MainWindow(ttk.Frame):
                 'use_ssl': use_ssl, 'verify': verify,
             })
         self._reload_domains()
-        self.e_search.delete(0, 'end')
+        pending = getattr(self, '_pending_select_dn', None)
+        self._pending_select_dn = None
+        if not pending:
+            self.e_search.delete(0, 'end')
         self.props.delete('1.0', 'end')
         self._load_ou_tree()
+        self._update_status()
         self.do_search()
+        if pending:
+            for iid in self.tree.get_children():
+                if (self.users[int(iid)].get('dn') or '').lower() == pending.lower():
+                    self.tree.selection_set(iid)
+                    self.tree.focus(iid)
+                    self.tree.see(iid)
+                    self.on_select()
+                    break
         messagebox.showinfo(
             T('Domain changed'),
             T('Connected to domain "{a0}" as {a1}.').format(a0=(self.client.host), a1=(self.client.username)))
@@ -2094,6 +3248,8 @@ class MainWindow(ttk.Frame):
                 ('desc', T('Description'), 180),
                 ('state', T('State'), 100),
             ]
+            if self._all_domains_on():
+                spec.append(('domain', T('Domain'), 140))
         cols = tuple(c[0] for c in spec)
         self.tree.configure(columns=cols)
         for key, title, width in spec:
@@ -2179,7 +3335,7 @@ class MainWindow(ttk.Frame):
 
     def _update_status(self, extra=''):
         proto = "LDAPS" if self.client.is_ssl() else "LDAP"
-        base = (T('Connected: {a0} ({a1})   |   Base: {a2}').format(a0=(self.client.host), a1=(proto), a2=(self.client.base_dn)))
+        base = (T('Connected: {a0} ({a1})   |   User: {a2}   |   Base: {a3}').format(a0=(self.client.host), a1=(proto), a2=(self.client.username), a3=(self.client.base_dn)))
         self.status.config(text=base + ('   |   ' + extra if extra else ''))
 
     # --- Organizational unit tree ---
@@ -2249,6 +3405,16 @@ class MainWindow(ttk.Frame):
             else:
                 self.users = self.client.search_users(
                     query=text, base=base, scope=scope)
+                for u in self.users:
+                    u['domain'] = self.client.upn_suffix or self.client.host
+                    u['_host'] = self.client.host
+                    u['_foreign'] = False
+                if self._all_domains_on() and text:
+                    own = {(u.get('dn') or '').lower() for u in self.users}
+                    self.users += [u for u in self._search_other_domains(text)
+                                   if (u.get('dn') or '').lower() not in own]
+                    self.users.sort(key=lambda x: ((x.get('name') or '').lower(),
+                                                   (x.get('domain') or '').lower()))
             self.tree.delete(*self.tree.get_children())
             for i, u in enumerate(self.users):
                 if mode == 'computers':
@@ -2260,10 +3426,17 @@ class MainWindow(ttk.Frame):
                 else:
                     vals = (u['name'], u['sAMAccountName'], u['mail'],
                             u['description'], u['state'])
+                    if self._all_domains_on():
+                        vals = vals + (u.get('domain') or '',)
                 self.tree.insert('', 'end', iid=str(i), values=vals)
             scope_txt = self._short_dn(base)
             if subtree:
                 scope_txt += T(' (+nested)')
+            if self._all_domains_on() and text:
+                scope_txt = T('all saved domains')
+                if self._other_domain_errors:
+                    scope_txt += T('; unavailable: {a0}').format(
+                        a0=(', '.join(self._other_domain_errors)))
             self._update_status(
                 T('Found: {a0}  |  scope: {a1}').format(a0=(len(self.users)), a1=(scope_txt)))
         except Exception as ex:
@@ -2271,11 +3444,85 @@ class MainWindow(ttk.Frame):
         finally:
             self.master.config(cursor='')
 
-    def _selected_users(self):
-        """All selected objects (multi-select aware)."""
-        return [self.users[int(i)] for i in self.tree.selection()]
+    # --- Search across saved domains ---
+    def _all_domains_on(self):
+        v = getattr(self, 'all_domains', None)
+        return bool(v and v.get()
+                    and getattr(self, 'mode_var', None)
+                    and self.mode_var.get() == 'users')
 
-    def _selected_user(self):
+    def _on_all_domains(self):
+        self._apply_columns()
+        self.do_search()
+
+    def _search_other_domains(self, text):
+        """Run the same text search in every other saved domain with the
+        session credentials; unreachable domains are collected into
+        self._other_domain_errors."""
+        self._other_domain_errors = []
+        found = []
+        cur = (self.client.host or '').lower()
+        seen_hosts = {cur}
+        # Several saved profiles may point to the SAME domain (domain name,
+        # controller names...): dedupe by the domain's base DN as well
+        seen_bases = {(self.client.base_dn or '').lower()}
+        for prof in (self.config.load() if self.config else []):
+            host = (prof.get('host') or prof.get('name') or '').strip()
+            if not host or host.lower() in seen_hosts:
+                continue
+            seen_hosts.add(host.lower())
+            try:
+                users = self.client.search_users_in_domain(
+                    host, text,
+                    use_ssl=prof.get('use_ssl'), verify_cert=prof.get('verify'))
+            except Exception:
+                self._other_domain_errors.append(prof.get('name') or host)
+                continue
+            base = users[0].get('_base_dn', '') if users else ''
+            if base and base in seen_bases:
+                continue  # same domain reached under another name
+            if base:
+                seen_bases.add(base)
+            found += users
+        # Final safety net: one row per object (by DN)
+        uniq, seen_dn = [], set()
+        for u in found:
+            key = (u.get('dn') or '').lower()
+            if key in seen_dn:
+                continue
+            seen_dn.add(key)
+            uniq.append(u)
+        return uniq
+
+    def _offer_switch_to(self, u):
+        """An object from another domain was chosen for an action: offer to
+        switch to that domain (same search text, the object re-selected)."""
+        host = u.get('_host') or ''
+        if messagebox.askyesno(
+                T('Object from another domain'),
+                T('"{a0}" belongs to domain {a1}.\nActions are available only in the connected domain.\n\nSwitch to domain {a1} now?').format(
+                    a0=(u.get('name') or u.get('sAMAccountName')), a1=(u.get('domain') or host))):
+            self.cmb_dom.set(host)
+            self._pending_select_dn = u.get('dn')
+            self.on_switch_domain()
+
+    def _selected_users(self, allow_foreign=False):
+        """All selected objects (multi-select aware)."""
+        objs = [self.users[int(i)] for i in self.tree.selection()]
+        if not allow_foreign:
+            foreign = [o for o in objs if o.get('_foreign')]
+            if foreign:
+                if len(objs) == 1:
+                    self._offer_switch_to(foreign[0])
+                else:
+                    messagebox.showinfo(
+                        T('Object from another domain'),
+                        T('The selection contains objects from other domains ({a0}). Bulk actions apply only to the connected domain.').format(
+                            a0=(', '.join(sorted({o.get('domain') or '' for o in foreign})))))
+                return []
+        return objs
+
+    def _selected_user(self, allow_foreign=False):
         sel = self.tree.selection()
         if not sel:
             messagebox.showinfo(T('No user selected'),
@@ -2286,7 +3533,11 @@ class MainWindow(ttk.Frame):
                 T('Multiple objects selected'),
                 T('This action applies to a single object.\nSelect exactly one item in the list.'))
             return None
-        return self.users[int(sel[0])]
+        u = self.users[int(sel[0])]
+        if u.get('_foreign') and not allow_foreign:
+            self._offer_switch_to(u)
+            return None
+        return u
 
     def on_select(self, event=None):
         sel = self.tree.selection()
@@ -2342,6 +3593,7 @@ class MainWindow(ttk.Frame):
             (T('First name'), u['givenName']),
             (T('Last name'), u['sn']),
             ("E-mail", u['mail']),
+            (T('E-mail addresses (Exchange)'), self._mail_addresses_text(u)),
             (T('State'), u['state']),
             (T('Locked'), T('Yes') if u['locked'] else T('No')),
             (T('Description'), u['description']),
@@ -2352,6 +3604,10 @@ class MainWindow(ttk.Frame):
             (T('Phone'), u['phone']),
             (T('Password last set'), filetime_to_str(u['pwdLastSet'])),
             (T('Password never expires'), T('Yes') if u.get('dontExpire') else T('No')),
+            (T('Flag auto-clear date'),
+             fmt_date(u['dontExpireUntil'], with_time=False)
+             if u.get('dontExpireUntil') else ''),
+
             (T('Password change required'), pwd_expiry_text(u)),
             (T('Bad password attempts'),
              '' if u.get('badPwdCount') in (None, '') else str(u.get('badPwdCount'))),
@@ -2363,11 +3619,113 @@ class MainWindow(ttk.Frame):
         ]
         self._prop_rows = [(k, v) for k, v in rows if v not in (None, '')]
         self.props.delete('1.0', 'end')
+        mono_keys = {T('E-mail addresses (Exchange)')}
         for k, val in self._prop_rows:
             self.props.insert('end', f"{k}:\n", ('label',))
-            self.props.insert('end', f"{val}\n\n")
+            if k in mono_keys and '\n' in val:
+                self.props.insert('end', f"{val}\n\n", ('mono',))
+            else:
+                self.props.insert('end', f"{val}\n\n")
         self.props.tag_config('label', foreground='#555',
                               font=('Menlo', 10, 'bold'))
+        self.props.tag_config('mono', font=('Menlo', 11))
+        self._load_dc_props(u)
+
+    def _mail_addresses_text(self, u):
+        """All Exchange addresses of the user (proxyAddresses). Without an
+        Exchange organization in the forest the row is simply omitted; with
+        Exchange but no addresses a note says there is no mailbox."""
+        text = format_proxy_addresses(u.get('proxyAddresses'))
+        if text:
+            return text
+        if u.get('_foreign'):
+            has_exchange = bool(u.get('_exchange'))
+        else:
+            try:
+                has_exchange = self.client.exchange_present()
+            except Exception:
+                has_exchange = False
+        return T('(no mailbox: the user has no Exchange addresses)') if has_exchange else ''
+
+    def _load_dc_props(self, u):
+        """Fetch per-DC non-replicated attributes (last logon, last bad
+        password, bad password attempts) in the background and append
+        them to the properties panel when they arrive."""
+        foreign = bool(u.get('_foreign'))
+        dcs = []
+        if not foreign:
+            try:
+                dcs = self.client.list_domain_controllers()
+            except Exception as ex:
+                self.client.last_dc_error = str(ex)
+        if not foreign and len(dcs) < 2:
+            err = getattr(self.client, 'last_dc_error', '')
+            if err:
+                label = T('By domain controller (non-replicated attributes)')
+                val = T('(controller list unavailable: {a0})').format(a0=err)
+                self._prop_rows.append((label, val))
+                try:
+                    self.props.insert('end', f"{label}:\n", ('label',))
+                    self.props.insert('end', f"{val}\n\n")
+                except Exception:
+                    pass
+            return
+        import threading
+        self._dc_token = getattr(self, '_dc_token', 0) + 1
+        token = self._dc_token
+        dn = u['dn']
+        holder = {}
+
+        def worker():
+            try:
+                if foreign:
+                    # controllers of the object's own domain, via the trust
+                    holder['rows'] = self.client.get_dc_user_times_in_domain(
+                        u.get('_host'), dn, u.get('_use_ssl'), u.get('_verify'))
+                else:
+                    holder['rows'] = self.client.get_dc_user_times(dn)
+            except Exception:
+                holder['rows'] = []
+
+        threading.Thread(target=worker, daemon=True).start()
+
+        def poll():
+            if token != self._dc_token:
+                return  # another object is selected now
+            if 'rows' not in holder:
+                self.master.after(300, poll)
+                return
+            self._append_dc_props(holder['rows'])
+
+        self.master.after(300, poll)
+
+    def _append_dc_props(self, rows):
+        """Render the per-DC values as an aligned monospaced table."""
+        if not rows:
+            return
+        table = [(T('DC'), T('Logon'), T('Bad password'), T('Attempts'))]
+        for r in rows:
+            if r.get('error'):
+                table.append((r['dc'], T('(unavailable)'), '', ''))
+                continue
+            ll = filetime_to_str(r.get('lastLogon')) or T('never / not set')
+            bp = filetime_to_str(r.get('badPwdTime')) or T('never / not set')
+            cnt = r.get('badPwdCount')
+            table.append((r['dc'], ll, bp,
+                          '' if cnt in (None, '') else str(cnt)))
+        widths = [max(len(row[i]) for row in table) for i in range(4)]
+        lines = ['  '.join(row[i].ljust(widths[i])
+                           for i in range(4)).rstrip()
+                 for row in table]
+        label = T('By domain controller (non-replicated attributes)')
+        val = '\n'.join(lines)
+        self._prop_rows.append((label, val))
+        try:
+            self.props.insert('end', f"{label}:\n", ('label',))
+            self.props.insert('end', f"{val}\n\n", ('mono',))
+            self.props.tag_config('mono', font=('Menlo', 11))
+        except Exception:
+            pass
 
     def _show_computer_props(self, c):
         rows = [
@@ -2560,6 +3918,8 @@ class MainWindow(ttk.Frame):
         m.add_command(label=T('Groups...'), command=self.on_groups)
         m.add_command(label=T('Move (OU)...'), command=self.on_move)
         m.add_command(label=T('Edit...'), command=self.on_edit)
+        m.add_separator()
+        m.add_command(label=T('Object history...'), command=self.on_history)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -2587,6 +3947,8 @@ class MainWindow(ttk.Frame):
         m.add_command(label=T('Move (OU)...'), command=self.on_move)
         m.add_command(label=T('Edit...'), command=self.on_edit)
         m.add_command(label=T('Delete'), command=self.on_delete)
+        m.add_separator()
+        m.add_command(label=T('Object history...'), command=self.on_history)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -2633,6 +3995,8 @@ class MainWindow(ttk.Frame):
         m.add_command(label=T('Rename...'), command=self.on_rename)
         m.add_command(label=T('Move (OU)...'), command=self.on_move)
         m.add_command(label=T('Delete'), command=self.on_delete)
+        m.add_separator()
+        m.add_command(label=T('Object history...'), command=self.on_history)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
@@ -2767,24 +4131,38 @@ class MainWindow(ttk.Frame):
         if not u or u.get('is_computer'):
             return
         cur = bool(u.get('dontExpire'))
+        until = None
         if cur:
             msg = (T("Clear the 'password never expires' flag for '{a0}'?\n\nThe password will expire per the domain policy.").format(a0=(u['sAMAccountName'])))
+            if not messagebox.askyesno(T('Password never expires'), msg):
+                return
         else:
-            msg = (T("Set the 'password never expires' flag for '{a0}'?\n\nIf a password change at next logon is pending, the requirement will be removed and the current password stays valid (same as in ADUC).").format(a0=(u['sAMAccountName'])))
-        if not messagebox.askyesno(T('Password never expires'), msg):
-            return
+            dlg = NeverExpiresUntilDialog(self.master, u['sAMAccountName'])
+            self.wait_window(dlg)
+            if not dlg.result:
+                return
+            until = dlg.result[1]
         try:
-            cleared = self.client.set_password_never_expires(u['dn'], not cur)
+            cleared = self.client.set_password_never_expires(u['dn'], not cur,
+                                                             until=until)
             if cur:
                 done = T('Flag cleared: the password expires per the domain policy.')
             else:
                 done = T('Flag set: the password never expires.')
+                if until:
+                    done += T('\n\nThe flag will be cleared automatically on {a0}.').format(
+                        a0=(fmt_date(until, with_time=False)))
                 if cleared:
                     done += (T("\n\nThe 'change password at next logon' requirement was removed; the current password stays valid."))
             messagebox.showinfo(T('Done'), done)
             self._refresh_selected(u['dn'])
         except Exception as ex:
             messagebox.showerror(T('Error'), str(ex))
+
+    def on_history(self, all_objects=False):
+        """Change history: whole journal, or filtered to the selected object."""
+        obj = None if all_objects else self._selected_user(allow_foreign=True)
+        HistoryDialog(self.master, obj)
 
     def on_groups(self):
         objs = [o for o in self._selected_users()
@@ -2941,6 +4319,111 @@ class MainWindow(ttk.Frame):
                            on_done=lambda: self._refresh_selected(g['dn']))
 
 
+class PasswordGeneratorDialog(tk.Toplevel):
+    """Password generator: length slider (8-20), character sets and the
+    look-alike filter; settings are kept for the session. With on_use the
+    dialog offers a 'Use' button that hands the password to the caller
+    (and copies it to the clipboard)."""
+
+    def __init__(self, master, on_use=None):
+        super().__init__(master)
+        self.on_use = on_use
+        self.title(T('Password generator'))
+        self.resizable(False, False)
+        modal_grab(self)
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        st = PW_SETTINGS
+        self.v_len = tk.IntVar(value=st['length'])
+        self.lbl_len = ttk.Label(frm, text='')
+        self.lbl_len.grid(row=0, column=0, sticky='w')
+        self.scale = ttk.Scale(frm, from_=PW_MIN, to=PW_MAX, orient='horizontal',
+                               length=300, command=self._on_scale)
+        self.scale.set(st['length'])
+        self.scale.grid(row=0, column=1, sticky='ew', pady=(0, 6))
+        self.v_lower = tk.BooleanVar(value=st['lower'])
+        self.v_upper = tk.BooleanVar(value=st['upper'])
+        self.v_digits = tk.BooleanVar(value=st['digits'])
+        self.v_special = tk.BooleanVar(value=st['special'])
+        self.v_similar = tk.BooleanVar(value=st['similar'])
+        r = 1
+        for text, var in ((T('Lowercase letters (a-z)'), self.v_lower),
+                          (T('Uppercase letters (A-Z)'), self.v_upper),
+                          (T('Digits (0-9)'), self.v_digits),
+                          (T('Special characters ({a0})').format(a0=PW_SPECIAL), self.v_special),
+                          (T('Exclude look-alike characters (O/0, I/l/1, S/5, Z/2, B/8)'), self.v_similar)):
+            ttk.Checkbutton(frm, text=text, variable=var,
+                            command=self._generate).grid(
+                row=r, column=0, columnspan=2, sticky='w', pady=1)
+            r += 1
+        self.e_pwd = ttk.Entry(frm, width=34, font=('Menlo', 14))
+        self.e_pwd.grid(row=r, column=0, columnspan=2, sticky='ew', pady=(12, 4))
+        r += 1
+        self.lbl = ttk.Label(frm, text='', foreground='#2E7D32', wraplength=380)
+        self.lbl.grid(row=r, column=0, columnspan=2, sticky='w')
+        r += 1
+        btns = ttk.Frame(frm)
+        btns.grid(row=r, column=0, columnspan=2, sticky='e', pady=(12, 0))
+        ttk.Button(btns, text=T('Generate'), command=self._generate).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Copy'), command=self._copy).grid(
+            row=0, column=1, padx=(0, 8))
+        if on_use:
+            ttk.Button(btns, text=T('Use'), command=self._use,
+                       default='active').grid(row=0, column=2, padx=(0, 8))
+        ttk.Button(btns, text=T('Close'), command=self.destroy).grid(
+            row=0, column=3)
+        self.bind('<Escape>', lambda e: self.destroy())
+        self.bind('<Return>', lambda e: (self._use() if on_use else self._generate()))
+        self._set_len_label()
+        self._generate()
+
+    def _on_scale(self, value):
+        v = int(round(float(value)))
+        if v != self.v_len.get():
+            self.v_len.set(v)
+            self._set_len_label()
+            self._generate()
+
+    def _set_len_label(self):
+        self.lbl_len.config(text=T('Length: {a0}').format(a0=self.v_len.get()))
+
+    def _save_settings(self):
+        PW_SETTINGS.update(length=self.v_len.get(), lower=self.v_lower.get(),
+                           upper=self.v_upper.get(), digits=self.v_digits.get(),
+                           special=self.v_special.get(), similar=self.v_similar.get())
+
+    def _generate(self):
+        self._save_settings()
+        self.lbl.config(text='', foreground='#2E7D32')
+        try:
+            pwd = generate_password(self.v_len.get(), self.v_lower.get(),
+                                    self.v_upper.get(), self.v_digits.get(),
+                                    self.v_special.get(), self.v_similar.get())
+        except ValueError as ex:
+            self.e_pwd.delete(0, 'end')
+            self.lbl.config(text=str(ex), foreground='#B00020')
+            return
+        self.e_pwd.delete(0, 'end')
+        self.e_pwd.insert(0, pwd)
+
+    def _copy(self):
+        pwd = self.e_pwd.get()
+        if not pwd:
+            return
+        set_clipboard(self, pwd)
+        self.lbl.config(text=T('Password generated and copied to clipboard.'),
+                        foreground='#2E7D32')
+
+    def _use(self):
+        pwd = self.e_pwd.get()
+        if not pwd or not self.on_use:
+            return
+        set_clipboard(self, pwd)
+        self.on_use(pwd)
+        self.destroy()
+
+
 class ResetPasswordDialog(tk.Toplevel):
     def __init__(self, master, client, user, on_done=None):
         super().__init__(master)
@@ -2956,11 +4439,15 @@ class ResetPasswordDialog(tk.Toplevel):
                   font=('', 12, 'bold')).grid(row=0, column=0, columnspan=2,
                                               sticky='w', pady=(0, 12))
         ttk.Label(frm, text=T('New password:')).grid(row=1, column=0, sticky='w')
-        self.e1 = ttk.Entry(frm, width=30, show='•')
-        self.e1.grid(row=1, column=1, pady=4)
+        prow = ttk.Frame(frm)
+        prow.grid(row=1, column=1, pady=4, sticky='w')
+        self.e1 = ttk.Entry(prow, width=30, show='•')
+        self.e1.grid(row=0, column=0)
+        ttk.Button(prow, text=T('Generate...'), width=9,
+                   command=self._open_generator).grid(row=0, column=1, padx=(6, 0))
         ttk.Label(frm, text=T('Confirm:')).grid(row=2, column=0, sticky='w')
         self.e2 = ttk.Entry(frm, width=30, show='•')
-        self.e2.grid(row=2, column=1, pady=4)
+        self.e2.grid(row=2, column=1, pady=4, sticky='w')
         self.v_change = tk.BooleanVar(value=True)
         self.v_unlock = tk.BooleanVar(value=True)
         ttk.Checkbutton(frm, text=T('Change password at next logon'),
@@ -2979,7 +4466,18 @@ class ResetPasswordDialog(tk.Toplevel):
             row=0, column=1)
         self.e1.focus_set()
 
+    def _open_generator(self):
+        PasswordGeneratorDialog(self, on_use=self._use_generated)
+
+    def _use_generated(self, pwd):
+        for e in (self.e1, self.e2):
+            e.delete(0, 'end')
+            e.insert(0, pwd)
+        self.lbl.config(text=T('Password inserted and copied to clipboard.'),
+                        foreground='#2E7D32')
+
     def _apply(self):
+        self.lbl.config(foreground='#B00020')
         if not self.e1.get():
             self.lbl.config(text=T('Enter a new password.'))
             return
@@ -2997,6 +4495,52 @@ class ResetPasswordDialog(tk.Toplevel):
             self.destroy()
         except Exception as ex:
             self.lbl.config(text=str(ex))
+
+
+def _report_remove_error(group_cn, ex):
+    """Group-removal failure: a stale membership (already removed) is a
+    notice, anything else is an error."""
+    if is_not_member_error(ex):
+        messagebox.showinfo(
+            T('Notice'),
+            T("'{a0}': the object is no longer a member of this group — the list was outdated and has been refreshed.").format(a0=(group_cn)))
+    else:
+        messagebox.showerror(T('Error'), f"{group_cn}: {ex}")
+
+
+class NamePromptDialog(tk.Toplevel):
+    """Ask for a (new) name; .value is None when cancelled."""
+
+    def __init__(self, master, title, message, default=''):
+        super().__init__(master)
+        self.value = None
+        self.title(title)
+        self.resizable(False, False)
+        modal_grab(self)
+        frm = ttk.Frame(self, padding=18)
+        frm.grid()
+        ttk.Label(frm, text=message, wraplength=440).grid(
+            row=0, column=0, sticky='w', pady=(0, 8))
+        self.entry = ttk.Entry(frm, width=52)
+        self.entry.insert(0, default or '')
+        self.entry.grid(row=1, column=0, sticky='ew')
+        self.entry.select_range(0, 'end')
+        self.entry.icursor('end')
+        self.entry.bind('<Return>', lambda e: self._ok())
+        btns = ttk.Frame(frm)
+        btns.grid(row=2, column=0, sticky='e', pady=(12, 0))
+        ttk.Button(btns, text=T('OK'), command=self._ok).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Cancel'), command=self.destroy).grid(
+            row=0, column=1)
+        self.entry.focus_set()
+
+    def _ok(self):
+        v = self.entry.get().strip()
+        if not v:
+            return
+        self.value = v
+        self.destroy()
 
 
 class MoveDialog(tk.Toplevel):
@@ -3062,6 +4606,29 @@ class MoveDialog(tk.Toplevel):
         if picker.selected_dn:
             self.combo.set(picker.selected_dn)
 
+    def _move_one(self, o, dest):
+        """Move one object; when the target container already has an
+        object with the same full name, ask for a new name (like ADUC)
+        and move with the rename in one step."""
+        name = None
+        while True:
+            try:
+                self.client.move_user(o['dn'], dest, new_name=name)
+                return
+            except Exception as ex:
+                if not is_name_conflict_error(ex):
+                    raise
+                cur = name or o['name']
+                dlg = NamePromptDialog(
+                    self, T('Name conflict'),
+                    T('An object named "{a0}" already exists in the target container.\nEnter a new full name for the object being moved:').format(a0=(cur)),
+                    cur)
+                self.wait_window(dlg)
+                if not dlg.value or dlg.value == cur:
+                    raise RuntimeError(
+                        T('Not moved: an object with this name already exists in the target container.'))
+                name = dlg.value
+
     def _apply(self):
         dest = self.combo.get().strip()
         if not dest:
@@ -3069,7 +4636,7 @@ class MoveDialog(tk.Toplevel):
             return
         if len(self.users_list) == 1:
             try:
-                self.client.move_user(self.users_list[0]['dn'], dest)
+                self._move_one(self.users_list[0], dest)
                 messagebox.showinfo(T('Done'), T('Object moved.'))
                 if self.on_done:
                     self.on_done()
@@ -3080,7 +4647,7 @@ class MoveDialog(tk.Toplevel):
         errors = []
         for o in self.users_list:
             try:
-                self.client.move_user(o['dn'], dest)
+                self._move_one(o, dest)
             except Exception as ex:
                 errors.append(f"{o.get('name')}: {ex}")
         ok = len(self.users_list) - len(errors)
@@ -3297,8 +4864,7 @@ class GroupsDialog(tk.Toplevel):
                 self.client.remove_from_group(self.user['dn'],
                                               self.groups[i]['dn'])
             except Exception as ex:
-                messagebox.showerror(T('Error'),
-                                     f"{self.groups[i]['cn']}: {ex}")
+                _report_remove_error(self.groups[i]['cn'], ex)
         self._reload()
 
 
@@ -3348,6 +4914,8 @@ class ComputerEditDialog(tk.Toplevel):
 
 class EditDialog(tk.Toplevel):
     FIELDS = [
+        ("First name", 'givenName'),
+        ("Last name", 'sn'),
         ("Display name", 'displayName'),
         ("E-mail", 'mail'),
         ("Title", 'title'),
@@ -3358,6 +4926,7 @@ class EditDialog(tk.Toplevel):
         ("Description", 'description'),
     ]
     SRC = {
+        'givenName': 'givenName', 'sn': 'sn',
         'displayName': 'displayName', 'mail': 'mail', 'title': 'title',
         'department': 'department', 'company': 'company',
         'physicalDeliveryOfficeName': 'office',
@@ -3383,11 +4952,31 @@ class EditDialog(tk.Toplevel):
             e.grid(row=i, column=1, pady=3)
             self.entries[attr] = e
         r = len(self.FIELDS)
-        # Account option: password never expires (UAC bit)
+        # Account option: password never expires (UAC bit) + optional
+        # auto-clear date (stored in PWD_NEVER_EXPIRES_UNTIL_ATTR)
         self.v_dont_expire = tk.BooleanVar(value=bool(user.get('dontExpire')))
         ttk.Checkbutton(frm, text=T('Password never expires'),
-                        variable=self.v_dont_expire).grid(
+                        variable=self.v_dont_expire,
+                        command=self._toggle_pne).grid(
             row=r, column=0, columnspan=2, sticky='w', pady=(8, 0))
+        r += 1
+        pne_row = ttk.Frame(frm)
+        pne_row.grid(row=r, column=0, columnspan=2, sticky='w', padx=(24, 0))
+        cur_until = user.get('dontExpireUntil')
+        self.v_pne_until = tk.BooleanVar(value=bool(cur_until))
+        self.chk_pne_until = ttk.Checkbutton(
+            pne_row, text=T('Clear the flag automatically on:'),
+            variable=self.v_pne_until, command=self._toggle_pne)
+        self.chk_pne_until.grid(row=0, column=0)
+        self.e_pne_until = ttk.Entry(pne_row, width=14)
+        self.e_pne_until.grid(row=0, column=1, padx=(6, 0))
+        self.e_pne_until.insert(
+            0, fmt_date(cur_until, with_time=False) if cur_until else date_hint())
+        self.btn_pne_cal = ttk.Button(pne_row, text="📅", width=3,
+                                      command=self._open_pne_calendar)
+        self.btn_pne_cal.grid(row=0, column=2, padx=(4, 0))
+        self._initial_until = cur_until
+        self._toggle_pne()
         r += 1
         # Group membership (Member Of) — applied immediately
         grp = ttk.LabelFrame(frm, text=T('Group membership (Member Of)'))
@@ -3451,16 +5040,53 @@ class EditDialog(tk.Toplevel):
                 self.client.remove_from_group(self.user['dn'],
                                               self.groups[i]['dn'])
             except Exception as ex:
-                messagebox.showerror(T('Error'), f"{self.groups[i]['cn']}: {ex}")
+                _report_remove_error(self.groups[i]['cn'], ex)
         self._reload_groups()
+
+    def _toggle_pne(self):
+        on = self.v_dont_expire.get()
+        self.chk_pne_until.config(state='normal' if on else 'disabled')
+        date_on = on and self.v_pne_until.get()
+        self.e_pne_until.config(state='normal' if date_on else 'disabled')
+        self.btn_pne_cal.config(state='normal' if date_on else 'disabled')
+        if date_on and self.e_pne_until.get().strip() in ('', date_hint()):
+            self.e_pne_until.delete(0, 'end')
+            self.e_pne_until.insert(0, fmt_date(
+                datetime.date.today() + datetime.timedelta(days=90),
+                with_time=False))
+
+    def _open_pne_calendar(self):
+        try:
+            init = parse_date(self.e_pne_until.get())
+        except ValueError:
+            init = datetime.date.today()
+        CalendarPopup(self, initial=init, on_pick=self._set_pne_date)
+
+    def _set_pne_date(self, d):
+        self.e_pne_until.config(state='normal')
+        self.e_pne_until.delete(0, 'end')
+        self.e_pne_until.insert(0, fmt_date(d, with_time=False))
 
     def _save(self):
         attrs = {attr: e.get() for attr, e in self.entries.items()}
+        # Auto-clear date for the 'password never expires' flag
+        until = None
+        if self.v_dont_expire.get() and self.v_pne_until.get():
+            try:
+                until = parse_date(self.e_pne_until.get())
+            except ValueError:
+                self.lbl.config(text=T('Invalid date. Format: {a0}').format(a0=(date_hint())))
+                return
+            if until <= datetime.date.today():
+                self.lbl.config(text=T('The date must be later than today.'))
+                return
         try:
             self.client.update_attributes(self.user['dn'], attrs)
-            if self.v_dont_expire.get() != bool(self.user.get('dontExpire')):
+            flag_changed = self.v_dont_expire.get() != bool(self.user.get('dontExpire'))
+            date_changed = self.v_dont_expire.get() and until != self._initial_until
+            if flag_changed or date_changed:
                 self.client.set_password_never_expires(
-                    self.user['dn'], self.v_dont_expire.get())
+                    self.user['dn'], self.v_dont_expire.get(), until=until)
             messagebox.showinfo(T('Done'), T('Changes saved.'))
             if self.on_done:
                 self.on_done()
@@ -3679,8 +5305,7 @@ class GroupEditDialog(tk.Toplevel):
                 self.client.remove_from_group(self.group['dn'],
                                               self.mo_groups[i]['dn'])
             except Exception as ex:
-                messagebox.showerror(T('Error'),
-                                     f"{self.mo_groups[i]['cn']}: {ex}")
+                _report_remove_error(self.mo_groups[i]['cn'], ex)
         self._mo_reload()
 
     def _save(self):
@@ -4002,6 +5627,108 @@ class GroupMembersDialog(tk.Toplevel):
             self.on_done()
 
 
+class HistoryDialog(tk.Toplevel):
+    """Change history: who changed what and when (local journal).
+    Optionally filtered to one object (by DN or name)."""
+
+    def __init__(self, master, obj=None):
+        super().__init__(master)
+        self.obj = obj
+        self.title(T('Change history'))
+        modal_grab(self)
+        self.geometry("900x520")
+        frm = ttk.Frame(self, padding=14)
+        frm.grid(sticky='nsew')
+        self.rowconfigure(0, weight=1)
+        self.columnconfigure(0, weight=1)
+        frm.rowconfigure(1, weight=1)
+        frm.columnconfigure(0, weight=1)
+
+        top = ttk.Frame(frm)
+        top.grid(row=0, column=0, sticky='ew', pady=(0, 8))
+        top.columnconfigure(1, weight=1)
+        ttk.Label(top, text=T('Filter:')).grid(row=0, column=0, padx=(0, 6))
+        self.e_filter = ttk.Entry(top)
+        self.e_filter.grid(row=0, column=1, sticky='ew')
+        self.e_filter.bind('<KeyRelease>', lambda e: self._render())
+        self.v_only = tk.BooleanVar(value=bool(obj))
+        self.chk_only = ttk.Checkbutton(
+            top, text=T('Only this object: {a0}').format(
+                a0=(obj.get('name') if obj else '')),
+            variable=self.v_only, command=self._render)
+        self.chk_only.grid(row=0, column=2, padx=(12, 0))
+        if not obj:
+            self.chk_only.grid_remove()
+
+        cols = ('ts', 'action', 'object', 'actor', 'details')
+        self.tree = ttk.Treeview(frm, columns=cols, show='headings')
+        self.tree.heading('ts', text=T('Time'))
+        self.tree.heading('action', text=T('Action'))
+        self.tree.heading('object', text=T('Object'))
+        self.tree.heading('actor', text=T('Performed by'))
+        self.tree.heading('details', text=T('Details'))
+        self.tree.column('ts', width=140, stretch=False)
+        self.tree.column('action', width=190, stretch=False)
+        self.tree.column('object', width=180)
+        self.tree.column('actor', width=150, stretch=False)
+        self.tree.column('details', width=220)
+        self.tree.grid(row=1, column=0, sticky='nsew')
+        sb = ttk.Scrollbar(frm, orient='vertical', command=self.tree.yview)
+        sb.grid(row=1, column=1, sticky='ns')
+        self.tree.configure(yscrollcommand=sb.set)
+
+        self.lbl = ttk.Label(frm, text='', foreground='#555', wraplength=860)
+        self.lbl.grid(row=2, column=0, columnspan=2, sticky='w', pady=(8, 0))
+
+        btns = ttk.Frame(frm)
+        btns.grid(row=3, column=0, columnspan=2, sticky='e', pady=(10, 0))
+        ttk.Button(btns, text=T('Refresh'), command=self._load).grid(
+            row=0, column=0, padx=(0, 8))
+        ttk.Button(btns, text=T('Close'), command=self.destroy).grid(
+            row=0, column=1)
+
+        self.records = []
+        self._load()
+        self.e_filter.focus_set()
+
+    @staticmethod
+    def _fmt_ts(ts):
+        try:
+            dt = datetime.datetime.strptime(ts, '%Y-%m-%dT%H:%M:%S')
+            return fmt_date(dt)
+        except Exception:
+            return ts or ''
+
+    def _matches_obj(self, rec):
+        if not self.obj:
+            return True
+        dn = (self.obj.get('dn') or '').lower()
+        name = (self.obj.get('name') or '').lower()
+        rdn = (rec.get('dn') or '').lower()
+        return (dn and rdn == dn) or (name and (rec.get('object') or '').lower() == name)
+
+    def _load(self):
+        self.records = list(reversed(history_load()))  # newest first
+        self._render()
+
+    def _render(self):
+        self.tree.delete(*self.tree.get_children())
+        q = self.e_filter.get().strip().lower()
+        shown = 0
+        for rec in self.records:
+            if self.obj and self.v_only.get() and not self._matches_obj(rec):
+                continue
+            action = T(HISTORY_ACTIONS.get(rec.get('action'), rec.get('action') or ''))
+            row = (self._fmt_ts(rec.get('ts')), action, rec.get('object') or '',
+                   rec.get('actor') or '', rec.get('details') or '')
+            if q and q not in ' '.join(str(x) for x in row + (rec.get('dn') or '',)).lower():
+                continue
+            self.tree.insert('', 'end', values=row)
+            shown += 1
+        self.lbl.config(text=T('Records: {a0} of {a1}. File: {a2}').format(
+            a0=(shown), a1=(len(self.records)), a2=(HISTORY_PATH)))
+
+
 class OUTreePickerDialog(tk.Toplevel):
     """Select an organizational unit (OU) by navigating the domain tree."""
 
@@ -4169,8 +5896,14 @@ class CreateDialog(tk.Toplevel):
         self.e_mail = row(5, "E-mail:")
         self.e_desc = row(6, T('Description:'))
         ttk.Label(frm, text=T('Password:')).grid(row=7, column=0, sticky='w', pady=3)
-        self.e_pass = ttk.Entry(frm, width=36, show='•')
-        self.e_pass.grid(row=7, column=1, pady=3)
+        prow = ttk.Frame(frm)
+        prow.grid(row=7, column=1, pady=3, sticky='w')
+        self.e_pass = ttk.Entry(prow, width=27, show='•')
+        self.e_pass.grid(row=0, column=0)
+        ttk.Button(prow, text=T('Generate...'), width=9,
+                   command=lambda: PasswordGeneratorDialog(
+                       self, on_use=self._use_generated)).grid(
+            row=0, column=1, padx=(6, 0))
 
         # Organizational unit (OU) where the user will be created
         ttk.Label(frm, text=T('Organizational unit (OU):')).grid(
@@ -4239,6 +5972,15 @@ class CreateDialog(tk.Toplevel):
 
         # Automatically add the default groups
         self._load_default_groups()
+
+    def _use_generated(self, pwd):
+        self.e_pass.delete(0, 'end')
+        self.e_pass.insert(0, pwd)
+        try:
+            self.lbl.config(text=T('Password inserted and copied to clipboard.'),
+                            foreground='#2E7D32')
+        except Exception:
+            pass
 
     def _browse_ou(self):
         picker = OUTreePickerDialog(
