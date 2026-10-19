@@ -4,7 +4,7 @@
 
 # ADUC-Extended
 
-GUI application for managing Active Directory accounts — Windows (PowerShell + WPF)
+GUI application for everyday Active Directory administration — Windows (PowerShell + WPF)
 and macOS (Python + Tkinter).
 
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS-blue)
@@ -20,64 +20,44 @@ and macOS (Python + Tkinter).
 
 ---
 
-A single bilingual application: the interface language (**English / Русский**)
-switches on the fly — in the login window and in the main window. On startup the
-app prompts for credentials and performs all operations under the specified account.
+ADUC-Extended is a lightweight alternative to the "Active Directory Users and
+Computers" snap-in for the tasks a help desk and system administrators perform
+every day. The same application exists for Windows and macOS, is bilingual
+(**English / Русский**, switchable on the fly), and runs under the account you
+sign in with — nothing is stored or executed on the server side.
 
-## Features
+## What it does
 
-- Search and view user properties (including password details: last set date,
-  change required, bad password attempts).
-- Computer objects (Users / Computers mode toggle): search, properties, rename,
-  move between OUs, edit description, enable/disable, delete.
-- Navigation of the organizational unit (OU) tree.
-- Account creation: name, login, UPN, e-mail, description, password, OU selection
-  via the tree, expiration date, group selection; duplicate-login check.
-- Enable, disable, and unlock accounts.
-- Password reset.
-- Group membership management, including bulk add of selected users to groups.
-- Group administration (Users / Computers / Groups mode toggle): create,
-  edit, rename, move, delete groups (bulk deletion included); a member list
-  opens on double-click, with members added via the AD hierarchy tree or
-  search (disabled accounts are excluded).
-- Move accounts between organizational units.
-- Multi-select with bulk actions: enable, disable, move to an OU.
-- Manage the "password never expires" flag (like ADUC, enabling it also
-  cancels a pending change-at-next-logon requirement).
-- Attribute editing; double-click on a list row opens the edit dialog.
-- Domain list with switching; a domain switch uses the active session credentials.
-- Interface language switching (English / Русский) on the fly; dates follow the
-  language: `YYYY-MMM-DD` (EN) or `DD MMM YYYY` (RU).
-- Editing shortcuts in input fields: delete the line (Cmd+Backspace on macOS,
-  Shift+Backspace on Windows) or one word (Ctrl+Backspace); Esc closes the
-  active dialog and never closes the main window.
-- Nested groups: the group edit dialog manages the groups the group itself
-  belongs to (Member Of), like the ADUC snap-in.
-- Member picker with a selection basket: double-click collects users from
-  any OU or search into one list — several members from different OUs are
-  added in one dialog.
-- Reliable clipboard on macOS (Tk 9): Cmd+V/C/X/Z/A work in every field,
-  in both English and Russian keyboard layouts, with a right-click
-  Cut/Copy/Paste menu and input undo (Cmd+Z).
-- Name-conflict handling on move: when the target OU already contains an
-  object with the same full name, the app offers to enter a new name and
-  moves the object with the rename (like the ADUC snap-in).
-- Change history: every change made through the app (enable/disable,
-  password reset, edits, moves, renames, group membership, creation,
-  deletion) is journaled locally with the account that performed it;
-  the History window shows the journal with a text filter, and
-  "Object history" filters it to the selected object.
-- Domain switch with account choice: keep the active account (default)
-  or enter another one for the target domain.
-- "Password never expires" with an auto-clear date: when setting the
-  flag you may enter the date on which the app clears it automatically
-  (checked at start and hourly; the date is kept in the account's
-  `adminDescription` attribute, configurable at the top of the file).
-- Search across all saved domains: the "All saved domains" checkbox runs
-  the text search (name / login / e-mail) in every saved domain with the
-  session credentials; results are merged into the list with a "Domain"
-  column, and an action on an object from another domain offers to
-  switch to that domain with the object re-selected.
+**Users.** Search by name, login or e-mail; a properties panel with account and
+password state; creation with all the usual attributes; enable, disable and
+unlock; password reset with a built-in generator; the "password never expires"
+flag with an optional automatic clearing date; attribute editing; moving between
+organizational units.
+
+**Computers and groups.** The same window switches to computer objects and to
+groups: search, properties, creation, renaming, moving, enabling/disabling,
+deletion. Group membership is managed from both sides — the user's groups and the
+group's members (including nested groups), with a picker that collects members
+from several OUs or searches into one list.
+
+**Working at scale.** Multi-selection with bulk actions, an OU tree for
+navigation and for choosing targets, name-conflict handling on move, and a
+local change journal that records every change made through the application
+and who made it.
+
+**Several domains.** A list of saved domains with quick switching (under the
+current or another account) and a search that spans all saved domains at once,
+with actions on objects from other domains.
+
+**Exchange attributes.** All e-mail addresses kept for a user are read straight
+from the directory — no access to the Exchange server is required.
+
+**Interface.** Keyboard shortcuts and a right-click menu in every field, a
+responsive toolbar for narrow windows, dates in the format of the selected
+language, and a clipboard that works reliably on macOS in both keyboard layouts.
+
+Details of each feature and the changes in every version are in the
+[release notes](RELEASE_NOTES.md).
 
 ## Repository layout
 
@@ -137,8 +117,8 @@ At the top of each source file you can set:
 
 ## Settings storage
 
-The domain list and the interface language are stored locally (passwords are
-never saved):
+The domain list, the interface language and the change journal are stored
+locally; passwords are never saved.
 
 | Windows | macOS |
 |---|---|
